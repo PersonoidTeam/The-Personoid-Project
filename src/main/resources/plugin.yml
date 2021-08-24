@@ -1,0 +1,6 @@
+name: Personoid
+version: ${project.version}
+main: us.notnotdoddy.personoid.Personoid
+api-version: 1.17
+depend: [ Citizens ]
+authors: [ notnotnotswipez, DefineDoddy ]
