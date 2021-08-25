@@ -1,0 +1,30 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": [ "hi", "how are you", "is anyone there", "hello", "good day", "whats up" ],
+      "responses":
+      {
+        "neutral": [ "hello", "good to see you!", "hi there!", "hi" ],
+        "aggravated": [ "HELLO!", "GOOD TO SEE YOU!", "HI THERE!", "HI" ],
+        "angry": [ "HELLO!", "GOOD TO SEE YOU!", "HI THERE!", "HI" ]
+      }
+    },
+    {
+      "tag": "goodbye",
+      "patterns": [ "bye", "goodbye", "im going to go now", "adios" ],
+      "responses":
+      {
+        "neutral": [ "bye", "goodbye", "cya", "adios" ],
+        "aggravated": [ "BYE", "GOODBYE", "CYA", "ADIOS" ],
+        "angry": [ "BYE", "GOODBYE", "CYA", "ADIOS" ]
+      }
+    }
+  ],
+  "backup":
+  {
+    "neutral": [ "okay", "ok", "urm..." ],
+    "aggravated": [ "OKAY", "OK", "URM..." ],
+    "angry": [ "OKAY", "OK", "URM..." ]
+  }
+}
