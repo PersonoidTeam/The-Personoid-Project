@@ -2,12 +2,12 @@
   "intents": [
     {
       "tag": "greeting",
-      "patterns": [ "hi", "how are you", "is anyone there", "hello", "good day", "whats up" ],
+      "patterns": [ "hi", "hello", "good day", "whats up", "sup", "yo", "hey", "good morning", "afternoon", "gday", "howdy" ],
       "responses":
       {
-        "neutral": [ "hello", "good to see you!", "hi there!", "hi" ],
-        "aggravated": [ "HELLO!", "GOOD TO SEE YOU!", "HI THERE!", "HI" ],
-        "angry": [ "HELLO!", "GOOD TO SEE YOU!", "HI THERE!", "HI" ]
+        "neutral": [ "hello", "good to see you", "hi there", "hi", "hey", "yo", "sup" ],
+        "aggravated": [ "hi", "hey", "okay", null, null ],
+        "angry": [ "goodbye", "go away", "no one cares", "bye", null, null, null ]
       }
     },
     {
@@ -16,15 +16,25 @@
       "responses":
       {
         "neutral": [ "bye", "goodbye", "cya", "adios" ],
-        "aggravated": [ "BYE", "GOODBYE", "CYA", "ADIOS" ],
-        "angry": [ "BYE", "GOODBYE", "CYA", "ADIOS" ]
+        "aggravated": [ "goodbye", "okay", "ADIOS", null, null ],
+        "angry": [ "good", "GOODBYE", "finally", "good riddance", null, null, null ]
+      }
+    },
+    {
+      "tag": "how-feeling",
+      "patterns": [ "how are you", "hows today been", "how are you feeling" ],
+      "responses":
+      {
+        "neutral": [ "good thanks", "good, how are you?", "great, thanks for asking", "pretty good, thanks" ],
+        "aggravated": [ "decent", "okay", "good", "doesn't really matter", null, null ],
+        "angry": [ "none of your business", "go away", "terrible", null, null, null ]
       }
     }
   ],
   "backup":
   {
     "neutral": [ "okay", "ok", "urm..." ],
-    "aggravated": [ "OKAY", "OK", "URM..." ],
-    "angry": [ "OKAY", "OK", "URM..." ]
+    "aggravated": [ "okay, and?", "OK", "urm...", null, null ],
+    "angry": [ "OKAY!", "okay, and?", "don't care", "urm...", null, null, null ]
   }
 }
