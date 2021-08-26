@@ -52,17 +52,27 @@ public class NPCHandler {
                         }
                         if (npc.players.get(closest).mood == Behavior.Mood.ANGRY) {
                             npc.entity.getNavigator().setTarget(closest, true);
-                        } else {
-                            Location loc = npc.entity.getStoredLocation();
-                            double x = loc.getX() + FluidUtils.random(-5, 5);
-                            double z = loc.getZ() + FluidUtils.random(-5, 5);
-                            Location to = new Location(npc.entity.getStoredLocation().getWorld(), x, loc.getY(), z);
-                            npc.entity.getNavigator().setTarget(to);
+                        } else if (npc.entity.getNavigator().getTargetAsLocation() == null) {
+                            npc.entity.getNavigator().setTarget(getRandomLoc(npc));
+                        }
+                        if (npc.entity.getNavigator().getEntityTarget() == null) {
+                            if (npc.entity.getNavigator().getTargetAsLocation().distance(npc.entity.getStoredLocation()) < 3) {
+                                npc.entity.getNavigator().setTarget(getRandomLoc(npc));
+                            }
                         }
                     }
                 }
             }
         };
+    }
+
+    private static Location getRandomLoc(NPC npc) {
+        Location loc = npc.entity.getStoredLocation();
+        double x = loc.getX() + FluidUtils.random(-20, 20);
+        double z = loc.getZ() + FluidUtils.random(-20, 20);
+        loc.setY(0);
+        double y = npc.entity.getStoredLocation().getWorld().getHighestBlockYAt(loc) + 1;
+        return new Location(npc.entity.getStoredLocation().getWorld(), x, y, z);
     }
 
     public static Player getClosestPlayer(Location loc) {
