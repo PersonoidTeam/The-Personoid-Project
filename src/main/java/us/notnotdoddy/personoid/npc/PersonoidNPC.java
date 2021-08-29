@@ -32,7 +32,7 @@ public class PersonoidNPC {
     public Player damagedByPlayer;
     private UUID livingEntityTarget = null;
     private boolean isWandering = false;
-    private PersonoidGoal selectedGoal = null;
+    public PersonoidGoal selectedGoal = null;
     private Location currentTargetLocation;
     public Player closestPlayerToNPC = null;
     public TargetHandler.TargetType activeTargetType = TargetHandler.TargetType.NOTHING;
@@ -105,7 +105,6 @@ public class PersonoidNPC {
     public void setMainHandItem(ItemStack item){
         getLivingEntity().getEquipment().setItemInMainHand(item);
     }
-
 
     // For when we need the living entity rather than generic, saves precious casting time haha
     public LivingEntity getLivingEntity(){
@@ -231,6 +230,9 @@ public class PersonoidNPC {
         if (!finalGoals.isEmpty()){
             PersonoidGoal finalSelectedGoal = finalGoals.get(random.nextInt(finalGoals.size()));
             if (selectedGoal == null || finalSelectedGoal.shouldOverrideExisting()){
+                if (selectedGoal != null) {
+                    selectedGoal.endGoal(getPersonoid());
+                }
                 selectedGoal = finalSelectedGoal;
                 selectedGoal.initializeGoal(getPersonoid());
             }

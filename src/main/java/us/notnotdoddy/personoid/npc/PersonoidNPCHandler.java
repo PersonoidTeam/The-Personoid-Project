@@ -23,13 +23,7 @@ public class PersonoidNPCHandler {
     }
 
     public static String getRandomName() {
-        InputStream stream = FluidPlugin.getPlugin().getClass().getResourceAsStream("/names.txt");
-        File file = new File("names.txt");
-        try {
-            FileUtils.copyInputStreamToFile(stream, file);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return FluidUtils.randomLineFromFile(file);
+        File nameFile = new File("names.txt");
+        return FluidUtils.randomLineFromFile(nameFile);
     }
 }

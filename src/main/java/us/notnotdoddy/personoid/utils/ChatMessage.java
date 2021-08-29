@@ -41,6 +41,14 @@ public class ChatMessage {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+
+        InputStream nameStream = FluidPlugin.getPlugin().getClass().getResourceAsStream("/names.txt");
+        File nameFile = new File("names.txt");
+        try {
+            FileUtils.copyInputStreamToFile(nameStream, nameFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         initListeners();
     }
 
