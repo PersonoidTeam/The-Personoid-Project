@@ -1,4 +1,4 @@
-package us.notnotdoddy.personoid;
+package us.notnotdoddy.personoid.npc;
 
 public class Behavior {
     public enum Mood {

@@ -1,8 +1,8 @@
-package us.notnotdoddy.personoid;
+package us.notnotdoddy.personoid.npc;
 
 import me.definedoddy.fluidapi.FluidListener;
 
-public class NPCEvents {
+public class PersonoidNPCEvents {
     public static void init() {
         new FluidListener.Group() {
 

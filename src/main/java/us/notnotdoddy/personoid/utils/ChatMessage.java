@@ -1,4 +1,4 @@
-package us.notnotdoddy.personoid;
+package us.notnotdoddy.personoid.utils;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -15,14 +15,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.jetbrains.annotations.Nullable;
+import us.notnotdoddy.personoid.npc.Behavior;
+import us.notnotdoddy.personoid.npc.PersonoidNPC;
+import us.notnotdoddy.personoid.npc.PersonoidNPCHandler;
 
 import java.io.*;
 
 public class ChatMessage {
     private static JsonObject intents;
 
-    public ChatMessage(String message, NPC npc) {
-        new FluidMessage("<" + npc.entity.getName() + "> " + message, FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
+    public ChatMessage(String message, PersonoidNPC npc) {
+        new FluidMessage("<" + npc.citizen.getName() + "> " + message, FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
     }
 
     public static void init() {
@@ -45,17 +48,17 @@ public class ChatMessage {
         new FluidListener<>(AsyncPlayerChatEvent.class) {
             @Override
             public void run() {
-                NPC npc = null;
-                for (NPC potential : NPCHandler.getNPCs().values()) {
-                    if (getData().getMessage().toLowerCase().contains(potential.entity.getName().toLowerCase())) {
+                PersonoidNPC npc = null;
+                for (PersonoidNPC potential : PersonoidNPCHandler.getNPCs().values()) {
+                    if (getData().getMessage().toLowerCase().contains(potential.citizen.getName().toLowerCase())) {
                         npc = potential;
                     }
                 }
                 if (npc == null) {
-                    npc = NPCHandler.getNPCs().values().stream().toList().get(FluidUtils.random(0, NPCHandler.getNPCs().size() - 1));
+                    npc = PersonoidNPCHandler.getNPCs().values().stream().toList().get(FluidUtils.random(0, PersonoidNPCHandler.getNPCs().size() - 1));
                 }
                 if (FluidUtils.random(1, 10) >= 3) {
-                    NPC finalNpc = npc;
+                    PersonoidNPC finalNpc = npc;
                     new DelayedTask(FluidUtils.random(10, 60)) {
                         @Override
                         public void run() {
@@ -79,7 +82,7 @@ public class ChatMessage {
         };
     }
 
-    private static String getResponse(Player player, String message, NPC npc) {
+    private static String getResponse(Player player, String message, PersonoidNPC npc) {
         Behavior.Mood mood = npc.players.get(player).mood;
         JsonArray array = (JsonArray) intents.get("intents");
         JsonObject closestIntent = null;

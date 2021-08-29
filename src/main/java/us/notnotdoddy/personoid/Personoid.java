@@ -8,6 +8,11 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import us.notnotdoddy.personoid.npc.Behavior;
+import us.notnotdoddy.personoid.npc.PersonoidNPC;
+import us.notnotdoddy.personoid.npc.PersonoidNPCHandler;
+import us.notnotdoddy.personoid.utils.ChatMessage;
+import us.notnotdoddy.personoid.utils.PlayerInfo;
 
 public final class Personoid extends JavaPlugin {
     //public static String colour = "#FF00AA";
@@ -18,13 +23,12 @@ public final class Personoid extends JavaPlugin {
         initCmds();
         initListeners();
         ChatMessage.init();
-        NPCHandler.startNPCTicking();
         new FluidMessage("&aPlugin enabled!").usePrefix().send();
     }
 
     @Override
     public void onDisable() {
-        for (NPC npc : NPCHandler.getNPCs().values()) {
+        for (PersonoidNPC npc : PersonoidNPCHandler.getNPCs().values()) {
             npc.remove();
         }
         new FluidMessage("&cPlugin disabled!").usePrefix().send();
@@ -35,8 +39,9 @@ public final class Personoid extends JavaPlugin {
             @Override
             public boolean run(CommandSender sender, Command cmd, String[] args) {
                 if (sender instanceof Player player) {
-                    String name = NPCHandler.getRandomName();
-                    NPCHandler.create(name, player.getLocation());
+                    String name = PersonoidNPCHandler.getRandomName();
+                    PersonoidNPC personoidNPC = PersonoidNPCHandler.create(name, player.getLocation());
+                    personoidNPC.startNPCTicking();
                     new FluidMessage("&aCreated new npc: &6" + name, player).usePrefix().send();
                 }
                 return true;
@@ -46,9 +51,9 @@ public final class Personoid extends JavaPlugin {
             @Override
             public boolean run(CommandSender sender, Command cmd, String[] args) {
                 if (sender instanceof Player player) {
-                    if (NPCHandler.getNPCs().size() > 0) {
-                        NPC npc = NPCHandler.getNPCs().values().stream().toList().get(0).remove();
-                        new FluidMessage("&aRemoved npc: &6" + npc.entity.getName(), player).usePrefix().send();
+                    if (PersonoidNPCHandler.getNPCs().size() > 0) {
+                        PersonoidNPC npc = PersonoidNPCHandler.getNPCs().values().stream().toList().get(0).remove();
+                        new FluidMessage("&aRemoved npc: &6" + npc.citizen.getName(), player).usePrefix().send();
                     } else {
                         new FluidMessage("&cThere are no npcs to remove!", player).usePrefix().send();
                     }
@@ -62,8 +67,8 @@ public final class Personoid extends JavaPlugin {
         new FluidListener<>(NPCDeathEvent.class) {
             @Override
             public void run() {
-                getData().getNPC().spawn(getData().getNPC().getStoredLocation().getWorld().getSpawnLocation());
-                NPC npc = NPCHandler.getNPCs().get(getData().getNPC());
+                PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(getData().getNPC());
+                npc.citizen.spawn(npc.spawnLocation);
                 if (npc.damagedByPlayer != null) {
                     PlayerInfo info = npc.players.get(npc.damagedByPlayer);
                     npc.players.get(npc.damagedByPlayer).killedBy++;
@@ -76,7 +81,7 @@ public final class Personoid extends JavaPlugin {
         new FluidListener<>(NPCDamageEvent.class) {
             @Override
             public void run() {
-                NPC npc = NPCHandler.getNPCs().get(getData().getNPC());
+                PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(getData().getNPC());
                 npc.damagedByPlayer = null;
             }
         };
@@ -85,7 +90,7 @@ public final class Personoid extends JavaPlugin {
             @Override
             public void run() {
                 if (getData().getDamager() instanceof Player player) {
-                    NPC npc = NPCHandler.getNPCs().get(getData().getNPC());
+                    PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(getData().getNPC());
                     npc.damagedByPlayer = player;
                 }
             }

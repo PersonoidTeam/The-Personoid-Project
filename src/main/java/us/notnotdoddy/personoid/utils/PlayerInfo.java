@@ -1,6 +1,7 @@
-package us.notnotdoddy.personoid;
+package us.notnotdoddy.personoid.utils;
 
 import org.bukkit.entity.Player;
+import us.notnotdoddy.personoid.npc.Behavior;
 
 public class PlayerInfo {
     public Player player;
