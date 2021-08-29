@@ -39,5 +39,4 @@ public class TargetHandler {
         personoidNPC.activeTargetType = TargetType.NOTHING;
         personoidNPC.setCurrentTargetLocation(location);
     }
-
 }

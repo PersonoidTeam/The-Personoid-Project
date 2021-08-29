@@ -1,18 +1,18 @@
 package us.notnotdoddy.personoid;
 
-import me.definedoddy.fluidapi.*;
-import net.citizensnpcs.api.event.NPCDamageByEntityEvent;
-import net.citizensnpcs.api.event.NPCDamageEvent;
-import net.citizensnpcs.api.event.NPCDeathEvent;
+import me.definedoddy.fluidapi.FluidCommand;
+import me.definedoddy.fluidapi.FluidListener;
+import me.definedoddy.fluidapi.FluidMessage;
+import me.definedoddy.fluidapi.FluidPlugin;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import us.notnotdoddy.personoid.npc.Behavior;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
+import us.notnotdoddy.personoid.npc.PersonoidNPCEvents;
 import us.notnotdoddy.personoid.npc.PersonoidNPCHandler;
 import us.notnotdoddy.personoid.utils.ChatMessage;
-import us.notnotdoddy.personoid.utils.PlayerInfo;
 
 public final class Personoid extends JavaPlugin {
     //public static String colour = "#FF00AA";
@@ -23,15 +23,13 @@ public final class Personoid extends JavaPlugin {
         initCmds();
         initListeners();
         ChatMessage.init();
+        PersonoidNPCEvents.init();
         new FluidMessage("&aPlugin enabled!").usePrefix().send();
     }
 
     @Override
     public void onDisable() {
-        for (PersonoidNPC npc : PersonoidNPCHandler.getNPCs().values()) {
-            npc.remove();
-        }
-        new FluidMessage("&cPlugin disabled!").usePrefix().send();
+        //disabled
     }
 
     private void initCmds() {
@@ -64,35 +62,13 @@ public final class Personoid extends JavaPlugin {
     }
 
     private void initListeners() {
-        new FluidListener<>(NPCDeathEvent.class) {
+        new FluidListener<>(PluginDisableEvent.class) {
             @Override
             public void run() {
-                PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(getData().getNPC());
-                npc.citizen.spawn(npc.spawnLocation);
-                if (npc.damagedByPlayer != null) {
-                    PlayerInfo info = npc.players.get(npc.damagedByPlayer);
-                    npc.players.get(npc.damagedByPlayer).killedBy++;
-                    info.mood = info.getNextMood(Behavior.MoodChangeType.ANGRY);
-                    setDelay(FluidUtils.random(20, 50));
+                for (PersonoidNPC npc : PersonoidNPCHandler.getNPCs().values()) {
+                    npc.remove();
                 }
-            }
-        }.setDelay(FluidUtils.random(20, 50));
-
-        new FluidListener<>(NPCDamageEvent.class) {
-            @Override
-            public void run() {
-                PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(getData().getNPC());
-                npc.damagedByPlayer = null;
-            }
-        };
-
-        new FluidListener<>(NPCDamageByEntityEvent.class) {
-            @Override
-            public void run() {
-                if (getData().getDamager() instanceof Player player) {
-                    PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(getData().getNPC());
-                    npc.damagedByPlayer = player;
-                }
+                new FluidMessage("&cPlugin disabled!").usePrefix().send();
             }
         };
     }

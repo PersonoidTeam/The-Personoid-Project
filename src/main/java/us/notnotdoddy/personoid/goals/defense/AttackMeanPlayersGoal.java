@@ -1,12 +1,11 @@
 package us.notnotdoddy.personoid.goals.defense;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.goals.PersonoidGoal;
-import us.notnotdoddy.personoid.npc.Behavior;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.TargetHandler;
+import us.notnotdoddy.personoid.status.Behavior;
 
 public class AttackMeanPlayersGoal extends PersonoidGoal {
 

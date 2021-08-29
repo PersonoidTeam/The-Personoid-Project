@@ -4,7 +4,6 @@ import me.definedoddy.fluidapi.tasks.RepeatingTask;
 import net.citizensnpcs.api.ai.flocking.Flocker;
 import net.citizensnpcs.api.ai.flocking.RadiusNPCFlock;
 import net.citizensnpcs.api.ai.flocking.SeparationBehavior;
-import net.citizensnpcs.api.ai.goals.WanderGoal;
 import net.citizensnpcs.util.PlayerAnimation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -119,6 +118,7 @@ public class PersonoidNPC {
         PersonoidNPCHandler.getNPCs().remove(citizen);
         citizen.despawn();
         PersonoidNPCHandler.registry.deregister(citizen);
+        repeatingTask.cancel();
         return this;
     }
 
@@ -145,7 +145,7 @@ public class PersonoidNPC {
 
     // Moved it here as I didnt see the need for the ticking to be universal.
     public void startNPCTicking() {
-        new RepeatingTask(0, 5) {
+        repeatingTask = new RepeatingTask(0, 5) {
             @Override
             public void run() {
                 if (citizen.isSpawned()) {

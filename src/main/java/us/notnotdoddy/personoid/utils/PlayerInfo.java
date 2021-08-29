@@ -1,7 +1,7 @@
 package us.notnotdoddy.personoid.utils;
 
 import org.bukkit.entity.Player;
-import us.notnotdoddy.personoid.npc.Behavior;
+import us.notnotdoddy.personoid.status.Behavior;
 
 public class PlayerInfo {
     public Player player;
