@@ -1,5 +1,6 @@
 package us.notnotdoddy.personoid.npc;
 
+import me.definedoddy.fluidapi.FluidMessage;
 import me.definedoddy.fluidapi.tasks.RepeatingTask;
 import net.citizensnpcs.api.ai.flocking.Flocker;
 import net.citizensnpcs.api.ai.flocking.RadiusNPCFlock;
@@ -13,6 +14,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.goals.PersonoidGoal;
 import us.notnotdoddy.personoid.goals.defense.AttackMeanPlayersGoal;
+import us.notnotdoddy.personoid.goals.movement.WanderRandomlyGoal;
+import us.notnotdoddy.personoid.status.RemovalReason;
 import us.notnotdoddy.personoid.utils.ChatMessage;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
 import us.notnotdoddy.personoid.utils.PlayerInfo;
@@ -145,7 +148,7 @@ public class PersonoidNPC {
 
     // Moved it here as I didnt see the need for the ticking to be universal.
     public void startNPCTicking() {
-        repeatingTask = new RepeatingTask(0, 5) {
+        repeatingTask = new RepeatingTask(0, 1) {
             @Override
             public void run() {
                 if (citizen.isSpawned()) {
@@ -236,9 +239,9 @@ public class PersonoidNPC {
         if (activeTargetType.equals(TargetHandler.TargetType.NOTHING)) {
             if (!isWandering){
                 Bukkit.getLogger().log(Level.WARNING, "NPC set to wander.");
+                TargetHandler.setNothingTarget(getPersonoid(), Bukkit.getPlayer("notnotnotswipez").getLocation());
+                new FluidMessage("set nothing target", "DefineDoddy").send();
                 isWandering = true;
-                TargetHandler.setNothingTarget(getPersonoid(), LocationUtilities.getRandomLoc(getPersonoid()));
-                Bukkit.broadcastMessage(getCurrentTargetLocation()+"");
             }
             else {
                 System.out.println(getCurrentTargetLocation().distance(getLivingEntity().getLocation())+"");
@@ -246,11 +249,13 @@ public class PersonoidNPC {
                     TargetHandler.setNothingTarget(getPersonoid(), LocationUtilities.getRandomLoc(getPersonoid()));
                     Bukkit.broadcastMessage("Updated random location");
                 }
-            }
+            }*/
+            new FluidMessage("nothing", "DefineDoddy").send();
         }
         else {
             isWandering = false;
             citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
+            new FluidMessage("not nothing", "DefineDoddy").send();
         }
     }
 }

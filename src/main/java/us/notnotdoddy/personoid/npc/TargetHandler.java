@@ -1,5 +1,6 @@
 package us.notnotdoddy.personoid.npc;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
@@ -33,10 +34,14 @@ public class TargetHandler {
         personoidNPC.setCurrentTargetLocation(livingEntity.getLocation());
     }
 
-    public static void setNothingTarget(PersonoidNPC personoidNPC, Location location){
-        personoidNPC.citizen.getNavigator().setTarget(location);
-        personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(0);
-        personoidNPC.activeTargetType = TargetType.NOTHING;
+    public static void setNothingTarget(PersonoidNPC personoidNPC, Location location) {
         personoidNPC.setCurrentTargetLocation(location);
+/*        if (personoidNPC.citizen.getNavigator().isNavigating()) {
+            personoidNPC.citizen.getNavigator().cancelNavigation();
+        }*/
+        Bukkit.broadcastMessage(personoidNPC.getCurrentTargetLocation() + "");
+        personoidNPC.citizen.getNavigator().setTarget(location);
+        //personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(0);
+        Bukkit.broadcastMessage("CALLED");
     }
 }
