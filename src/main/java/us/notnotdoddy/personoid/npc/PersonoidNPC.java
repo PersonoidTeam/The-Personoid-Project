@@ -41,6 +41,9 @@ public class PersonoidNPC {
     private List<PersonoidGoal> allGoals = new ArrayList<>();
     private Flocker flock;
     public Location spawnLocation = null;
+    private RemovalReason lastRemovalReason = null;
+    private RepeatingTask repeatingTask;
+
 
     public PersonoidNPC(String name) {
         citizen = PersonoidNPCHandler.registry.createNPC(EntityType.PLAYER, name);
@@ -84,7 +87,7 @@ public class PersonoidNPC {
         // Demonstration Goals
         // Simple stuff
         allGoals.add(new AttackMeanPlayersGoal());
-
+        allGoals.add(new WanderRandomlyGoal());
     }
 
     public void sendChatMessage(String message){
@@ -92,7 +95,7 @@ public class PersonoidNPC {
     }
 
     public void setCurrentTargetLocation(Location location){
-        currentTargetLocation = location;
+        currentTargetLocation = location.clone();
     }
 
     public Location getCurrentTargetLocation(){
@@ -120,6 +123,7 @@ public class PersonoidNPC {
     public PersonoidNPC remove() {
         PersonoidNPCHandler.getNPCs().remove(citizen);
         citizen.despawn();
+        lastRemovalReason = RemovalReason.FULLY_REMOVED;
         PersonoidNPCHandler.registry.deregister(citizen);
         repeatingTask.cancel();
         return this;
@@ -165,7 +169,7 @@ public class PersonoidNPC {
                                 players.put(closestPlayerToNPC, new PlayerInfo(closestPlayerToNPC));
                             }
                         }
-                        getProperMovementAction();
+                        //getProperMovementAction();
                         selectGoal();
                         if (selectedGoal != null){
                             selectedGoal.tick(getPersonoid());
@@ -177,9 +181,15 @@ public class PersonoidNPC {
                     }
                 }
                 else {
-                    if (selectedGoal != null){
-                        selectedGoal.endGoal(getPersonoid());
+                    if (lastRemovalReason == RemovalReason.DIED) {
+                        if (selectedGoal != null){
+                            selectedGoal.endGoal(getPersonoid());
+                            selectedGoal = null;
+                        }
+                    }
+                    if (lastRemovalReason == RemovalReason.FULLY_REMOVED) {
                         selectedGoal = null;
+                        cancel();
                     }
                 }
             }
@@ -238,16 +248,19 @@ public class PersonoidNPC {
 
         if (activeTargetType.equals(TargetHandler.TargetType.NOTHING)) {
             if (!isWandering){
+                //forgetCurrentTarget();
                 Bukkit.getLogger().log(Level.WARNING, "NPC set to wander.");
                 TargetHandler.setNothingTarget(getPersonoid(), Bukkit.getPlayer("notnotnotswipez").getLocation());
                 new FluidMessage("set nothing target", "DefineDoddy").send();
                 isWandering = true;
             }
-            else {
-                System.out.println(getCurrentTargetLocation().distance(getLivingEntity().getLocation())+"");
+/*            else {
                 if (getCurrentTargetLocation().distance(getLivingEntity().getLocation()) < 3) {
                     TargetHandler.setNothingTarget(getPersonoid(), LocationUtilities.getRandomLoc(getPersonoid()));
-                    Bukkit.broadcastMessage("Updated random location");
+                    new FluidMessage("set nothing target 1", "DefineDoddy").send();
+                }
+                else {
+                    new FluidMessage("distance >=", "DefineDoddy").send();
                 }
             }*/
             new FluidMessage("nothing", "DefineDoddy").send();

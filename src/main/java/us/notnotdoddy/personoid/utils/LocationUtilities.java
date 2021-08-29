@@ -9,7 +9,7 @@ import us.notnotdoddy.personoid.npc.PersonoidNPC;
 public class LocationUtilities {
 
     public static Location getRandomLoc(PersonoidNPC npc) {
-        Location loc = npc.getLivingEntity().getLocation();
+        Location loc = npc.getLivingEntity().getLocation().clone();
         double x = loc.getX() + FluidUtils.random(-20, 20);
         double z = loc.getZ() + FluidUtils.random(-20, 20);
         loc.setY(0);
