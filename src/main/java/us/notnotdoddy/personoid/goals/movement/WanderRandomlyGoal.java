@@ -1,6 +1,5 @@
 package us.notnotdoddy.personoid.goals.movement;
 
-import org.bukkit.Bukkit;
 import us.notnotdoddy.personoid.goals.PersonoidGoal;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.TargetHandler;
@@ -37,8 +36,6 @@ public class WanderRandomlyGoal extends PersonoidGoal {
             TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
             failSafeTicks = 0;
         }
-        Bukkit.broadcastMessage("" + personoidNPC.getCurrentTargetLocation());
-        Bukkit.broadcastMessage("" + personoidNPC.getCurrentTargetLocation().distance(personoidNPC.getLivingEntity().getLocation()));
         if (personoidNPC.getCurrentTargetLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3) {
             TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
             failSafeTicks = 0;

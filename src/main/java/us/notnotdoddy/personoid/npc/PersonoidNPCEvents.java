@@ -16,11 +16,12 @@ public class PersonoidNPCEvents {
             @Override
             public void run() {
                 PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(getData().getNPC());
-                npc.citizen.spawn(npc.spawnLocation);
+                npc.isFullyInitialized = false;
+                npc.spawn(npc.spawnLocation);
                 if (npc.damagedByPlayer != null) {
                     PlayerInfo info = npc.players.get(npc.damagedByPlayer);
                     npc.players.get(npc.damagedByPlayer).killedBy++;
-                    info.mood = info.getNextMood(Behavior.MoodChangeType.ANGRY);
+                    info.incrementMoodStrength(Behavior.Mood.ANGRY, 0.25F);
                 }
                 setDelay(FluidUtils.random(20, 50));
             }
@@ -37,7 +38,9 @@ public class PersonoidNPCEvents {
             public void damageByEntity(NPCDamageByEntityEvent e) {
                 if (e.getDamager() instanceof Player player) {
                     PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(e.getNPC());
+                    PlayerInfo info = npc.players.get(player);
                     npc.damagedByPlayer = player;
+                    info.incrementMoodStrength(Behavior.Mood.ANGRY, ((float) (1.1F * e.getDamage()))/10);
                 }
             }
         };

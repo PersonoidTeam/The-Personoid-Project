@@ -1,39 +1,62 @@
 package us.notnotdoddy.personoid.utils;
 
-import org.bukkit.entity.Player;
 import us.notnotdoddy.personoid.status.Behavior;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class PlayerInfo {
-    public Player player;
-    public Behavior.Mood mood = Behavior.Mood.NEUTRAL;
-    public int killedBy = 0;
-    public int killed = 0;
+    private final Map<Behavior.Mood, Float> moods = new HashMap<>();
+    public int killedBy;
+    public int killed;
 
-    public PlayerInfo(Player player) {
-        this.player = player;
-    }
-
-    public Behavior.Mood getNextMood(Behavior.MoodChangeType change) {
-        if (mood == Behavior.Mood.NEUTRAL) {
-            if (change == Behavior.MoodChangeType.ANGRY) {
-                return Behavior.Mood.AGGRAVATED;
-            }
-            return Behavior.Mood.NEUTRAL;
-        } else if (mood == Behavior.Mood.AGGRAVATED) {
-            if (change == Behavior.MoodChangeType.ANGRY) {
-                return Behavior.Mood.ANGRY;
-            }
-            return Behavior.Mood.NEUTRAL;
-        } else if (mood == Behavior.Mood.ANGRY) {
-            if (change == Behavior.MoodChangeType.ANGRY) {
-                return Behavior.Mood.ANGRY;
-            }
-            return Behavior.Mood.AGGRAVATED;
+    public PlayerInfo() {
+        for (Behavior.Mood mood : Behavior.Mood.values()) {
+            moods.put(mood, mood == Behavior.Mood.NEUTRAL ? 1F : 0F);
         }
-        return Behavior.Mood.NEUTRAL;
     }
 
-    public enum DamageCause {
+    public void setMood(Behavior.Mood mood, float strength) {
+        moods.replace(mood, strength);
+    }
 
+    public void incrementMoodStrength(Behavior.Mood mood, float value) {
+        moods.replace(mood, Math.min(Math.max(moods.get(mood) + value, 0F), 1F));
+    }
+
+    public void decrementMoodStrength(Behavior.Mood mood, float value) {
+        moods.replace(mood, Math.min(Math.max(moods.get(mood) - value, 0F), 1F));
+    }
+
+    public void multiplyMoodStrength(Behavior.Mood mood, float value) {
+        moods.replace(mood, Math.min(Math.max(moods.get(mood) * value, 0F), 1F));
+    }
+
+    public void divideMoodStrength(Behavior.Mood mood, float value) {
+        moods.replace(mood, Math.min(Math.max(moods.get(mood) / value, 0F), 1F));
+    }
+
+    public float getMoodValue(Behavior.Mood mood){
+        return moods.get(mood);
+    }
+
+    public Behavior.Mood getStrongestMood() {
+        float highestStrength = 0;
+        Behavior.Mood highestMood = Behavior.Mood.NEUTRAL;
+        for (Map.Entry<Behavior.Mood, Float> entry : moods.entrySet()) {
+            if (entry.getValue() > highestStrength) {
+                highestMood = entry.getKey();
+            }
+        }
+        return highestMood;
+    }
+
+    public boolean isTarget() {
+        for (Map.Entry<Behavior.Mood, Float> entry : moods.entrySet()) {
+            if (Behavior.isTarget(entry.getKey(), entry.getValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

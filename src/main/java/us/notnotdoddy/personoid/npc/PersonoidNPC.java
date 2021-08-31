@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.goals.PersonoidGoal;
 import us.notnotdoddy.personoid.goals.defense.AttackMeanPlayersGoal;
 import us.notnotdoddy.personoid.goals.movement.WanderRandomlyGoal;
+import us.notnotdoddy.personoid.status.Behavior;
 import us.notnotdoddy.personoid.status.RemovalReason;
 import us.notnotdoddy.personoid.utils.ChatMessage;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
@@ -42,7 +43,8 @@ public class PersonoidNPC {
     public Location spawnLocation = null;
     private RemovalReason lastRemovalReason = null;
     private RepeatingTask repeatingTask;
-    private boolean isFullyInitialized = false;
+    public boolean isFullyInitialized = false;
+    public Behavior.Type behaviourType = Behavior.Type.BUILDER;
 
 
     public PersonoidNPC(String name) {
@@ -108,7 +110,7 @@ public class PersonoidNPC {
     }
 
     // For when we need the living entity rather than generic, saves precious casting time haha
-    public LivingEntity getLivingEntity(){
+    public LivingEntity getLivingEntity() {
         return (LivingEntity) citizen.getEntity();
     }
 
@@ -127,11 +129,11 @@ public class PersonoidNPC {
     }
 
     public PersonoidNPC remove() {
+        repeatingTask.cancel();
         PersonoidNPCHandler.getNPCs().remove(citizen);
         citizen.despawn();
         lastRemovalReason = RemovalReason.FULLY_REMOVED;
         PersonoidNPCHandler.registry.deregister(citizen);
-        repeatingTask.cancel();
         return this;
     }
 
@@ -174,7 +176,7 @@ public class PersonoidNPC {
                         closestPlayerToNPC = LocationUtilities.getClosestPlayer(getLivingEntity().getLocation());
                         if (closestPlayerToNPC != null){
                             if (!players.containsKey(closestPlayerToNPC)) {
-                                players.put(closestPlayerToNPC, new PlayerInfo(closestPlayerToNPC));
+                                players.put(closestPlayerToNPC, new PlayerInfo());
                             }
                         }
                         selectGoal();
@@ -183,6 +185,11 @@ public class PersonoidNPC {
                             if (selectedGoal.shouldStop(getPersonoid())){
                                 selectedGoal.endGoal(getPersonoid());
                                 selectedGoal = null;
+                            }
+                        }
+                        for (Map.Entry<Player, PlayerInfo> entry : players.entrySet()) {
+                            for (Behavior.Mood mood : Behavior.Mood.values()) {
+                                entry.getValue().decrementMoodStrength(mood, behaviourType.retention);
                             }
                         }
                     }

@@ -91,7 +91,7 @@ public class ChatMessage {
     }
 
     private static String getResponse(Player player, String message, PersonoidNPC npc) {
-        Behavior.Mood mood = npc.players.get(player).mood;
+        Behavior.Mood mood = npc.players.get(player).getStrongestMood();
         JsonArray array = (JsonArray) intents.get("intents");
         JsonObject closestIntent = null;
         int closestDistance = Integer.MAX_VALUE;

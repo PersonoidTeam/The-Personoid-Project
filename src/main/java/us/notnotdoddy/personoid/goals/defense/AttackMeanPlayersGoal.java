@@ -1,5 +1,6 @@
 package us.notnotdoddy.personoid.goals.defense;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.goals.PersonoidGoal;
@@ -32,7 +33,8 @@ public class AttackMeanPlayersGoal extends PersonoidGoal {
 
     @Override
     public boolean canStart(PersonoidNPC personoidNPC) {
-        return personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).mood == Behavior.Mood.ANGRY &&
+        Bukkit.broadcastMessage(personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).getMoodValue(Behavior.Mood.ANGRY) + "");
+        return personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).isTarget() &&
                 personoidNPC.getClosestPlayerToNPC().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) <= botRange;
     }
 
