@@ -1,6 +1,6 @@
 package us.notnotdoddy.personoid.npc;
 
-import me.definedoddy.fluidapi.FluidMessage;
+import me.definedoddy.fluidapi.tasks.DelayedTask;
 import me.definedoddy.fluidapi.tasks.RepeatingTask;
 import net.citizensnpcs.api.ai.flocking.Flocker;
 import net.citizensnpcs.api.ai.flocking.RadiusNPCFlock;
@@ -21,7 +21,6 @@ import us.notnotdoddy.personoid.utils.LocationUtilities;
 import us.notnotdoddy.personoid.utils.PlayerInfo;
 
 import java.util.*;
-import java.util.logging.Level;
 
 public class PersonoidNPC {
 
@@ -43,6 +42,7 @@ public class PersonoidNPC {
     public Location spawnLocation = null;
     private RemovalReason lastRemovalReason = null;
     private RepeatingTask repeatingTask;
+    private boolean isFullyInitialized = false;
 
 
     public PersonoidNPC(String name) {
@@ -55,6 +55,7 @@ public class PersonoidNPC {
         citizen.getNavigator().getLocalParameters().baseSpeed(1.15F);
         citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
         citizen.getNavigator().getLocalParameters().attackDelayTicks(15);
+        citizen.getNavigator().getLocalParameters().useNewPathfinder(true);
         initGoals();
     }
 
@@ -116,6 +117,12 @@ public class PersonoidNPC {
         PersonoidNPCHandler.getNPCs().put(citizen, this);
         this.flock = new Flocker(citizen, new RadiusNPCFlock(4.0D, 0), new SeparationBehavior(1.0D));
         spawnLocation = location.getWorld().getSpawnLocation();
+        new DelayedTask(60) {
+            @Override
+            public void run(){
+                isFullyInitialized = true;
+            }
+        };
         return this;
     }
 
@@ -130,12 +137,14 @@ public class PersonoidNPC {
 
     public PersonoidNPC pause() {
         paused = true;
-        citizen.getNavigator().cancelNavigation();
+        citizen.getNavigator().setPaused(true);
+        //citizen.getNavigator().cancelNavigation();
         return this;
     }
 
     public PersonoidNPC resume() {
         paused = false;
+        citizen.getNavigator().setPaused(false);
         return this;
     }
 
@@ -154,7 +163,7 @@ public class PersonoidNPC {
         repeatingTask = new RepeatingTask(0, 1) {
             @Override
             public void run() {
-                if (citizen.isSpawned()) {
+                if (isFullyInitialized) {
                     if (cooldownTicks > 0){
                         cooldownTicks--;
                     }
@@ -168,7 +177,6 @@ public class PersonoidNPC {
                                 players.put(closestPlayerToNPC, new PlayerInfo(closestPlayerToNPC));
                             }
                         }
-                        //getProperMovementAction();
                         selectGoal();
                         if (selectedGoal != null){
                             selectedGoal.tick(getPersonoid());
@@ -236,41 +244,6 @@ public class PersonoidNPC {
                 selectedGoal = finalSelectedGoal;
                 selectedGoal.initializeGoal(getPersonoid());
             }
-        }
-    }
-
-    public void getProperMovementAction(){
-        /*
-            Swipez Note - Switching to goals for stuff like this. Keeping this juuust incase it turns out my goal system isnt good enough, probably wont be LOL.
-
-            if (players.get(player).mood == Behavior.Mood.ANGRY) {
-                isWandering = false;
-                TargetHandler.setLivingEntityTarget(getPersonoid(), player);
-            }   */
-
-        if (activeTargetType.equals(TargetHandler.TargetType.NOTHING)) {
-            if (!isWandering){
-                //forgetCurrentTarget();
-                Bukkit.getLogger().log(Level.WARNING, "NPC set to wander.");
-                TargetHandler.setNothingTarget(getPersonoid(), Bukkit.getPlayer("notnotnotswipez").getLocation());
-                new FluidMessage("set nothing target", "DefineDoddy").send();
-                isWandering = true;
-            }
-/*            else {
-                if (getCurrentTargetLocation().distance(getLivingEntity().getLocation()) < 3) {
-                    TargetHandler.setNothingTarget(getPersonoid(), LocationUtilities.getRandomLoc(getPersonoid()));
-                    new FluidMessage("set nothing target 1", "DefineDoddy").send();
-                }
-                else {
-                    new FluidMessage("distance >=", "DefineDoddy").send();
-                }
-            }*/
-            new FluidMessage("nothing", "DefineDoddy").send();
-        }
-        else {
-            isWandering = false;
-            citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
-            new FluidMessage("not nothing", "DefineDoddy").send();
         }
     }
 }

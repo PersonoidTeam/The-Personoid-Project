@@ -12,8 +12,7 @@ public class LocationUtilities {
         Location loc = npc.getLivingEntity().getLocation().clone();
         double x = loc.getX() + FluidUtils.random(-20, 20);
         double z = loc.getZ() + FluidUtils.random(-20, 20);
-        loc.setY(0);
-        double y = npc.getLivingEntity().getLocation().getWorld().getHighestBlockYAt(loc) + 1;
+        double y = npc.getLivingEntity().getLocation().getWorld().getHighestBlockYAt((int) x, (int) z) + 1;
         return new Location(npc.getLivingEntity().getLocation().getWorld(), x, y, z);
     }
 

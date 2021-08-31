@@ -3,7 +3,6 @@ package us.notnotdoddy.personoid.goals;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 
 public abstract class PersonoidGoal {
-
     final boolean shouldOverrideExistingGoals;
     final GoalPriority goalPriority;
 

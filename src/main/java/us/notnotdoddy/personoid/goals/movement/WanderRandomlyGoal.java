@@ -1,8 +1,9 @@
 package us.notnotdoddy.personoid.goals.movement;
 
-import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import us.notnotdoddy.personoid.goals.PersonoidGoal;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
+import us.notnotdoddy.personoid.npc.TargetHandler;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
 
 public class WanderRandomlyGoal extends PersonoidGoal {
@@ -10,17 +11,18 @@ public class WanderRandomlyGoal extends PersonoidGoal {
         super(false, GoalPriority.LOW);
     }
 
+    int failSafeTicks = 0;
+
     @Override
     public void initializeGoal(PersonoidNPC personoidNPC) {
-        personoidNPC.sendChatMessage("Im wandering!");
-        Location chosenDestination = LocationUtilities.getRandomLoc(personoidNPC);
-        personoidNPC.citizen.getNavigator().setTarget(chosenDestination);
-        personoidNPC.setCurrentTargetLocation(chosenDestination);
+        TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
+        personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(0);
     }
 
     @Override
     public void endGoal(PersonoidNPC personoidNPC) {
-
+        personoidNPC.forgetCurrentTarget();
+        personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
     }
 
     @Override
@@ -30,12 +32,18 @@ public class WanderRandomlyGoal extends PersonoidGoal {
 
     @Override
     public void tick(PersonoidNPC personoidNPC) {
-        if (personoidNPC.getCurrentTargetLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3){
-            //TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
-            Location chosenDestination = LocationUtilities.getRandomLoc(personoidNPC);
-            personoidNPC.citizen.getNavigator().setTarget(chosenDestination);
-            personoidNPC.setCurrentTargetLocation(chosenDestination);
+        failSafeTicks++;
+        if (failSafeTicks == 40){
+            TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
+            failSafeTicks = 0;
         }
+        Bukkit.broadcastMessage("" + personoidNPC.getCurrentTargetLocation());
+        Bukkit.broadcastMessage("" + personoidNPC.getCurrentTargetLocation().distance(personoidNPC.getLivingEntity().getLocation()));
+        if (personoidNPC.getCurrentTargetLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3) {
+            TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
+            failSafeTicks = 0;
+        }
+
     }
 
     @Override

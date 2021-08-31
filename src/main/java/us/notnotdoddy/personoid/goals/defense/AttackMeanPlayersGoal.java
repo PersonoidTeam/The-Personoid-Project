@@ -32,7 +32,8 @@ public class AttackMeanPlayersGoal extends PersonoidGoal {
 
     @Override
     public boolean canStart(PersonoidNPC personoidNPC) {
-        return personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).mood == Behavior.Mood.ANGRY && personoidNPC.getClosestPlayerToNPC().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) <= botRange;
+        return personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).mood == Behavior.Mood.ANGRY &&
+                personoidNPC.getClosestPlayerToNPC().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) <= botRange;
     }
 
     @Override
