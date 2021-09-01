@@ -29,9 +29,23 @@
         "aggravated": [ "decent", "okay", "good", "doesn't really matter", null, null ],
         "angry": [ "none of your business", "go away", "terrible", null, null, null ]
       }
+    },
+    {
+      "tag": "attack-player",
+      "responses":
+      {
+        "angry": [ "STOP", "GO AWAY", "You asked for this...", null, null ]
+      }
+    },
+    {
+      "tag": "attack-player-end",
+      "responses":
+      {
+        "angry": [ "i'll be back", "fine, you win", "nevermind, but don't do it again", null, null ]
+      }
     }
   ],
-  "backup":
+  "default":
   {
     "neutral": [ "okay", "ok", "urm..." ],
     "aggravated": [ "okay, and?", "OK", "urm...", null, null ],

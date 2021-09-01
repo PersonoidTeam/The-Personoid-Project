@@ -1,12 +1,12 @@
 package us.notnotdoddy.personoid.goals.defense;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.goals.PersonoidGoal;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.TargetHandler;
 import us.notnotdoddy.personoid.status.Behavior;
+import us.notnotdoddy.personoid.utils.ChatMessage;
 
 public class AttackMeanPlayersGoal extends PersonoidGoal {
 
@@ -19,21 +19,21 @@ public class AttackMeanPlayersGoal extends PersonoidGoal {
 
     @Override
     public void initializeGoal(PersonoidNPC personoidNPC) {
-        personoidNPC.sendChatMessage("You.... I hate you!");
+        personoidNPC.sendChatMessage(ChatMessage.getResponse(Behavior.Mood.ANGRY, "attack-player"));
         personoidNPC.setMainHandItem(new ItemStack(Material.IRON_SWORD));
         TargetHandler.setLivingEntityTarget(personoidNPC, personoidNPC.getClosestPlayerToNPC(), true);
     }
 
     @Override
     public void endGoal(PersonoidNPC personoidNPC) {
-        personoidNPC.sendChatMessage("You live to see another day, it seems....");
+        personoidNPC.sendChatMessage(ChatMessage.getResponse(Behavior.Mood.ANGRY, "attack-player-end"));
         personoidNPC.setMainHandItem(null);
         personoidNPC.forgetCurrentTarget();
     }
 
     @Override
     public boolean canStart(PersonoidNPC personoidNPC) {
-        Bukkit.broadcastMessage(personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).getMoodValue(Behavior.Mood.ANGRY) + "");
+        //Bukkit.broadcastMessage(personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).getMoodValue(Behavior.Mood.ANGRY) + "");
         return personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).isTarget() &&
                 personoidNPC.getClosestPlayerToNPC().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) <= botRange;
     }

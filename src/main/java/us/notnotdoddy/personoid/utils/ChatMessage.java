@@ -15,18 +15,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.jetbrains.annotations.Nullable;
-import us.notnotdoddy.personoid.status.Behavior;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.PersonoidNPCHandler;
+import us.notnotdoddy.personoid.status.Behavior;
 
 import java.io.*;
 
 public class ChatMessage {
     private static JsonObject intents;
-
-    public ChatMessage(String message, PersonoidNPC npc) {
-        new FluidMessage("<" + npc.citizen.getName() + "> " + message, FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
-    }
 
     public static void init() {
         InputStream stream = FluidPlugin.getPlugin().getClass().getResourceAsStream("/intents.json");
@@ -50,6 +46,12 @@ public class ChatMessage {
             e.printStackTrace();
         }
         initListeners();
+    }
+
+    public static void send(PersonoidNPC npc, String message) {
+        if (message != null) {
+            new FluidMessage("<" + npc.citizen.getName() + "> " + message, FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
+        }
     }
 
     private static void initListeners() {
@@ -78,7 +80,7 @@ public class ChatMessage {
                                 @Override
                                 public void run() {
                                     if (response != null) {
-                                        new ChatMessage(response, finalNpc);
+                                        ChatMessage.send(finalNpc, response);
                                     }
                                     finalNpc.resume();
                                 }
@@ -92,38 +94,65 @@ public class ChatMessage {
 
     private static String getResponse(Player player, String message, PersonoidNPC npc) {
         Behavior.Mood mood = npc.players.get(player).getStrongestMood();
-        JsonArray array = (JsonArray) intents.get("intents");
+        JsonArray array = intents.get("intents").getAsJsonArray();
         JsonObject closestIntent = null;
         int closestDistance = Integer.MAX_VALUE;
         for (JsonElement intent : array) {
-            JsonArray patterns = ((JsonObject)intent).get("patterns").getAsJsonArray();
-            for (JsonElement pattern : patterns) {
-                String string = pattern.toString();
-                string = string.substring(1, string.length() - 1);
-                int distance = StringUtils.getLevenshteinDistance(message, string);
-                if (distance < closestDistance) {
-                    closestDistance = distance;
-                    closestIntent = intent.getAsJsonObject();
+            if (intent.getAsJsonObject().has("patterns")) {
+                JsonArray patterns = intent.getAsJsonObject().get("patterns").getAsJsonArray();
+                for (JsonElement pattern : patterns) {
+                    String string = pattern.toString();
+                    string = string.substring(1, string.length() - 1);
+                    int distance = StringUtils.getLevenshteinDistance(message, string);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestIntent = intent.getAsJsonObject();
+                    }
                 }
             }
         }
         if (closestDistance < 15) {
-            JsonObject responses = (JsonObject)(closestIntent).get("responses");
+            JsonObject responses = closestIntent.get("responses").getAsJsonObject();
             return getRandomFromMood(mood, responses);
         }
-        JsonObject responses = (JsonObject) intents.get("backup");
+        JsonObject responses = intents.get("default").getAsJsonObject();
         return getRandomFromMood(mood, responses);
+    }
+
+    public static String getResponse(Behavior.Mood mood, String tag) {
+        JsonArray array = intents.get("intents").getAsJsonArray();
+        JsonObject correctIntent = null;
+        for (JsonElement intent : array) {
+            JsonElement element = intent.getAsJsonObject().get("tag");
+            String currentTag = element.toString().substring(1, element.toString().length() - 1);
+            if (currentTag.equals(tag)) {
+                correctIntent = intent.getAsJsonObject();
+            }
+        }
+        if (correctIntent != null) {
+            JsonObject responses = correctIntent.get("responses").getAsJsonObject();
+            return getRandomFromMood(mood, responses);
+        }
+        return null;
     }
 
     @Nullable
     private static String getRandomFromMood(Behavior.Mood mood, JsonObject responses) {
-        JsonElement list = responses.get(mood.name().toLowerCase());
-        JsonElement element = ((JsonArray)list).get(FluidUtils.random(0, responses.size() - 1));
-        if (element != null) {
-            String response = element.toString();
-            return response.substring(1, response.length() - 1);
-        } else {
-            return null;
+        JsonElement list = null;
+        if (responses.has("all")) {
+            list = responses.get("all");
+        } else if (responses.has(mood.name().toLowerCase())) {
+            list = responses.get(mood.name().toLowerCase());
+        } else if (responses.has("default")) {
+            list = responses.get("default");
         }
+        if (list != null) {
+            JsonElement response = list.getAsJsonArray().get(FluidUtils.random(0, list.getAsJsonArray().size() - 1));
+            if (response.isJsonNull()) {
+                return null;
+            }
+            return response.toString().substring(1, response.toString().length() - 1);
+        }
+        return null;
     }
 }

@@ -11,7 +11,10 @@ import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import us.notnotdoddy.personoid.goals.PersonoidGoal;
 import us.notnotdoddy.personoid.goals.defense.AttackMeanPlayersGoal;
 import us.notnotdoddy.personoid.goals.movement.WanderRandomlyGoal;
@@ -23,12 +26,13 @@ import us.notnotdoddy.personoid.utils.PlayerInfo;
 
 import java.util.*;
 
-public class PersonoidNPC {
-
+public class PersonoidNPC implements InventoryHolder {
     Random random = new Random();
 
     public net.citizensnpcs.api.npc.NPC citizen;
     public Map<Player, PlayerInfo> players = new HashMap<>();
+    public NPCInventory inventory = new NPCInventory(this);
+
     public Player damagedByPlayer;
     private UUID livingEntityTarget = null;
     private boolean isWandering = false;
@@ -38,7 +42,7 @@ public class PersonoidNPC {
     public TargetHandler.TargetType activeTargetType = TargetHandler.TargetType.NOTHING;
     public boolean paused;
     private int cooldownTicks = 0;
-    private List<PersonoidGoal> allGoals = new ArrayList<>();
+    private final List<PersonoidGoal> allGoals = new ArrayList<>();
     private Flocker flock;
     public Location spawnLocation = null;
     private RemovalReason lastRemovalReason = null;
@@ -50,9 +54,7 @@ public class PersonoidNPC {
     public PersonoidNPC(String name) {
         citizen = PersonoidNPCHandler.registry.createNPC(EntityType.PLAYER, name);
         citizen.setProtected(false);
-        // Prevents teleportation on far targets.
         citizen.getNavigator().getLocalParameters().stuckAction(null);
-        //change whatever you like here, this was mainly just for testing purposes
         citizen.getNavigator().getLocalParameters().attackRange(10);
         citizen.getNavigator().getLocalParameters().baseSpeed(1.15F);
         citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
@@ -87,14 +89,12 @@ public class PersonoidNPC {
     }
 
     public void initGoals(){
-        // Demonstration Goals
-        // Simple stuff
         allGoals.add(new AttackMeanPlayersGoal());
         allGoals.add(new WanderRandomlyGoal());
     }
 
     public void sendChatMessage(String message){
-        new ChatMessage(message, getPersonoid());
+        ChatMessage.send(getPersonoid(), message);
     }
 
     public void setCurrentTargetLocation(Location location){
@@ -106,12 +106,16 @@ public class PersonoidNPC {
     }
 
     public void setMainHandItem(ItemStack item){
-        getLivingEntity().getEquipment().setItemInMainHand(item);
+        getNPCInventory().setItemInMainHand(item);
     }
 
     // For when we need the living entity rather than generic, saves precious casting time haha
     public LivingEntity getLivingEntity() {
         return (LivingEntity) citizen.getEntity();
+    }
+
+    public Player getPlayer() {
+        return (Player) citizen.getEntity();
     }
 
     public PersonoidNPC spawn(Location location) {
@@ -123,9 +127,14 @@ public class PersonoidNPC {
             @Override
             public void run(){
                 isFullyInitialized = true;
+                onInitialised();
             }
         };
         return this;
+    }
+
+    public void onInitialised() {
+        getLivingEntity().setCanPickupItems(true);
     }
 
     public PersonoidNPC remove() {
@@ -140,7 +149,6 @@ public class PersonoidNPC {
     public PersonoidNPC pause() {
         paused = true;
         citizen.getNavigator().setPaused(true);
-        //citizen.getNavigator().cancelNavigation();
         return this;
     }
 
@@ -153,7 +161,6 @@ public class PersonoidNPC {
     private PersonoidNPC getPersonoid(){
         return this;
     }
-
 
     // This is for goals and whatnot, prevents having to check for closest player eeeverrryy time we want to do something in relation.
     public Player getClosestPlayerToNPC(){
@@ -189,7 +196,7 @@ public class PersonoidNPC {
                         }
                         for (Map.Entry<Player, PlayerInfo> entry : players.entrySet()) {
                             for (Behavior.Mood mood : Behavior.Mood.values()) {
-                                entry.getValue().decrementMoodStrength(mood, behaviourType.retention);
+                                entry.getValue().decrementMoodStrength(mood, behaviourType.retentionDecrement);
                             }
                         }
                     }
@@ -252,5 +259,16 @@ public class PersonoidNPC {
                 selectedGoal.initializeGoal(getPersonoid());
             }
         }
+    }
+
+    @NotNull
+    @Override
+    public Inventory getInventory() {
+        return inventory.getInventory();
+    }
+
+    @NotNull
+    public NPCInventory getNPCInventory() {
+        return inventory;
     }
 }
