@@ -71,5 +71,6 @@ public final class Personoid extends JavaPlugin {
                 new FluidMessage("&cPlugin disabled!").usePrefix().send();
             }
         };
+        getServer().getPluginManager().registerEvents(new GameEvents(), this);
     }
 }

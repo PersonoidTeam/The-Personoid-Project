@@ -26,6 +26,7 @@ public class GatherAction {
     private final ResourceTypes gatherType;
     private final PersonoidNPC personoidNPC;
     private Block targetBlock = null;
+    private Material materialWhenStarted = null;
     private int targetAmount;
     private boolean wasBreaking = false;
     private int currentAmount = 0;
@@ -54,11 +55,16 @@ public class GatherAction {
         lookForNewBlock();
     }
 
+    private boolean shouldGetThatCoal(Material block){
+        return gatherType.shouldBeSmelted && ResourceTypes.COAL.contains(block);
+    }
+
     private void lookForNewBlock(){
         boolean foundBlock = false;
         for (Block block : getBlocksInSphere(personoidNPC.getLivingEntity().getLocation(), 10)){
-            if (gatherType.contains(block.getType()) || (gatherType.shouldBeSmelted && ResourceTypes.COAL.contains(block.getType()))){
+            if (gatherType.contains(block.getType()) || shouldGetThatCoal(block.getType())){
                 targetBlock = block;
+                materialWhenStarted = targetBlock.getType();
                 if (wasLooking){
                     personoidNPC.forgetCurrentTarget();
                     wasLooking = false;
@@ -72,6 +78,9 @@ public class GatherAction {
             wasLooking = true;
             Bukkit.broadcastMessage("Wandering because didnt find block");
             failSafeTicks++;
+            if (personoidNPC.getCurrentTargetLocation() == null){
+                                TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
+            }
             if (failSafeTicks == 40){
                 TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
                 failSafeTicks = 0;
@@ -84,13 +93,14 @@ public class GatherAction {
     }
 
     public void tick(){
-        if (targetAmount == currentAmount && currentCoalCount >= probableCoalCount){
+        if (targetAmount <= currentAmount && currentCoalCount >= probableCoalCount){
+            Bukkit.broadcastMessage("DONE!");
             if (!gatherType.shouldBeSmelted){
                 isCompleted = true;
             }
             else {
                 if (hasPlacedFurnace()){
-                    Furnace furnace = (Furnace) furnaceBlock;
+                    Furnace furnace = (Furnace) furnaceBlock.getState();
                     if (personoidNPC.getLivingEntity().getLocation().distance(furnaceBlock.getLocation()) >= 6){
                         TargetHandler.setBlockTarget(personoidNPC, furnaceBlock.getRelative(BlockFace.UP), false);
                     }
@@ -113,6 +123,7 @@ public class GatherAction {
                     }
                 }
                 else {
+                    Bukkit.broadcastMessage("Placed furnace");
                     personoidNPC.setMainHandItem(new ItemStack(Material.FURNACE));
                     personoidNPC.getLivingEntity().getLocation().clone().add(1,0,0).getBlock().setType(Material.FURNACE);
                     furnaceBlock = personoidNPC.getLivingEntity().getLocation().clone().add(1,0,0).getBlock();
@@ -122,35 +133,47 @@ public class GatherAction {
         else {
             if (!personoidNPC.isInHibernationState()){
                 if (targetBlock != null){
-                    if (!gatherType.contains(targetBlock.getType())){
+                    if (!targetBlock.getType().equals(materialWhenStarted)){
                         Bukkit.broadcastMessage("Target block is no longer correct.");
                         if (targetBlock != null){
                             personoidNPC.forgetCurrentTarget();
                             targetBlock = null;
+                            materialWhenStarted = null;
                         }
                         if (wasBreaking){
                             Bukkit.broadcastMessage("was breaking!");
-                            for (Entity entity : personoidNPC.getLivingEntity().getNearbyEntities(0.5, 0.5, 0.5)){
+                            for (Entity entity : personoidNPC.getLivingEntity().getNearbyEntities(4, 4, 4)){
                                 if (entity instanceof Item item){
                                     ItemStack itemStack = item.getItemStack();
                                     Bukkit.broadcastMessage("itemstack");
-                                    if (gatherType.contains(itemStack.getType()) || (gatherType.shouldBeSmelted && ResourceTypes.COAL.contains(itemStack.getType()))){
+                                    if (gatherType.contains(itemStack.getType()) || shouldGetThatCoal(itemStack.getType())){
                                         personoidNPC.inventory.addItem(itemStack);
                                         item.remove();
-                                        currentAmount++;
-                                        if (itemStack.getType().equals(Material.COAL)){
-                                            currentCoalCount += itemStack.getAmount();
+                                        if (gatherType.contains(itemStack.getType())){
+                                            currentAmount++;
                                         }
+                                        else {
+                                            if (itemStack.getType().equals(Material.COAL)){
+                                                currentCoalCount += itemStack.getAmount();
+                                            }
+                                        }
+                                        Bukkit.broadcastMessage(currentAmount+" blocks collected");
+                                        Bukkit.broadcastMessage("Target amount: "+targetAmount);
+                                        Bukkit.broadcastMessage(currentCoalCount+" coal collected");
+                                        Bukkit.broadcastMessage("Target coal: "+probableCoalCount);
+
                                     }
                                 }
                             }
                             wasBreaking = false;
+                            personoidNPC.resume();
                         }
                         lookForNewBlock();
                     }
                     else {
-                        if (personoidNPC.getLivingEntity().getLocation().distance(targetBlock.getLocation()) <= 3 && !personoidNPC.paused){
+                        if (personoidNPC.getLivingEntity().getLocation().distance(targetBlock.getLocation()) <= 2 && !personoidNPC.paused){
                             wasBreaking = true;
+                            personoidNPC.getProperMiningTool(targetBlock);
                             personoidNPC.breakBlock(targetBlock.getLocation());
                         }
                     }

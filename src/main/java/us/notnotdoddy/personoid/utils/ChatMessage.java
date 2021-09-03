@@ -20,6 +20,7 @@ import us.notnotdoddy.personoid.npc.PersonoidNPCHandler;
 import us.notnotdoddy.personoid.status.Behavior;
 
 import java.io.*;
+import java.util.List;
 
 public class ChatMessage {
     private static JsonObject intents;
@@ -50,7 +51,29 @@ public class ChatMessage {
 
     public static void send(PersonoidNPC npc, String message) {
         if (message != null) {
-            new FluidMessage("<" + npc.citizen.getName() + "> " + message, FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
+            int delay = Math.min(Math.max(message.length() * 5 + FluidUtils.random(0, 10), 5), 100);
+            if (delay > 0 && message.length() > 0) {
+                npc.pause();
+                new DelayedTask(delay) {
+                    @Override
+                    public void run() {
+                        new FluidMessage("<" + npc.citizen.getName() + "> " + message, FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
+                        npc.resume();
+                    }
+                };
+            }
+        }
+    }
+
+    public static void send(PersonoidNPC npc, String response, String message) {
+        if (message.length() > 0) {
+            int delay = Math.min(Math.max(message.length() * 3 + FluidUtils.random(0, 10), 5), 75);
+            new DelayedTask(delay) {
+                @Override
+                public void run() {
+                    send(npc, response);
+                }
+            };
         }
     }
 
@@ -65,35 +88,16 @@ public class ChatMessage {
                     }
                 }
                 if (npc == null) {
-                    npc = PersonoidNPCHandler.getNPCs().values().stream().toList().get(FluidUtils.random(0, PersonoidNPCHandler.getNPCs().size() - 1));
+                    List<PersonoidNPC> npcs = PersonoidNPCHandler.getNPCs().values().stream().toList();
+                    npc = npcs.size() > 1 ? npcs.get(FluidUtils.random(0, PersonoidNPCHandler.getNPCs().size() - 1)) : npcs.get(0);
                 }
-                if (FluidUtils.random(1, 10) >= 3) {
-                    PersonoidNPC finalNpc = npc;
-                    new DelayedTask(FluidUtils.random(10, 60)) {
-                        @Override
-                        public void run() {
-                            finalNpc.pause();
-                            String response = getResponse(getData().getPlayer(), getData().getMessage(), finalNpc);
-                            int delay = response == null ? FluidUtils.random(0, 10) :
-                                    Math.min(Math.max(response.length() * 5 + FluidUtils.random(0, 10), 5), 100);
-                            new DelayedTask(delay) {
-                                @Override
-                                public void run() {
-                                    if (response != null) {
-                                        ChatMessage.send(finalNpc, response);
-                                    }
-                                    finalNpc.resume();
-                                }
-                            };
-                        }
-                    };
-                }
+                send(npc, getResponse(getData().getPlayer(), getData().getMessage(), npc), getData().getMessage());
             }
         };
     }
 
     private static String getResponse(Player player, String message, PersonoidNPC npc) {
-        Behavior.Mood mood = npc.players.get(player).getStrongestMood();
+        Behavior.Mood mood = npc.players.get(player.getUniqueId()).getStrongestMood();
         JsonArray array = intents.get("intents").getAsJsonArray();
         JsonObject closestIntent = null;
         int closestDistance = Integer.MAX_VALUE;

@@ -34,7 +34,7 @@ public class AttackMeanPlayersGoal extends PersonoidGoal {
     @Override
     public boolean canStart(PersonoidNPC personoidNPC) {
         //Bukkit.broadcastMessage(personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).getMoodValue(Behavior.Mood.ANGRY) + "");
-        return personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).isTarget() &&
+        return personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC().getUniqueId()).isTarget() &&
                 personoidNPC.getClosestPlayerToNPC().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) <= botRange;
     }
 

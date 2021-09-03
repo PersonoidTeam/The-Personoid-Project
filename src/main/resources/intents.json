@@ -34,14 +34,14 @@
       "tag": "attack-player",
       "responses":
       {
-        "angry": [ "STOP", "GO AWAY", "You asked for this...", null, null ]
+        "angry": [ "STOP", "GO AWAY", "You asked for this...", null, null, null, null ]
       }
     },
     {
       "tag": "attack-player-end",
       "responses":
       {
-        "angry": [ "i'll be back", "fine, you win", "nevermind, but don't do it again", null, null ]
+        "angry": [ "i'll be back", "fine, you win", null, null, null, null ]
       }
     }
   ],

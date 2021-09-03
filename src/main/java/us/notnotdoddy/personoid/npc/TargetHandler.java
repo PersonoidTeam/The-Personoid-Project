@@ -17,25 +17,15 @@ public class TargetHandler {
 
     // This is for future proofing. If the NPCs need to interact with blocks we shouldnt have to band-aid fix block interactions
     public static void setBlockTarget(PersonoidNPC personoidNPC, Block block, boolean destroy){
-
         // We will have a system for switching between straight line and actual pathfinding in the future.
         // For now, this works.
-        personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
-
         if (personoidNPC.citizen.getNavigator().isNavigating()) {
             personoidNPC.citizen.getNavigator().cancelNavigation();
         }
         personoidNPC.citizen.getNavigator().setTarget(block.getLocation());
+        personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
         personoidNPC.setCurrentTargetLocation(block.getLocation());
-
-        personoidNPC.setCurrentTargetLocation(block.getLocation().clone());
-
-        if (destroy){
-            personoidNPC.activeTargetType = TargetType.BLOCK_BREAK;
-        }
-        else {
-            personoidNPC.activeTargetType = TargetType.BLOCK_INTERACT;
-        }
+        personoidNPC.activeTargetType = destroy ? TargetType.BLOCK_BREAK : TargetType.BLOCK_INTERACT;
     }
 
     // See reason above for separation

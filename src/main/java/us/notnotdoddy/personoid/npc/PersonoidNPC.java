@@ -8,11 +8,12 @@ import net.citizensnpcs.api.ai.flocking.RadiusNPCFlock;
 import net.citizensnpcs.api.ai.flocking.SeparationBehavior;
 import net.citizensnpcs.api.ai.tree.BehaviorStatus;
 import net.citizensnpcs.api.npc.BlockBreaker;
+import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.util.PlayerAnimation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -24,6 +25,7 @@ import us.notnotdoddy.personoid.goals.PersonoidGoal;
 import us.notnotdoddy.personoid.goals.defense.AttackMeanPlayersGoal;
 import us.notnotdoddy.personoid.goals.movement.WanderRandomlyGoal;
 import us.notnotdoddy.personoid.npc.resourceGathering.ResourceManager;
+import us.notnotdoddy.personoid.npc.resourceGathering.ResourceTypes;
 import us.notnotdoddy.personoid.status.Behavior;
 import us.notnotdoddy.personoid.status.RemovalReason;
 import us.notnotdoddy.personoid.utils.ChatMessage;
@@ -35,8 +37,8 @@ import java.util.*;
 public class PersonoidNPC implements InventoryHolder {
     Random random = new Random();
 
-    public net.citizensnpcs.api.npc.NPC citizen;
-    public Map<Player, PlayerInfo> players = new HashMap<>();
+    public NPC citizen;
+    public Map<UUID, PlayerInfo> players = new HashMap<>();
     public NPCInventory inventory = new NPCInventory(this);
     public final ResourceManager resourceManager;
 
@@ -80,6 +82,11 @@ public class PersonoidNPC implements InventoryHolder {
         citizen.getNavigator().getLocalParameters().attackDelayTicks(15);
         citizen.getNavigator().getLocalParameters().useNewPathfinder(true);
         resourceManager = new ResourceManager(getPersonoid());
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!players.containsKey(player.getUniqueId())) {
+                players.put(player.getUniqueId(), new PlayerInfo());
+            }
+        }
         initGoals();
     }
 
@@ -215,7 +222,7 @@ public class PersonoidNPC implements InventoryHolder {
 
     public void onInitialised() {
         lastUpdatedLocation = getLivingEntity().getLocation().clone();
-        getPersonoid().resourceManager.attemptCraft(Material.CRAFTING_TABLE);
+        getPersonoid().resourceManager.attemptCraft(Material.IRON_HELMET);
     }
 
     public PersonoidNPC remove() {
@@ -263,11 +270,6 @@ public class PersonoidNPC implements InventoryHolder {
                             flock.run();
                         }
                         closestPlayerToNPC = LocationUtilities.getClosestPlayer(getLivingEntity().getLocation());
-                        if (closestPlayerToNPC != null){
-                            if (!players.containsKey(closestPlayerToNPC)) {
-                                players.put(closestPlayerToNPC, new PlayerInfo());
-                            }
-                        }
                         updateLocationOrAssumeStuck();
                         selectGoal();
                         if (selectedGoal != null){
@@ -278,7 +280,7 @@ public class PersonoidNPC implements InventoryHolder {
                                 resourceManager.isPaused = false;
                             }
                         }
-                        for (Map.Entry<Player, PlayerInfo> entry : players.entrySet()) {
+                        for (Map.Entry<UUID, PlayerInfo> entry : players.entrySet()) {
                             for (Behavior.Mood mood : Behavior.Mood.values()) {
                                 entry.getValue().decrementMoodStrength(mood, behaviourType.retentionDecrement);
                             }
@@ -286,30 +288,40 @@ public class PersonoidNPC implements InventoryHolder {
                     }
                 }
                 else {
-                    if (isInHibernationState){
-                        unloadedEntityTicking();
-                    }
-                    if (lastRemovalReason == RemovalReason.DIED) {
-                        if (selectedGoal != null){
-                            selectedGoal.endGoal(getPersonoid());
-                            selectedGoal = null;
+                    if (isFullyInitialized){
+                        if (isInHibernationState){
+                            unloadedEntityTicking();
                         }
-                    }
-                    else if (lastRemovalReason == RemovalReason.FULLY_REMOVED) {
-                        selectedGoal = null;
-                        cancel();
-                    }
-                    else {
-                        if (isFullyInitialized){
+                        if (lastRemovalReason == RemovalReason.DIED) {
+                            if (selectedGoal != null){
+                                selectedGoal.endGoal(getPersonoid());
+                                selectedGoal = null;
+                            }
+                        }
+                        else if (lastRemovalReason == RemovalReason.FULLY_REMOVED) {
+                            selectedGoal = null;
+                            cancel();
+                        }
+                        else {
                             selectedGoal = null;
                             isInHibernationState = true;
                             originalLastLocation = lastUpdatedLocation.clone();
                         }
+                        isFullyInitialized = false;
                     }
-                    isFullyInitialized = false;
+
                 }
             }
         };
+    }
+
+    public void getProperMiningTool(Block block){
+        if (ResourceTypes.LOG.contains(block.getType())){
+            setMainHandItem(new ItemStack(Material.DIAMOND_AXE));
+        }
+        if (ResourceTypes.ORES.contains(block.getType())){
+            setMainHandItem(new ItemStack(Material.DIAMOND_PICKAXE));
+        }
     }
 
     // This is specifically for when the NPCs are not loaded by any player, but we still want them to function in some way. Be that a counter for logging
@@ -317,6 +329,7 @@ public class PersonoidNPC implements InventoryHolder {
     private void unloadedEntityTicking(){
         ticksSinceHibernation++;
         attemptLoad();
+        offsetLastLocationByTime();
     }
 
     private void attemptLoad(){

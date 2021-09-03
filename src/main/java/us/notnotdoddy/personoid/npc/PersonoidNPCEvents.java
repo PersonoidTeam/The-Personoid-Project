@@ -40,7 +40,7 @@ public class PersonoidNPCEvents {
             public void damageByEntity(NPCDamageByEntityEvent e) {
                 if (e.getDamager() instanceof Player player) {
                     PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(e.getNPC());
-                    PlayerInfo info = npc.players.get(player);
+                    PlayerInfo info = npc.players.get(player.getUniqueId());
                     npc.damagedByPlayer = player;
                     info.incrementMoodStrength(Behavior.Mood.ANGRY, ((float) (1.1F * e.getDamage()))/10);
                 }
