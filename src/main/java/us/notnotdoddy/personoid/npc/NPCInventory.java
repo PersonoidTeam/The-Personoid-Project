@@ -114,10 +114,11 @@ public class NPCInventory {
 
     public void removeMaterialCount(Material material, int amountToRemove){
         int removedAmount = 0;
+        ItemStack[] itemStacks = getContents().clone();
         while (removedAmount < amountToRemove){
-            for (ItemStack itemStack : getContents()){
-                if (itemStack.getType().equals(material)){
-                    itemStack.setAmount(itemStack.getAmount()-1);
+            for (ItemStack itemStack : itemStacks) {
+                if (itemStack.getType().equals(material)) {
+                    itemStack.setAmount(itemStack.getAmount() - 1);
                     removedAmount++;
                     break;
                 }
@@ -128,8 +129,10 @@ public class NPCInventory {
     public int getAmountOf(ResourceTypes resourceTypes){
         int amount = 0;
         for (ItemStack itemStack : inventory.getContents()){
-            if (resourceTypes.contains(itemStack.getType())){
-                amount += itemStack.getAmount();
+            if (itemStack != null){
+                if (resourceTypes.contains(itemStack.getType())){
+                    amount += itemStack.getAmount();
+                }
             }
         }
         return amount;

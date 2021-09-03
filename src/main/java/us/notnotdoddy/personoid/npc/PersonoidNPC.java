@@ -90,7 +90,7 @@ public class PersonoidNPC implements InventoryHolder {
         initGoals();
     }
 
-    public void breakBlock(Location location){
+    public boolean breakBlock(Location location){
         BlockBreaker.BlockBreakerConfiguration config = new BlockBreaker.BlockBreakerConfiguration();
         config.item(((Player) getLivingEntity()).getInventory().getItemInMainHand());
         config.radius(3);
@@ -98,11 +98,12 @@ public class PersonoidNPC implements InventoryHolder {
         if (!location.getBlock().getType().isAir()){
             BlockBreaker breaker = citizen.getBlockBreaker(location.getBlock(), config);
             if (breaker.shouldExecute()) {
-                pause();
                 TaskRunnable run = new TaskRunnable(breaker, getPersonoid(), location);
                 run.taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(FluidPlugin.getPlugin(), run, 0, 1);
+                return true;
             }
         }
+        return false;
     }
 
     private static class TaskRunnable implements Runnable {

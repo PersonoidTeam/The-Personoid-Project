@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.TargetHandler;
 import us.notnotdoddy.personoid.npc.resourceGathering.ResourceTypes;
+import us.notnotdoddy.personoid.utils.DebugMessage;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ public class GatherAction {
     private final PersonoidNPC personoidNPC;
     private Block targetBlock = null;
     private Material materialWhenStarted = null;
+    private Material pickedUpMaterial = null;
     private int targetAmount;
     private boolean wasBreaking = false;
     private int currentAmount = 0;
@@ -48,7 +50,7 @@ public class GatherAction {
         if (gatherType.shouldBeSmelted){
             probableCoalCount = 4;
         }
-        Bukkit.broadcastMessage("Made gather action: "+gatherType.toString());
+        DebugMessage.attemptMessage("Made gather action: "+gatherType.toString());
     }
 
     public void init(){
@@ -69,17 +71,18 @@ public class GatherAction {
                     personoidNPC.forgetCurrentTarget();
                     wasLooking = false;
                 }
-                TargetHandler.setBlockTarget(personoidNPC, targetBlock, true);
+                TargetHandler.setBlockTarget(personoidNPC, LocationUtilities.getNearestStandableLocation(targetBlock.getLocation()).getBlock(), true);
                 foundBlock = true;
-                Bukkit.broadcastMessage("Found block");
+                DebugMessage.attemptMessage("Found block");
             }
         }
         if (!foundBlock){
             wasLooking = true;
-            Bukkit.broadcastMessage("Wandering because didnt find block");
+            DebugMessage.attemptMessage("Wandering because didnt find block");
             failSafeTicks++;
             if (personoidNPC.getCurrentTargetLocation() == null){
-                                TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
+                Location location = LocationUtilities.getRandomLoc(personoidNPC);
+                TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getNearestStandableLocation(location));
             }
             if (failSafeTicks == 40){
                 TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
@@ -94,7 +97,7 @@ public class GatherAction {
 
     public void tick(){
         if (targetAmount <= currentAmount && currentCoalCount >= probableCoalCount){
-            Bukkit.broadcastMessage("DONE!");
+            DebugMessage.attemptMessage("DONE!");
             if (!gatherType.shouldBeSmelted){
                 isCompleted = true;
             }
@@ -105,25 +108,29 @@ public class GatherAction {
                         TargetHandler.setBlockTarget(personoidNPC, furnaceBlock.getRelative(BlockFace.UP), false);
                     }
                     if (!hasTransferedToFurnace){
+                        hasTransferedToFurnace = true;
                         furnace.getInventory().setFuel(new ItemStack(Material.COAL, probableCoalCount));
                         personoidNPC.inventory.removeMaterialCount(Material.COAL, probableCoalCount);
 
-                        furnace.getInventory().setSmelting(new ItemStack(getFirstMatchedMaterial(), targetAmount));
-                        personoidNPC.inventory.removeMaterialCount(getFirstMatchedMaterial(), targetAmount);
-
-                        hasTransferedToFurnace = true;
+                        furnace.getInventory().setSmelting(new ItemStack(pickedUpMaterial, targetAmount));
+                        personoidNPC.inventory.removeMaterialCount(pickedUpMaterial, targetAmount);
                     }
-                    if (furnace.getInventory().getResult().getAmount() >= targetAmount){
-                        if (furnace.getInventory().getFuel() != null){
-                            personoidNPC.inventory.addItem(furnace.getInventory().getFuel().clone());
-                            furnace.getInventory().setFuel(null);
+                    if (furnace.getInventory().getResult() != null){
+                        if (furnace.getInventory().getResult().getAmount() >= targetAmount){
+                            if (furnace.getInventory().getFuel() != null){
+                                personoidNPC.inventory.addItem(furnace.getInventory().getFuel().clone());
+                                furnace.getInventory().setFuel(null);
+                            }
+                            personoidNPC.inventory.addItem(furnace.getInventory().getResult().clone());
+                            furnace.getInventory().setResult(null);
+                            personoidNPC.resume();
+
+                            isCompleted = true;
                         }
-                        personoidNPC.inventory.addItem(furnace.getInventory().getResult().clone());
-                        furnace.getInventory().setResult(null);
                     }
                 }
                 else {
-                    Bukkit.broadcastMessage("Placed furnace");
+                    DebugMessage.attemptMessage("Placed furnace");
                     personoidNPC.setMainHandItem(new ItemStack(Material.FURNACE));
                     personoidNPC.getLivingEntity().getLocation().clone().add(1,0,0).getBlock().setType(Material.FURNACE);
                     furnaceBlock = personoidNPC.getLivingEntity().getLocation().clone().add(1,0,0).getBlock();
@@ -134,22 +141,25 @@ public class GatherAction {
             if (!personoidNPC.isInHibernationState()){
                 if (targetBlock != null){
                     if (!targetBlock.getType().equals(materialWhenStarted)){
-                        Bukkit.broadcastMessage("Target block is no longer correct.");
+                        DebugMessage.attemptMessage("Target block is no longer correct.");
                         if (targetBlock != null){
                             personoidNPC.forgetCurrentTarget();
                             targetBlock = null;
                             materialWhenStarted = null;
                         }
                         if (wasBreaking){
-                            Bukkit.broadcastMessage("was breaking!");
+                            DebugMessage.attemptMessage("was breaking!");
                             for (Entity entity : personoidNPC.getLivingEntity().getNearbyEntities(4, 4, 4)){
                                 if (entity instanceof Item item){
                                     ItemStack itemStack = item.getItemStack();
-                                    Bukkit.broadcastMessage("itemstack");
+                                    DebugMessage.attemptMessage("itemstack");
                                     if (gatherType.contains(itemStack.getType()) || shouldGetThatCoal(itemStack.getType())){
                                         personoidNPC.inventory.addItem(itemStack);
                                         item.remove();
                                         if (gatherType.contains(itemStack.getType())){
+                                            if (pickedUpMaterial == null){
+                                                pickedUpMaterial = itemStack.getType();
+                                            }
                                             currentAmount++;
                                         }
                                         else {
@@ -157,21 +167,21 @@ public class GatherAction {
                                                 currentCoalCount += itemStack.getAmount();
                                             }
                                         }
-                                        Bukkit.broadcastMessage(currentAmount+" blocks collected");
-                                        Bukkit.broadcastMessage("Target amount: "+targetAmount);
-                                        Bukkit.broadcastMessage(currentCoalCount+" coal collected");
-                                        Bukkit.broadcastMessage("Target coal: "+probableCoalCount);
+                                        DebugMessage.attemptMessage(currentAmount+" blocks collected");
+                                        DebugMessage.attemptMessage("Target amount: "+targetAmount);
+                                        DebugMessage.attemptMessage(currentCoalCount+" coal collected");
+                                        DebugMessage.attemptMessage("Target coal: "+probableCoalCount);
 
                                     }
                                 }
                             }
                             wasBreaking = false;
-                            personoidNPC.resume();
                         }
+                        personoidNPC.resume();
                         lookForNewBlock();
                     }
                     else {
-                        if (personoidNPC.getLivingEntity().getLocation().distance(targetBlock.getLocation()) <= 2 && !personoidNPC.paused){
+                        if (personoidNPC.getLivingEntity().getLocation().distance(targetBlock.getLocation()) <= 3 && !personoidNPC.paused){
                             wasBreaking = true;
                             personoidNPC.getProperMiningTool(targetBlock);
                             personoidNPC.breakBlock(targetBlock.getLocation());
@@ -183,7 +193,7 @@ public class GatherAction {
                 }
             }
             else {
-                Bukkit.broadcastMessage("Im hibernating");
+                DebugMessage.attemptMessage("Im hibernating");
                 // Haha, now we can do the lame stuff. Funny how this is literally all code to DISPLAY them getting the resources in the case that someone is watching
                 // Which is probably not even going to be that common.
                 if (random.nextDouble() <= personoidNPC.behaviourType.resourceGatheringSkill){

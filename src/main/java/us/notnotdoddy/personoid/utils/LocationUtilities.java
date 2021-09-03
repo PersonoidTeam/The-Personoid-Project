@@ -3,10 +3,24 @@ package us.notnotdoddy.personoid.utils;
 import me.definedoddy.fluidapi.FluidUtils;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class LocationUtilities {
+
+    static List<BlockFace> blockFaces = new ArrayList<>();
+
+    static {
+        blockFaces.add(BlockFace.NORTH);
+        blockFaces.add(BlockFace.SOUTH);
+        blockFaces.add(BlockFace.EAST);
+        blockFaces.add(BlockFace.WEST);
+    }
 
     public static Location getRandomLoc(PersonoidNPC npc) {
         Location loc = npc.getLivingEntity().getLocation().clone();
@@ -26,6 +40,31 @@ public class LocationUtilities {
         }
         else {
             return false;
+        }
+    }
+
+    public static Location getNearestStandableLocation(Location origin){
+        Location standable = null;
+        for (BlockFace blockFace : blockFaces){
+            if (getFirstLowest(origin.getBlock().getRelative(blockFace).getLocation(), 5) != null){
+                standable = getFirstLowest(origin.getBlock().getRelative(blockFace).getLocation(), 5);
+            }
+        }
+        return standable;
+    }
+
+    private static Location getFirstLowest(Location starting, int maxSize){
+        Block currentBlock = starting.getBlock();
+        int currentLoops = 0;
+        while (currentBlock.getRelative(BlockFace.DOWN).getType().isAir() && currentLoops < maxSize){
+            currentLoops++;
+            currentBlock = currentBlock.getRelative(BlockFace.DOWN);
+        }
+        if (currentBlock.getRelative(BlockFace.DOWN).getType().isAir()){
+            return null;
+        }
+        else {
+            return currentBlock.getLocation();
         }
     }
 

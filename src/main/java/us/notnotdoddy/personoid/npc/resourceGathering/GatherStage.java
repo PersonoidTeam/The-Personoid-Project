@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.resourceGathering.actions.GatherAction;
+import us.notnotdoddy.personoid.utils.DebugMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public class GatherStage {
             }
         }
         else {
-            Bukkit.broadcastMessage("Stage completed!");
+            DebugMessage.attemptMessage("Stage completed!");
             stageCompleted = true;
             if (craftMaterial != null){
                 personoidNPC.resourceManager.attemptCraft(craftMaterial);
