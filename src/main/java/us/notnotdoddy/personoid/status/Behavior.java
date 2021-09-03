@@ -2,12 +2,15 @@ package us.notnotdoddy.personoid.status;
 
 public class Behavior {
     public enum Type {
-        BUILDER(1),
-        SPEEDRUNNER(1);
+        BUILDER(1, 0.3F),
+        SPEEDRUNNER(1, 0.7F);
 
         public float retention;
         public float retentionDecrement;
-        Type(float retention) {
+        public float resourceGatheringSkill;
+
+        Type(float retention, float resourceGatheringSkill) {
+            this.resourceGatheringSkill = resourceGatheringSkill;
             this.retention = retention;
             retentionDecrement = (1 / retention) / 5000;
         }

@@ -8,6 +8,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import us.notnotdoddy.personoid.npc.resourceGathering.ResourceTypes;
 
 import java.util.HashMap;
 
@@ -104,6 +105,46 @@ public class NPCInventory {
     @NotNull
     public ItemStack[] getStorageContents() {
         return inventory.getStorageContents();
+    }
+
+    public void transferToOtherInventory(Inventory transfer, int slot, Material type, int amount){
+        transfer.setItem(slot, new ItemStack(type, amount));
+        removeMaterialCount(type, amount);
+    }
+
+    public void removeMaterialCount(Material material, int amountToRemove){
+        int removedAmount = 0;
+        while (removedAmount < amountToRemove){
+            for (ItemStack itemStack : getContents()){
+                if (itemStack.getType().equals(material)){
+                    itemStack.setAmount(itemStack.getAmount()-1);
+                    removedAmount++;
+                    break;
+                }
+            }
+        }
+    }
+
+    public int getAmountOf(ResourceTypes resourceTypes){
+        int amount = 0;
+        for (ItemStack itemStack : inventory.getContents()){
+            if (resourceTypes.contains(itemStack.getType())){
+                amount += itemStack.getAmount();
+            }
+        }
+        return amount;
+    }
+
+    public int getAmountOf(Material material){
+        int amount = 0;
+        for (ItemStack itemStack : inventory.getContents()){
+            if (itemStack != null){
+                if (material.equals(itemStack.getType())){
+                    amount += itemStack.getAmount();
+                }
+            }
+        }
+        return amount;
     }
 
     public void setStorageContents(@NotNull ItemStack[] items) throws IllegalArgumentException {

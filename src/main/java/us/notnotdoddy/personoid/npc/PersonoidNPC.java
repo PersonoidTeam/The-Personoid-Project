@@ -1,13 +1,18 @@
 package us.notnotdoddy.personoid.npc;
 
+import me.definedoddy.fluidapi.FluidPlugin;
 import me.definedoddy.fluidapi.tasks.DelayedTask;
 import me.definedoddy.fluidapi.tasks.RepeatingTask;
 import net.citizensnpcs.api.ai.flocking.Flocker;
 import net.citizensnpcs.api.ai.flocking.RadiusNPCFlock;
 import net.citizensnpcs.api.ai.flocking.SeparationBehavior;
+import net.citizensnpcs.api.ai.tree.BehaviorStatus;
+import net.citizensnpcs.api.npc.BlockBreaker;
 import net.citizensnpcs.util.PlayerAnimation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -18,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import us.notnotdoddy.personoid.goals.PersonoidGoal;
 import us.notnotdoddy.personoid.goals.defense.AttackMeanPlayersGoal;
 import us.notnotdoddy.personoid.goals.movement.WanderRandomlyGoal;
+import us.notnotdoddy.personoid.npc.resourceGathering.ResourceManager;
 import us.notnotdoddy.personoid.status.Behavior;
 import us.notnotdoddy.personoid.status.RemovalReason;
 import us.notnotdoddy.personoid.utils.ChatMessage;
@@ -32,6 +38,7 @@ public class PersonoidNPC implements InventoryHolder {
     public net.citizensnpcs.api.npc.NPC citizen;
     public Map<Player, PlayerInfo> players = new HashMap<>();
     public NPCInventory inventory = new NPCInventory(this);
+    public final ResourceManager resourceManager;
 
     public Player damagedByPlayer;
     private UUID livingEntityTarget = null;
@@ -49,6 +56,18 @@ public class PersonoidNPC implements InventoryHolder {
     private RepeatingTask repeatingTask;
     public boolean isFullyInitialized = false;
     public Behavior.Type behaviourType = Behavior.Type.BUILDER;
+    private Location lastUpdatedLocation = null;
+    private boolean updatedLocationThisTick = false;
+    public boolean locationIsLoadedByPlayer = false;
+
+    private boolean isInHibernationState = false;
+    private Location originalLastLocation;
+    private boolean isStuck = false;
+    private int ticksSinceHibernation = 0;
+
+
+    // Home
+    Location homeLocation = null;
 
 
     public PersonoidNPC(String name) {
@@ -60,7 +79,57 @@ public class PersonoidNPC implements InventoryHolder {
         citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
         citizen.getNavigator().getLocalParameters().attackDelayTicks(15);
         citizen.getNavigator().getLocalParameters().useNewPathfinder(true);
+        resourceManager = new ResourceManager(getPersonoid());
         initGoals();
+    }
+
+    public void breakBlock(Location location){
+        BlockBreaker.BlockBreakerConfiguration config = new BlockBreaker.BlockBreakerConfiguration();
+        config.item(((Player) getLivingEntity()).getInventory().getItemInMainHand());
+        config.radius(3);
+
+        if (!location.getBlock().getType().isAir()){
+            BlockBreaker breaker = citizen.getBlockBreaker(location.getBlock(), config);
+            if (breaker.shouldExecute()) {
+                pause();
+                TaskRunnable run = new TaskRunnable(breaker, getPersonoid(), location);
+                run.taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(FluidPlugin.getPlugin(), run, 0, 1);
+            }
+        }
+    }
+
+    private static class TaskRunnable implements Runnable {
+        private int taskId;
+        private final BlockBreaker breaker;
+        private final Location location;
+        private final PersonoidNPC personoidNPC;
+
+        public TaskRunnable(BlockBreaker breaker, PersonoidNPC personoidNPC ,Location location) {
+            this.location = location;
+            this.breaker = breaker;
+            this.personoidNPC = personoidNPC;
+        }
+
+        @Override
+        public void run() {
+            if (breaker.run() != BehaviorStatus.RUNNING) {
+                Bukkit.getScheduler().cancelTask(taskId);
+                breaker.reset();
+                personoidNPC.resume();
+            }
+        }
+    }
+
+    public boolean isInHibernationState(){
+        return isInHibernationState;
+    }
+
+    public void setInHibernationState(boolean hibernationState){
+        isInHibernationState = hibernationState;
+    }
+
+    public Location getLastUpdatedLocation(){
+        return lastUpdatedLocation;
     }
 
     public boolean hitTarget(LivingEntity livingEntity, double damage, int cooldownTicks){
@@ -133,8 +202,20 @@ public class PersonoidNPC implements InventoryHolder {
         return this;
     }
 
+    private void updateLocationOrAssumeStuck(){
+        if (!updatedLocationThisTick){
+            updatedLocationThisTick = true;
+            lastUpdatedLocation = getLivingEntity().getLocation().clone();
+        }
+        else {
+            isStuck = LocationUtilities.withinMargin(lastUpdatedLocation.clone(), getLivingEntity().getLocation().clone(), 0.05);
+            updatedLocationThisTick = false;
+        }
+    }
+
     public void onInitialised() {
-        getLivingEntity().setCanPickupItems(true);
+        lastUpdatedLocation = getLivingEntity().getLocation().clone();
+        getPersonoid().resourceManager.attemptCraft(Material.CRAFTING_TABLE);
     }
 
     public PersonoidNPC remove() {
@@ -172,7 +253,8 @@ public class PersonoidNPC implements InventoryHolder {
         repeatingTask = new RepeatingTask(0, 1) {
             @Override
             public void run() {
-                if (isFullyInitialized) {
+                resourceManager.tick();
+                if (isFullyInitialized && citizen.isSpawned()) {
                     if (cooldownTicks > 0){
                         cooldownTicks--;
                     }
@@ -186,12 +268,14 @@ public class PersonoidNPC implements InventoryHolder {
                                 players.put(closestPlayerToNPC, new PlayerInfo());
                             }
                         }
+                        updateLocationOrAssumeStuck();
                         selectGoal();
                         if (selectedGoal != null){
                             selectedGoal.tick(getPersonoid());
                             if (selectedGoal.shouldStop(getPersonoid())){
                                 selectedGoal.endGoal(getPersonoid());
                                 selectedGoal = null;
+                                resourceManager.isPaused = false;
                             }
                         }
                         for (Map.Entry<Player, PlayerInfo> entry : players.entrySet()) {
@@ -202,19 +286,66 @@ public class PersonoidNPC implements InventoryHolder {
                     }
                 }
                 else {
+                    if (isInHibernationState){
+                        unloadedEntityTicking();
+                    }
                     if (lastRemovalReason == RemovalReason.DIED) {
                         if (selectedGoal != null){
                             selectedGoal.endGoal(getPersonoid());
                             selectedGoal = null;
                         }
                     }
-                    if (lastRemovalReason == RemovalReason.FULLY_REMOVED) {
+                    else if (lastRemovalReason == RemovalReason.FULLY_REMOVED) {
                         selectedGoal = null;
                         cancel();
                     }
+                    else {
+                        if (isFullyInitialized){
+                            selectedGoal = null;
+                            isInHibernationState = true;
+                            originalLastLocation = lastUpdatedLocation.clone();
+                        }
+                    }
+                    isFullyInitialized = false;
                 }
             }
         };
+    }
+
+    // This is specifically for when the NPCs are not loaded by any player, but we still want them to function in some way. Be that a counter for logging
+    // Back in or something else.
+    private void unloadedEntityTicking(){
+        ticksSinceHibernation++;
+        attemptLoad();
+    }
+
+    private void attemptLoad(){
+        if (locationIsLoadedByPlayer){
+            spawn(lastUpdatedLocation);
+            setInHibernationState(false);
+            ticksSinceHibernation = 0;
+        }
+    }
+
+
+    // How many blocks do player usually travel in a second? Ive got no idea, Google it is.
+    // Back from Google, its 5 blocks per second at full sprint speed.
+    // We'll go with three, since players usually stop and investigate something on their journey.
+    private void offsetLastLocationByTime(){
+        if (ticksSinceHibernation % 20 == 0){
+            int randomX = random.nextInt((3));
+            int randomZ = random.nextInt((3));
+
+            if (random.nextBoolean()){
+                randomX *= -1;
+            }
+            if (random.nextBoolean()){
+                randomZ *= -1;
+            }
+
+            lastUpdatedLocation.add(randomX, 0, randomZ);
+            lastUpdatedLocation.setY(lastUpdatedLocation.getWorld().getHighestBlockYAt(lastUpdatedLocation.clone()));
+        }
     }
 
     public void selectGoal(){
@@ -251,12 +382,15 @@ public class PersonoidNPC implements InventoryHolder {
 
         if (!finalGoals.isEmpty()){
             PersonoidGoal finalSelectedGoal = finalGoals.get(random.nextInt(finalGoals.size()));
-            if (selectedGoal == null || finalSelectedGoal.shouldOverrideExisting()){
-                if (selectedGoal != null) {
-                    selectedGoal.endGoal(getPersonoid());
+            if (!resourceManager.isDoingSomething || finalSelectedGoal.getGoalPriority().isHigherThan(PersonoidGoal.GoalPriority.LOW)){
+                if (selectedGoal == null || finalSelectedGoal.shouldOverrideExisting()){
+                    if (selectedGoal != null) {
+                        selectedGoal.endGoal(getPersonoid());
+                    }
+                    selectedGoal = finalSelectedGoal;
+                    selectedGoal.initializeGoal(getPersonoid());
+                    resourceManager.isPaused = true;
                 }
-                selectedGoal = finalSelectedGoal;
-                selectedGoal.initializeGoal(getPersonoid());
             }
         }
     }

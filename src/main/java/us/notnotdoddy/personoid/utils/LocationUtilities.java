@@ -16,6 +16,19 @@ public class LocationUtilities {
         return new Location(npc.getLivingEntity().getLocation().getWorld(), x, y, z);
     }
 
+    public static boolean withinMargin(Location firstLocation, Location secondLocation, double margin){
+        Location firstClone = firstLocation.clone();
+        Location secondClone = secondLocation.clone();
+        firstClone.setY(1000);
+        secondClone.setY(1000);
+        if (firstClone.getWorld().getUID().equals(secondClone.getWorld().getUID())){
+            return firstClone.distance(secondClone) <= margin;
+        }
+        else {
+            return false;
+        }
+    }
+
     public static Player getClosestPlayer(Location loc) {
         Player closestPlayer = null;
         double closestDistance = 0;
