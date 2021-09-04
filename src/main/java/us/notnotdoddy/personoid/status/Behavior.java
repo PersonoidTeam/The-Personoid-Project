@@ -1,6 +1,16 @@
 package us.notnotdoddy.personoid.status;
 
 public class Behavior {
+    private Type type;
+
+    public Behavior(Type type) {
+        this.type = type;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
     public enum Type {
         BUILDER(1, 0.3F),
         SPEEDRUNNER(1, 0.7F);

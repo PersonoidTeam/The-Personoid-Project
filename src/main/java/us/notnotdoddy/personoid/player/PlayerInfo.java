@@ -1,4 +1,4 @@
-package us.notnotdoddy.personoid.utils;
+package us.notnotdoddy.personoid.player;
 
 import us.notnotdoddy.personoid.status.Behavior;
 

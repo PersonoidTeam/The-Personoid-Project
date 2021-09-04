@@ -1,6 +1,5 @@
 package us.notnotdoddy.personoid.npc.resourceGathering;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.resourceGathering.actions.GatherAction;
@@ -42,7 +41,7 @@ public class GatherStage {
             DebugMessage.attemptMessage("Stage completed!");
             stageCompleted = true;
             if (craftMaterial != null){
-                personoidNPC.resourceManager.attemptCraft(craftMaterial);
+                personoidNPC.data.resourceManager.attemptCraft(craftMaterial);
             }
         }
     }

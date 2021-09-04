@@ -24,21 +24,21 @@ public class TargetHandler {
         }
         personoidNPC.citizen.getNavigator().setTarget(block.getLocation());
         personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
-        personoidNPC.setCurrentTargetLocation(block.getLocation());
-        personoidNPC.activeTargetType = destroy ? TargetType.BLOCK_BREAK : TargetType.BLOCK_INTERACT;
+        personoidNPC.setTargetLocation(block.getLocation());
+        personoidNPC.data.targetType = destroy ? TargetType.BLOCK_BREAK : TargetType.BLOCK_INTERACT;
     }
 
     // See reason above for separation
     public static void setLivingEntityTarget(PersonoidNPC personoidNPC, LivingEntity livingEntity, boolean attack){
         personoidNPC.citizen.getNavigator().setTarget(livingEntity, false);
         if (attack){
-            personoidNPC.activeTargetType = TargetType.ATTACK_LIVING_ENTITY;
+            personoidNPC.data.targetType = TargetType.ATTACK_LIVING_ENTITY;
         }
         else {
-            personoidNPC.activeTargetType = TargetType.FOLLOW_LIVING_ENTITY;
+            personoidNPC.data.targetType = TargetType.FOLLOW_LIVING_ENTITY;
         }
-        personoidNPC.setLivingEntityTarget(livingEntity);
-        personoidNPC.setCurrentTargetLocation(livingEntity.getLocation());
+        personoidNPC.setEntityTarget(livingEntity);
+        personoidNPC.setTargetLocation(livingEntity.getLocation());
     }
 
     public static void setNothingTarget(PersonoidNPC personoidNPC, Location location) {
@@ -47,6 +47,6 @@ public class TargetHandler {
         }
         personoidNPC.citizen.getNavigator().setTarget(location);
         personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(0);
-        personoidNPC.setCurrentTargetLocation(location);
+        personoidNPC.setTargetLocation(location);
     }
 }

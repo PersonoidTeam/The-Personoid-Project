@@ -10,7 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import us.notnotdoddy.personoid.status.Behavior;
-import us.notnotdoddy.personoid.utils.PlayerInfo;
+import us.notnotdoddy.personoid.player.PlayerInfo;
 
 public class PersonoidNPCEvents {
     public static void init() {
@@ -18,11 +18,11 @@ public class PersonoidNPCEvents {
             @Override
             public void run() {
                 PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(getData().getNPC());
-                npc.isFullyInitialized = false;
-                npc.spawn(npc.spawnLocation);
-                if (npc.damagedByPlayer != null) {
-                    PlayerInfo info = npc.players.get(npc.damagedByPlayer);
-                    npc.players.get(npc.damagedByPlayer).killedBy++;
+                npc.initialised = false;
+                npc.spawn(npc.data.spawnPoint);
+                if (npc.data.lastDamager != null) {
+                    PlayerInfo info = npc.data.players.get(npc.data.lastDamager);
+                    npc.data.players.get(npc.data.lastDamager).killedBy++;
                     info.incrementMoodStrength(Behavior.Mood.ANGRY, 0.25F);
                 }
                 setDelay(FluidUtils.random(20, 50));
@@ -33,15 +33,15 @@ public class PersonoidNPCEvents {
             @EventHandler
             public void damage(NPCDamageEvent e) {
                 PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(e.getNPC());
-                npc.damagedByPlayer = null;
+                npc.data.lastDamager = null;
             }
 
             @EventHandler
             public void damageByEntity(NPCDamageByEntityEvent e) {
                 if (e.getDamager() instanceof Player player) {
                     PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(e.getNPC());
-                    PlayerInfo info = npc.players.get(player.getUniqueId());
-                    npc.damagedByPlayer = player;
+                    PlayerInfo info = npc.data.players.get(player.getUniqueId());
+                    npc.data.lastDamager = player.getUniqueId();
                     info.incrementMoodStrength(Behavior.Mood.ANGRY, ((float) (1.1F * e.getDamage()))/10);
                 }
             }
@@ -51,14 +51,14 @@ public class PersonoidNPCEvents {
             @Override
             public void run() {
                 for (PersonoidNPC personoidNPC : PersonoidNPCHandler.getNPCs().values()){
-                    if (personoidNPC.isInHibernationState()){
+                    if (personoidNPC.isHibernating()){
                         boolean foundAPlayerLoadingZone = false;
                         for (Player player : Bukkit.getOnlinePlayers()){
-                            if (player.getLocation().distance(personoidNPC.getLastUpdatedLocation()) <= player.getClientViewDistance()){
+                            if (player.getLocation().distance(personoidNPC.getLastLocation()) <= player.getClientViewDistance()){
                                 foundAPlayerLoadingZone = true;
                             }
                         }
-                        personoidNPC.locationIsLoadedByPlayer = foundAPlayerLoadingZone;
+                        personoidNPC.data.playerLoaded = foundAPlayerLoadingZone;
                     }
                 }
             }

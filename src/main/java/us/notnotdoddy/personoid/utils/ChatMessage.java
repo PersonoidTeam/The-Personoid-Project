@@ -82,22 +82,24 @@ public class ChatMessage {
             @Override
             public void run() {
                 PersonoidNPC npc = null;
-                for (PersonoidNPC potential : PersonoidNPCHandler.getNPCs().values()) {
+                List<PersonoidNPC> npcs = PersonoidNPCHandler.getNPCs().values().stream().toList();
+                for (PersonoidNPC potential : npcs) {
                     if (getData().getMessage().toLowerCase().contains(potential.citizen.getName().toLowerCase())) {
                         npc = potential;
                     }
                 }
-                if (npc == null) {
-                    List<PersonoidNPC> npcs = PersonoidNPCHandler.getNPCs().values().stream().toList();
-                    npc = npcs.size() > 1 ? npcs.get(FluidUtils.random(0, PersonoidNPCHandler.getNPCs().size() - 1)) : npcs.get(0);
+                if (npcs.size() > 0) {
+                    if (npc == null) {
+                        npc = npcs.size() > 1 ? npcs.get(FluidUtils.random(0, PersonoidNPCHandler.getNPCs().size() - 1)) : npcs.get(0);
+                    }
+                    send(npc, getResponse(getData().getPlayer(), getData().getMessage(), npc), getData().getMessage());
                 }
-                send(npc, getResponse(getData().getPlayer(), getData().getMessage(), npc), getData().getMessage());
             }
         };
     }
 
     private static String getResponse(Player player, String message, PersonoidNPC npc) {
-        Behavior.Mood mood = npc.players.get(player.getUniqueId()).getStrongestMood();
+        Behavior.Mood mood = npc.data.players.get(player.getUniqueId()).getStrongestMood();
         JsonArray array = intents.get("intents").getAsJsonArray();
         JsonObject closestIntent = null;
         int closestDistance = Integer.MAX_VALUE;

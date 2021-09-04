@@ -7,6 +7,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
+import us.notnotdoddy.personoid.npc.PersonoidNPCHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,5 +80,20 @@ public class LocationUtilities {
             }
         }
         return closestPlayer;
+    }
+
+    public static PersonoidNPC getClosestNPC(Location loc) {
+        PersonoidNPC closestNPC = null;
+        double closestDistance = 0;
+        for (PersonoidNPC npc : PersonoidNPCHandler.getNPCs().values()) {
+            if (npc.getLivingEntity().getWorld() == loc.getWorld()) {
+                double distance = npc.getLivingEntity().getLocation().distance(loc);
+                if (closestNPC == null || distance < closestDistance) {
+                    closestDistance = distance;
+                    closestNPC = npc;
+                }
+            }
+        }
+        return closestNPC;
     }
 }

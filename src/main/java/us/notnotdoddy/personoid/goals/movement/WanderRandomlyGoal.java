@@ -36,7 +36,7 @@ public class WanderRandomlyGoal extends PersonoidGoal {
             TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
             failSafeTicks = 0;
         }
-        if (personoidNPC.getCurrentTargetLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3) {
+        if (personoidNPC.getTargetLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3) {
             TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
             failSafeTicks = 0;
         }

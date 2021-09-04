@@ -21,7 +21,7 @@ public class AttackMeanPlayersGoal extends PersonoidGoal {
     public void initializeGoal(PersonoidNPC personoidNPC) {
         personoidNPC.sendChatMessage(ChatMessage.getResponse(Behavior.Mood.ANGRY, "attack-player"));
         personoidNPC.setMainHandItem(new ItemStack(Material.IRON_SWORD));
-        TargetHandler.setLivingEntityTarget(personoidNPC, personoidNPC.getClosestPlayerToNPC(), true);
+        TargetHandler.setLivingEntityTarget(personoidNPC, personoidNPC.getClosestPlayer(), true);
     }
 
     @Override
@@ -34,19 +34,19 @@ public class AttackMeanPlayersGoal extends PersonoidGoal {
     @Override
     public boolean canStart(PersonoidNPC personoidNPC) {
         //Bukkit.broadcastMessage(personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).getMoodValue(Behavior.Mood.ANGRY) + "");
-        return personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC().getUniqueId()).isTarget() &&
-                personoidNPC.getClosestPlayerToNPC().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) <= botRange;
+        return personoidNPC.data.players.get(personoidNPC.getClosestPlayer().getUniqueId()).isTarget() &&
+                personoidNPC.getClosestPlayer().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) <= botRange;
     }
 
     @Override
     public void tick(PersonoidNPC personoidNPC) {
-        if (personoidNPC.getLivingEntityTarget().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3){
-            personoidNPC.hitTarget(personoidNPC.getLivingEntityTarget(), 6, 20);
+        if (personoidNPC.getEntityTarget().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3){
+            personoidNPC.hitTarget(personoidNPC.getEntityTarget(), 6, 20);
         }
     }
 
     @Override
     public boolean shouldStop(PersonoidNPC personoidNPC) {
-        return personoidNPC.getLivingEntity().getLocation().distance(personoidNPC.getLivingEntityTarget().getLocation()) > (botRange+5);
+        return personoidNPC.getLivingEntity().getLocation().distance(personoidNPC.getEntityTarget().getLocation()) > (botRange+5);
     }
 }

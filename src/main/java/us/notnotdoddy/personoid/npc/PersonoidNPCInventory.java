@@ -12,14 +12,14 @@ import us.notnotdoddy.personoid.npc.resourceGathering.ResourceTypes;
 
 import java.util.HashMap;
 
-public class NPCInventory {
+public class PersonoidNPCInventory {
     private final PersonoidNPC npc;
     private final Inventory inventory;
     private ItemStack[] armor = new ItemStack[4];
     private ItemStack[] extra = new ItemStack[4];
     private final ItemStack[] hands = new ItemStack[2];
 
-    public NPCInventory(PersonoidNPC npc) {
+    public PersonoidNPCInventory(PersonoidNPC npc) {
         this.npc = npc;
         inventory = Bukkit.createInventory(npc, 36);
     }

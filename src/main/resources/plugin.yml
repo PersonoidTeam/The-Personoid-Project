@@ -7,3 +7,5 @@ authors: [ notnotnotswipez, DefineDoddy ]
 commands:
   create:
   remove:
+  toggledebug:
+  craft:
