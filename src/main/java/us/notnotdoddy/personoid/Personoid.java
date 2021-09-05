@@ -44,9 +44,6 @@ public final class Personoid extends JavaPlugin {
                     String name = PersonoidNPCHandler.getRandomName();
                     PersonoidNPC personoidNPC = PersonoidNPCHandler.create(name, player.getLocation());
                     personoidNPC.startNPCTicking();
-                    Gson gson = new Gson();
-                    String jsonString = gson.toJson(personoidNPC);
-                    Bukkit.broadcastMessage(jsonString);
                     new FluidMessage("&aCreated new npc: &6" + name, player).usePrefix().send();
                 }
                 return true;
@@ -86,6 +83,7 @@ public final class Personoid extends JavaPlugin {
                                 npc.data.currentGoal.endGoal(npc);
                                 npc.data.currentGoal = null;
                             }
+                            npc.forgetCurrentTarget();
                             npc.data.resourceManager.isDoingSomething = true;
                             npc.data.resourceManager.attemptCraft(material);
                             new FluidMessage("Sent crafting instructions for &a" + material.getKey().getKey().toLowerCase() + "&r to &6" +

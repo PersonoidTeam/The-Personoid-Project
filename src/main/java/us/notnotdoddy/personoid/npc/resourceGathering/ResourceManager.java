@@ -30,7 +30,7 @@ public class ResourceManager {
 
     public ResourceManager(PersonoidNPC personoidNPC) {
         this.personoidNPC = personoidNPC;
-        this.baseInventory = personoidNPC.getNPCInventory();
+        this.baseInventory = personoidNPC.data.inventory;
     }
 
     public void tick(){

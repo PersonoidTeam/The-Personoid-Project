@@ -22,7 +22,7 @@ public class PersonoidNPCData {
     private final PersonoidNPC npc;
     public final HashMap<UUID, PlayerInfo> players = new HashMap<>();
     public final PersonoidNPCInventory inventory;
-    public final ResourceManager resourceManager;
+    public ResourceManager resourceManager;
     public final Flocker flocker;
 
     public final Behavior behavior = new Behavior(Behavior.Type.BUILDER);
@@ -47,15 +47,18 @@ public class PersonoidNPCData {
     public int cooldownTicks;
 
     public PersonoidNPCData(PersonoidNPC npc) {
+        inventory = new PersonoidNPCInventory(npc);
+        flocker = new Flocker(npc.citizen, new RadiusNPCFlock(4.0D, 0), new SeparationBehavior(1.0D));
         this.npc = npc;
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!players.containsKey(player.getUniqueId())) {
                 players.put(player.getUniqueId(), new PlayerInfo());
             }
         }
-        inventory = new PersonoidNPCInventory(npc);
+    }
+
+    public void makeResourceManager(){
         resourceManager = new ResourceManager(npc);
-        flocker = new Flocker(npc.citizen, new RadiusNPCFlock(4.0D, 0), new SeparationBehavior(1.0D));
     }
 
     public Player getClosestPlayer() {

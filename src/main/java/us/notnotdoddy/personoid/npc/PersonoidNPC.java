@@ -33,7 +33,7 @@ import us.notnotdoddy.personoid.utils.LocationUtilities;
 import java.util.*;
 
 public class PersonoidNPC implements InventoryHolder {
-    public PersonoidNPCData data = new PersonoidNPCData(this);
+    public PersonoidNPCData data;
     private final Random random = new Random();
     public NPC citizen;
     private RepeatingTask repeatingTask;
@@ -49,6 +49,8 @@ public class PersonoidNPC implements InventoryHolder {
         citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
         citizen.getNavigator().getLocalParameters().attackDelayTicks(15);
         citizen.getNavigator().getLocalParameters().useNewPathfinder(true);
+        data = new PersonoidNPCData(this);
+        data.makeResourceManager();
         initGoals();
     }
 
