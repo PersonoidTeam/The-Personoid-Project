@@ -2,51 +2,47 @@ package us.notnotdoddy.personoid.goals.defense;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import us.notnotdoddy.personoid.goals.PersonoidGoal;
+import us.notnotdoddy.personoid.goals.NPCGoal;
+import us.notnotdoddy.personoid.npc.NPCTarget;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
-import us.notnotdoddy.personoid.npc.TargetHandler;
 import us.notnotdoddy.personoid.status.Behavior;
-import us.notnotdoddy.personoid.utils.ChatMessage;
 
-public class AttackMeanPlayersGoal extends PersonoidGoal {
-
-    // Goal system example.
-    int botRange = 10;
+public class AttackMeanPlayersGoal extends NPCGoal {
+    private final int botRange = 10;
 
     public AttackMeanPlayersGoal() {
         super(true, GoalPriority.HIGH);
     }
 
     @Override
-    public void initializeGoal(PersonoidNPC personoidNPC) {
-        personoidNPC.sendChatMessage(ChatMessage.getResponse(Behavior.Mood.ANGRY, "attack-player"));
-        personoidNPC.setMainHandItem(new ItemStack(Material.IRON_SWORD));
-        TargetHandler.setLivingEntityTarget(personoidNPC, personoidNPC.getClosestPlayer(), true);
+    public void initializeGoal(PersonoidNPC npc) {
+        npc.sendMessage(Behavior.Mood.ANGRY, "attack-player");
+        npc.setItemInMainHand(new ItemStack(Material.IRON_SWORD));
+        npc.target(new NPCTarget(npc.getClosestPlayer(), NPCTarget.EntityTargetType.ATTACK));
     }
 
     @Override
-    public void endGoal(PersonoidNPC personoidNPC) {
-        personoidNPC.sendChatMessage(ChatMessage.getResponse(Behavior.Mood.ANGRY, "attack-player-end"));
-        personoidNPC.setMainHandItem(null);
-        personoidNPC.forgetCurrentTarget();
+    public void endGoal(PersonoidNPC npc) {
+        npc.sendMessage(Behavior.Mood.ANGRY, "attack-player-end");
+        npc.setItemInMainHand(null);
+        npc.forgetTarget();
     }
 
     @Override
-    public boolean canStart(PersonoidNPC personoidNPC) {
+    public boolean canStart(PersonoidNPC npc) {
         //Bukkit.broadcastMessage(personoidNPC.players.get(personoidNPC.getClosestPlayerToNPC()).getMoodValue(Behavior.Mood.ANGRY) + "");
-        return personoidNPC.data.players.get(personoidNPC.getClosestPlayer().getUniqueId()).isTarget() &&
-                personoidNPC.getClosestPlayer().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) <= botRange;
+        return npc.isTarget(npc.getClosestPlayer()) && npc.getClosestPlayer().getLocation().distance(npc.getEntity().getLocation()) <= botRange;
     }
 
     @Override
-    public void tick(PersonoidNPC personoidNPC) {
-        if (personoidNPC.getEntityTarget().getLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3){
-            personoidNPC.hitTarget(personoidNPC.getEntityTarget(), 6, 20);
+    public void tick(PersonoidNPC npc) {
+        if (npc.getEntityTarget().getLocation().distance(npc.getEntity().getLocation()) < 3){
+            npc.hitTarget(npc.getEntityTarget(), 6, 20);
         }
     }
 
     @Override
-    public boolean shouldStop(PersonoidNPC personoidNPC) {
-        return personoidNPC.getLivingEntity().getLocation().distance(personoidNPC.getEntityTarget().getLocation()) > (botRange+5);
+    public boolean shouldStop(PersonoidNPC npc) {
+        return npc.getEntity().getLocation().distance(npc.getEntityTarget().getLocation()) > botRange + 5;
     }
 }

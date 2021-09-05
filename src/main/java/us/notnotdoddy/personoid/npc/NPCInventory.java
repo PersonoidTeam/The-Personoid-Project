@@ -12,16 +12,16 @@ import us.notnotdoddy.personoid.npc.resourceGathering.ResourceTypes;
 
 import java.util.HashMap;
 
-public class PersonoidNPCInventory {
+public class NPCInventory {
     private final PersonoidNPC npc;
     private final Inventory inventory;
     private ItemStack[] armor = new ItemStack[4];
     private ItemStack[] extra = new ItemStack[4];
     private final ItemStack[] hands = new ItemStack[2];
 
-    public PersonoidNPCInventory(PersonoidNPC npc) {
+    public NPCInventory(PersonoidNPC npc) {
         this.npc = npc;
-        inventory = Bukkit.createInventory(npc, 36);
+        inventory = Bukkit.createInventory(null, 36);
     }
 
     public PersonoidNPC getNPC() {
@@ -245,7 +245,7 @@ public class PersonoidNPCInventory {
 
     public void setArmorContents(@Nullable ItemStack[] items) {
         armor = items;
-        npc.getLivingEntity().getEquipment().setArmorContents(items);
+        npc.getEntity().getEquipment().setArmorContents(items);
     }
 
     public void setExtraContents(@Nullable ItemStack[] items) {
@@ -254,22 +254,22 @@ public class PersonoidNPCInventory {
     
     public void setHelmet(@Nullable ItemStack helmet) {
         armor[0] = helmet;
-        npc.getLivingEntity().getEquipment().setHelmet(helmet);
+        npc.getEntity().getEquipment().setHelmet(helmet);
     }
 
     public void setChestplate(@Nullable ItemStack chestplate) {
         armor[1] = chestplate;
-        npc.getLivingEntity().getEquipment().setChestplate(chestplate);
+        npc.getEntity().getEquipment().setChestplate(chestplate);
     }
 
     public void setLeggings(@Nullable ItemStack leggings) {
         armor[2] = leggings;
-        npc.getLivingEntity().getEquipment().setLeggings(leggings);
+        npc.getEntity().getEquipment().setLeggings(leggings);
     }
 
     public void setBoots(@Nullable ItemStack boots) {
         armor[3] = boots;
-        npc.getLivingEntity().getEquipment().setBoots(boots);
+        npc.getEntity().getEquipment().setBoots(boots);
     }
 
     @NotNull
@@ -279,7 +279,7 @@ public class PersonoidNPCInventory {
 
     public void setItemInMainHand(@Nullable ItemStack item) {
         hands[0] = item;
-        npc.getLivingEntity().getEquipment().setItemInMainHand(item);
+        npc.getEntity().getEquipment().setItemInMainHand(item);
     }
 
     @NotNull
@@ -289,7 +289,7 @@ public class PersonoidNPCInventory {
 
     public void setItemInOffHand(@Nullable ItemStack item) {
         hands[1] = item;
-        npc.getLivingEntity().getEquipment().setItemInOffHand(item);
+        npc.getEntity().getEquipment().setItemInOffHand(item);
     }
     
     public int getHeldItemSlot() {

@@ -10,7 +10,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PersonoidNPCHandler {
+public class NPCHandler {
     public static final NPCRegistry registry = CitizensAPI.getNPCRegistry();
     private static final Map<NPC, PersonoidNPC> NPCs = new HashMap<>();
 

@@ -2,21 +2,21 @@ package us.notnotdoddy.personoid.goals;
 
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 
-public abstract class PersonoidGoal {
-    final boolean shouldOverrideExistingGoals;
-    final GoalPriority goalPriority;
+public abstract class NPCGoal {
+    final boolean overrideExistingGoals;
+    final GoalPriority priority;
 
-    public PersonoidGoal(boolean shouldOverrideExistingGoals, GoalPriority goalPriority) {
-        this.shouldOverrideExistingGoals = shouldOverrideExistingGoals;
-        this.goalPriority = goalPriority;
+    public NPCGoal(boolean overrideExistingGoals, GoalPriority priority) {
+        this.overrideExistingGoals = overrideExistingGoals;
+        this.priority = priority;
     }
 
     public boolean shouldOverrideExisting(){
-        return shouldOverrideExistingGoals;
+        return overrideExistingGoals;
     }
 
-    public GoalPriority getGoalPriority(){
-        return goalPriority;
+    public GoalPriority getPriority(){
+        return priority;
     }
 
     public abstract void initializeGoal(PersonoidNPC personoidNPC);
@@ -32,10 +32,11 @@ public abstract class PersonoidGoal {
 
     // Made to account for alot of different goals, dont be shy to add in more priorities if you want.
     public enum GoalPriority {
-        HIGH(1),
+        HIGHEST(1),
+        HIGH(0.75),
         MEDIUM(0.5),
-        LOW(0)
-        ;
+        LOW(0.25),
+        LOWEST(0);
 
         final double doubleValue;
 

@@ -1,26 +1,28 @@
 package us.notnotdoddy.personoid.goals.movement;
 
-import us.notnotdoddy.personoid.goals.PersonoidGoal;
+import org.bukkit.Location;
+import us.notnotdoddy.personoid.goals.NPCGoal;
+import us.notnotdoddy.personoid.npc.NPCTarget;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
-import us.notnotdoddy.personoid.npc.TargetHandler;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
 
-public class WanderRandomlyGoal extends PersonoidGoal {
+public class WanderRandomlyGoal extends NPCGoal {
+    private int failSafeTicks;
+
     public WanderRandomlyGoal() {
         super(false, GoalPriority.LOW);
     }
 
-    int failSafeTicks = 0;
 
     @Override
-    public void initializeGoal(PersonoidNPC personoidNPC) {
-        TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
-        personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(0);
+    public void initializeGoal(PersonoidNPC npc) {
+        npc.target(new NPCTarget(LocationUtilities.getRandomLoc(npc)));
+        npc.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(0);
     }
 
     @Override
     public void endGoal(PersonoidNPC personoidNPC) {
-        personoidNPC.forgetCurrentTarget();
+        personoidNPC.forgetTarget();
         personoidNPC.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
     }
 
@@ -30,17 +32,18 @@ public class WanderRandomlyGoal extends PersonoidGoal {
     }
 
     @Override
-    public void tick(PersonoidNPC personoidNPC) {
+    public void tick(PersonoidNPC npc) {
         failSafeTicks++;
         if (failSafeTicks == 40){
-            TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
+            npc.target(new NPCTarget(LocationUtilities.getRandomLoc(npc)));
             failSafeTicks = 0;
         }
-        if (personoidNPC.getTargetLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3) {
-            TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
-            failSafeTicks = 0;
+        if (npc.hasTarget()) {
+            if (npc.data.target.getTarget(Location.class).distance(npc.getEntity().getLocation()) < 3) {
+                npc.target(new NPCTarget(LocationUtilities.getRandomLoc(npc)));
+                failSafeTicks = 0;
+            }
         }
-
     }
 
     @Override

@@ -6,7 +6,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
-import us.notnotdoddy.personoid.npc.PersonoidNPCInventory;
+import us.notnotdoddy.personoid.npc.NPCInventory;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.resourceGathering.actions.GatherAction;
 import us.notnotdoddy.personoid.utils.DebugMessage;
@@ -19,18 +19,17 @@ import java.util.List;
 public class ResourceManager {
 
     private final PersonoidNPC personoidNPC;
-    private final PersonoidNPCInventory baseInventory;
+    private NPCInventory baseInventory;
     // Unrealistic for bots to resource gather forever with 0 breaks, even robots need to rest sometimes.
     private int restTime = 0;
     public boolean isDoingSomething = false;
     public boolean isPaused = false;
-    private List<GatherStage> gatherStages = new ArrayList<>();
+    private final List<GatherStage> gatherStages = new ArrayList<>();
     private GatherStage activeGatherStage = null;
 
 
     public ResourceManager(PersonoidNPC personoidNPC) {
         this.personoidNPC = personoidNPC;
-        this.baseInventory = personoidNPC.data.inventory;
     }
 
     public void tick(){
@@ -64,6 +63,9 @@ public class ResourceManager {
     }
 
     public boolean attemptCraft(Material itemStack){
+        if (baseInventory == null) {
+            baseInventory = personoidNPC.data.inventory;
+        }
         for (Iterator<Recipe> it = Bukkit.getServer().recipeIterator(); it.hasNext(); ) {
             Recipe recipe = it.next();
             if (recipe.getResult().getType().equals(itemStack)) {
@@ -104,7 +106,7 @@ public class ResourceManager {
                 baseInventory.removeMaterialCount(removalMaterial, requiredItems.get(removalMaterial));
             }
             //baseInventory.addItem(recipe.getResult());
-            personoidNPC.setMainHandItem(result);
+            personoidNPC.setItemInMainHand(result);
             DebugMessage.attemptMessage("NPC has successfully crafted the item!");
             return true;
         }

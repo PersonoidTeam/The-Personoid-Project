@@ -12,12 +12,12 @@ import org.bukkit.event.EventHandler;
 import us.notnotdoddy.personoid.status.Behavior;
 import us.notnotdoddy.personoid.player.PlayerInfo;
 
-public class PersonoidNPCEvents {
+public class NPCEvents {
     public static void init() {
         new FluidListener<>(NPCDeathEvent.class) {
             @Override
             public void run() {
-                PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(getData().getNPC());
+                PersonoidNPC npc = NPCHandler.getNPCs().get(getData().getNPC());
                 npc.initialised = false;
                 npc.spawn(npc.data.spawnPoint);
                 if (npc.data.lastDamager != null) {
@@ -32,14 +32,14 @@ public class PersonoidNPCEvents {
         new FluidListener.Group() {
             @EventHandler
             public void damage(NPCDamageEvent e) {
-                PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(e.getNPC());
+                PersonoidNPC npc = NPCHandler.getNPCs().get(e.getNPC());
                 npc.data.lastDamager = null;
             }
 
             @EventHandler
             public void damageByEntity(NPCDamageByEntityEvent e) {
                 if (e.getDamager() instanceof Player player) {
-                    PersonoidNPC npc = PersonoidNPCHandler.getNPCs().get(e.getNPC());
+                    PersonoidNPC npc = NPCHandler.getNPCs().get(e.getNPC());
                     PlayerInfo info = npc.data.players.get(player.getUniqueId());
                     npc.data.lastDamager = player.getUniqueId();
                     info.incrementMoodStrength(Behavior.Mood.ANGRY, ((float) (1.1F * e.getDamage()))/10);
@@ -50,7 +50,7 @@ public class PersonoidNPCEvents {
         new RepeatingTask(0, 5, true) {
             @Override
             public void run() {
-                for (PersonoidNPC personoidNPC : PersonoidNPCHandler.getNPCs().values()){
+                for (PersonoidNPC personoidNPC : NPCHandler.getNPCs().values()){
                     if (personoidNPC.isHibernating()){
                         boolean foundAPlayerLoadingZone = false;
                         for (Player player : Bukkit.getOnlinePlayers()){

@@ -7,7 +7,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
-import us.notnotdoddy.personoid.npc.PersonoidNPCHandler;
+import us.notnotdoddy.personoid.npc.NPCHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,11 +24,11 @@ public class LocationUtilities {
     }
 
     public static Location getRandomLoc(PersonoidNPC npc) {
-        Location loc = npc.getLivingEntity().getLocation().clone();
+        Location loc = npc.getEntity().getLocation().clone();
         double x = loc.getX() + FluidUtils.random(-20, 20);
         double z = loc.getZ() + FluidUtils.random(-20, 20);
-        double y = npc.getLivingEntity().getLocation().getWorld().getHighestBlockYAt((int) x, (int) z) + 1;
-        return new Location(npc.getLivingEntity().getLocation().getWorld(), x, y, z);
+        double y = npc.getEntity().getLocation().getWorld().getHighestBlockYAt((int) x, (int) z) + 1;
+        return new Location(npc.getEntity().getLocation().getWorld(), x, y, z);
     }
 
     public static boolean withinMargin(Location firstLocation, Location secondLocation, double margin){
@@ -44,7 +44,7 @@ public class LocationUtilities {
         }
     }
 
-    public static Location getNearestStandableLocation(Location origin){
+    public static Location getNearestValidLocation(Location origin){
         Location standable = null;
         for (BlockFace blockFace : blockFaces){
             if (getFirstLowest(origin.getBlock().getRelative(blockFace).getLocation(), 5) != null){
@@ -85,9 +85,9 @@ public class LocationUtilities {
     public static PersonoidNPC getClosestNPC(Location loc) {
         PersonoidNPC closestNPC = null;
         double closestDistance = 0;
-        for (PersonoidNPC npc : PersonoidNPCHandler.getNPCs().values()) {
-            if (npc.getLivingEntity().getWorld() == loc.getWorld()) {
-                double distance = npc.getLivingEntity().getLocation().distance(loc);
+        for (PersonoidNPC npc : NPCHandler.getNPCs().values()) {
+            if (npc.getEntity().getWorld() == loc.getWorld()) {
+                double distance = npc.getEntity().getLocation().distance(loc);
                 if (closestNPC == null || distance < closestDistance) {
                     closestDistance = distance;
                     closestNPC = npc;

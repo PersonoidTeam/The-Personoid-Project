@@ -8,8 +8,8 @@ import org.bukkit.block.Furnace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
+import us.notnotdoddy.personoid.npc.NPCTarget;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
-import us.notnotdoddy.personoid.npc.TargetHandler;
 import us.notnotdoddy.personoid.npc.resourceGathering.ResourceTypes;
 import us.notnotdoddy.personoid.utils.DebugMessage;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
@@ -24,7 +24,7 @@ public class GatherAction {
 
     public boolean isCompleted = false;
     private final ResourceTypes gatherType;
-    private final PersonoidNPC personoidNPC;
+    private final PersonoidNPC npc;
     private Block targetBlock = null;
     private Material materialWhenStarted = null;
     private Material pickedUpMaterial = null;
@@ -42,9 +42,9 @@ public class GatherAction {
 
     private boolean hasTransferedToFurnace = false;
 
-    public GatherAction(ResourceTypes gatherType, PersonoidNPC personoidNPC, int targetAmount) {
+    public GatherAction(ResourceTypes gatherType, PersonoidNPC npc, int targetAmount) {
         this.gatherType = gatherType;
-        this.personoidNPC = personoidNPC;
+        this.npc = npc;
         this.targetAmount = targetAmount;
         if (gatherType.shouldBeSmelted){
             probableCoalCount = 4;
@@ -62,15 +62,16 @@ public class GatherAction {
 
     private void lookForNewBlock(){
         boolean foundBlock = false;
-        for (Block block : getBlocksInSphere(personoidNPC.getLivingEntity().getLocation(), 10)){
+        for (Block block : getBlocksInSphere(npc.getEntity().getLocation(), 10)){
             if (gatherType.contains(block.getType()) || shouldGetThatCoal(block.getType())){
                 targetBlock = block;
                 materialWhenStarted = targetBlock.getType();
                 if (wasLooking){
-                    personoidNPC.forgetCurrentTarget();
+                    npc.forgetTarget();
                     wasLooking = false;
                 }
-                TargetHandler.setBlockTarget(personoidNPC, LocationUtilities.getNearestStandableLocation(targetBlock.getLocation()).getBlock(), true);
+                npc.target(new NPCTarget(LocationUtilities.getNearestValidLocation(targetBlock.getLocation()).getBlock(),
+                        NPCTarget.BlockTargetType.BREAK));
                 foundBlock = true;
                 DebugMessage.attemptMessage("Found block");
             }
@@ -79,16 +80,12 @@ public class GatherAction {
             wasLooking = true;
             DebugMessage.attemptMessage("Wandering because didnt find block");
             failSafeTicks++;
-            if (personoidNPC.getTargetLocation() == null){
-                Location location = LocationUtilities.getRandomLoc(personoidNPC);
-                TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getNearestStandableLocation(location));
+            if (!npc.hasTarget()){
+                Location location = LocationUtilities.getRandomLoc(npc);
+                npc.target(new NPCTarget(LocationUtilities.getNearestValidLocation(location)));
             }
-            if (failSafeTicks == 40){
-                TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
-                failSafeTicks = 0;
-            }
-            if (personoidNPC.getTargetLocation().distance(personoidNPC.getLivingEntity().getLocation()) < 3) {
-                TargetHandler.setNothingTarget(personoidNPC, LocationUtilities.getRandomLoc(personoidNPC));
+            if (failSafeTicks == 40 || npc.getLocationTarget().distance(npc.getEntity().getLocation()) < 3){
+                npc.target(new NPCTarget(LocationUtilities.getRandomLoc(npc)));
                 failSafeTicks = 0;
             }
         }
@@ -103,26 +100,26 @@ public class GatherAction {
             else {
                 if (hasPlacedFurnace()){
                     Furnace furnace = (Furnace) furnaceBlock.getState();
-                    if (personoidNPC.getLivingEntity().getLocation().distance(furnaceBlock.getLocation()) >= 6){
-                        TargetHandler.setBlockTarget(personoidNPC, furnaceBlock.getRelative(BlockFace.UP), false);
+                    if (npc.getEntity().getLocation().distance(furnaceBlock.getLocation()) >= 6){
+                        npc.target(new NPCTarget(furnaceBlock.getRelative(BlockFace.UP)));
                     }
                     if (!hasTransferedToFurnace){
                         hasTransferedToFurnace = true;
                         furnace.getInventory().setFuel(new ItemStack(Material.COAL, probableCoalCount));
-                        personoidNPC.data.inventory.removeMaterialCount(Material.COAL, probableCoalCount);
+                        npc.data.inventory.removeMaterialCount(Material.COAL, probableCoalCount);
 
                         furnace.getInventory().setSmelting(new ItemStack(pickedUpMaterial, targetAmount));
-                        personoidNPC.data.inventory.removeMaterialCount(pickedUpMaterial, targetAmount);
+                        npc.data.inventory.removeMaterialCount(pickedUpMaterial, targetAmount);
                     }
                     if (furnace.getInventory().getResult() != null){
                         if (furnace.getInventory().getResult().getAmount() >= targetAmount){
                             if (furnace.getInventory().getFuel() != null){
-                                personoidNPC.data.inventory.addItem(furnace.getInventory().getFuel().clone());
+                                npc.data.inventory.addItem(furnace.getInventory().getFuel().clone());
                                 furnace.getInventory().setFuel(null);
                             }
-                            personoidNPC.data.inventory.addItem(furnace.getInventory().getResult().clone());
+                            npc.data.inventory.addItem(furnace.getInventory().getResult().clone());
                             furnace.getInventory().setResult(null);
-                            personoidNPC.resume();
+                            npc.resume();
 
                             isCompleted = true;
                         }
@@ -130,30 +127,30 @@ public class GatherAction {
                 }
                 else {
                     DebugMessage.attemptMessage("Placed furnace");
-                    personoidNPC.setMainHandItem(new ItemStack(Material.FURNACE));
-                    personoidNPC.getLivingEntity().getLocation().clone().add(1,0,0).getBlock().setType(Material.FURNACE);
-                    furnaceBlock = personoidNPC.getLivingEntity().getLocation().clone().add(1,0,0).getBlock();
+                    npc.setItemInMainHand(new ItemStack(Material.FURNACE));
+                    npc.getEntity().getLocation().clone().add(1,0,0).getBlock().setType(Material.FURNACE);
+                    furnaceBlock = npc.getEntity().getLocation().clone().add(1,0,0).getBlock();
                 }
             }
         }
         else {
-            if (!personoidNPC.isHibernating()){
+            if (!npc.isHibernating()){
                 if (targetBlock != null){
                     if (!targetBlock.getType().equals(materialWhenStarted)){
                         DebugMessage.attemptMessage("Target block is no longer correct.");
                         if (targetBlock != null){
-                            personoidNPC.forgetCurrentTarget();
+                            npc.forgetTarget();
                             targetBlock = null;
                             materialWhenStarted = null;
                         }
                         if (wasBreaking){
                             DebugMessage.attemptMessage("was breaking!");
-                            for (Entity entity : personoidNPC.getLivingEntity().getNearbyEntities(4, 4, 4)){
+                            for (Entity entity : npc.getEntity().getNearbyEntities(4, 4, 4)){
                                 if (entity instanceof Item item){
                                     ItemStack itemStack = item.getItemStack();
                                     DebugMessage.attemptMessage("itemstack");
                                     if (gatherType.contains(itemStack.getType()) || shouldGetThatCoal(itemStack.getType())){
-                                        personoidNPC.data.inventory.addItem(itemStack);
+                                        npc.data.inventory.addItem(itemStack);
                                         item.remove();
                                         if (gatherType.contains(itemStack.getType())){
                                             if (pickedUpMaterial == null){
@@ -176,14 +173,14 @@ public class GatherAction {
                             }
                             wasBreaking = false;
                         }
-                        personoidNPC.resume();
+                        npc.resume();
                         lookForNewBlock();
                     }
                     else {
-                        if (personoidNPC.getLivingEntity().getLocation().distance(targetBlock.getLocation()) <= 3 && !personoidNPC.data.paused){
+                        if (npc.getEntity().getLocation().distance(targetBlock.getLocation()) <= 3 && !npc.data.paused){
                             wasBreaking = true;
-                            personoidNPC.getProperMiningTool(targetBlock);
-                            personoidNPC.breakBlock(targetBlock.getLocation());
+                            npc.setToolFromBlock(targetBlock);
+                            npc.breakBlock(targetBlock.getLocation());
                         }
                     }
                 }
@@ -195,13 +192,13 @@ public class GatherAction {
                 DebugMessage.attemptMessage("Im hibernating");
                 // Haha, now we can do the lame stuff. Funny how this is literally all code to DISPLAY them getting the resources in the case that someone is watching
                 // Which is probably not even going to be that common.
-                if (random.nextDouble() <= personoidNPC.data.behavior.getType().resourceGatheringSkill){
+                if (random.nextDouble() <= npc.data.behavior.type().resourceGatheringSkill){
                     successChecks++;
                 }
                 if (successChecks == 100){
                     for (Material material : Material.values()){
                         if (gatherType.contains(material)){
-                            personoidNPC.data.inventory.addItem(new ItemStack(material));
+                            npc.data.inventory.addItem(new ItemStack(material));
                             break;
                         }
                     }

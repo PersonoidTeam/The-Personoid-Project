@@ -1,8 +1,6 @@
 package us.notnotdoddy.personoid;
 
-import com.google.gson.Gson;
 import me.definedoddy.fluidapi.*;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -10,8 +8,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
-import us.notnotdoddy.personoid.npc.PersonoidNPCEvents;
-import us.notnotdoddy.personoid.npc.PersonoidNPCHandler;
+import us.notnotdoddy.personoid.npc.NPCEvents;
+import us.notnotdoddy.personoid.npc.NPCHandler;
 import us.notnotdoddy.personoid.utils.ChatMessage;
 import us.notnotdoddy.personoid.utils.DebugMessage;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
@@ -27,7 +25,7 @@ public final class Personoid extends JavaPlugin {
         initCmds();
         initListeners();
         ChatMessage.init();
-        PersonoidNPCEvents.init();
+        NPCEvents.init();
         new FluidMessage("&aPlugin enabled!").usePrefix().send();
     }
 
@@ -41,9 +39,9 @@ public final class Personoid extends JavaPlugin {
             @Override
             public boolean run(CommandSender sender, Command cmd, String[] args) {
                 if (sender instanceof Player player) {
-                    String name = PersonoidNPCHandler.getRandomName();
-                    PersonoidNPC personoidNPC = PersonoidNPCHandler.create(name, player.getLocation());
-                    personoidNPC.startNPCTicking();
+                    String name = NPCHandler.getRandomName();
+                    PersonoidNPC personoidNPC = NPCHandler.create(name, player.getLocation());
+                    personoidNPC.startTicking();
                     new FluidMessage("&aCreated new npc: &6" + name, player).usePrefix().send();
                 }
                 return true;
@@ -53,8 +51,8 @@ public final class Personoid extends JavaPlugin {
             @Override
             public boolean run(CommandSender sender, Command cmd, String[] args) {
                 if (sender instanceof Player player) {
-                    if (PersonoidNPCHandler.getNPCs().size() > 0) {
-                        PersonoidNPC npc = PersonoidNPCHandler.getNPCs().values().stream().toList().get(0).remove();
+                    if (NPCHandler.getNPCs().size() > 0) {
+                        PersonoidNPC npc = NPCHandler.getNPCs().values().stream().toList().get(0).remove();
                         new FluidMessage("&aRemoved npc: &6" + npc.citizen.getName(), player).usePrefix().send();
                     } else {
                         new FluidMessage("&cThere are no npcs to remove!", player).usePrefix().send();
@@ -83,7 +81,7 @@ public final class Personoid extends JavaPlugin {
                                 npc.data.currentGoal.endGoal(npc);
                                 npc.data.currentGoal = null;
                             }
-                            npc.forgetCurrentTarget();
+                            npc.forgetTarget();
                             npc.data.resourceManager.isDoingSomething = true;
                             npc.data.resourceManager.attemptCraft(material);
                             new FluidMessage("Sent crafting instructions for &a" + material.getKey().getKey().toLowerCase() + "&r to &6" +
@@ -100,7 +98,7 @@ public final class Personoid extends JavaPlugin {
         new FluidListener<>(PluginDisableEvent.class) {
             @Override
             public void run() {
-                for (PersonoidNPC npc : PersonoidNPCHandler.getNPCs().values()) {
+                for (PersonoidNPC npc : NPCHandler.getNPCs().values()) {
                     npc.remove();
                 }
                 new FluidMessage("&cPlugin disabled!").usePrefix().send();

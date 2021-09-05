@@ -16,7 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.jetbrains.annotations.Nullable;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
-import us.notnotdoddy.personoid.npc.PersonoidNPCHandler;
+import us.notnotdoddy.personoid.npc.NPCHandler;
 import us.notnotdoddy.personoid.status.Behavior;
 
 import java.io.*;
@@ -82,7 +82,7 @@ public class ChatMessage {
             @Override
             public void run() {
                 PersonoidNPC npc = null;
-                List<PersonoidNPC> npcs = PersonoidNPCHandler.getNPCs().values().stream().toList();
+                List<PersonoidNPC> npcs = NPCHandler.getNPCs().values().stream().toList();
                 for (PersonoidNPC potential : npcs) {
                     if (getData().getMessage().toLowerCase().contains(potential.citizen.getName().toLowerCase())) {
                         npc = potential;
@@ -90,7 +90,7 @@ public class ChatMessage {
                 }
                 if (npcs.size() > 0) {
                     if (npc == null) {
-                        npc = npcs.size() > 1 ? npcs.get(FluidUtils.random(0, PersonoidNPCHandler.getNPCs().size() - 1)) : npcs.get(0);
+                        npc = npcs.size() > 1 ? npcs.get(FluidUtils.random(0, NPCHandler.getNPCs().size() - 1)) : npcs.get(0);
                     }
                     send(npc, getResponse(getData().getPlayer(), getData().getMessage(), npc), getData().getMessage());
                 }

@@ -3,6 +3,7 @@ package us.notnotdoddy.personoid.npc;
 import me.definedoddy.fluidapi.FluidPlugin;
 import me.definedoddy.fluidapi.tasks.DelayedTask;
 import me.definedoddy.fluidapi.tasks.RepeatingTask;
+import net.citizensnpcs.api.ai.Navigator;
 import net.citizensnpcs.api.ai.tree.BehaviorStatus;
 import net.citizensnpcs.api.npc.BlockBreaker;
 import net.citizensnpcs.api.npc.NPC;
@@ -14,15 +15,11 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
-import us.notnotdoddy.personoid.goals.PersonoidGoal;
+import us.notnotdoddy.personoid.goals.NPCGoal;
 import us.notnotdoddy.personoid.goals.defense.AttackMeanPlayersGoal;
 import us.notnotdoddy.personoid.goals.movement.WanderRandomlyGoal;
 import us.notnotdoddy.personoid.npc.resourceGathering.ResourceTypes;
-import us.notnotdoddy.personoid.player.NPCTarget;
 import us.notnotdoddy.personoid.player.PlayerInfo;
 import us.notnotdoddy.personoid.status.Behavior;
 import us.notnotdoddy.personoid.status.RemovalReason;
@@ -32,16 +29,15 @@ import us.notnotdoddy.personoid.utils.LocationUtilities;
 
 import java.util.*;
 
-public class PersonoidNPC implements InventoryHolder {
-    public PersonoidNPCData data;
+public class PersonoidNPC {
+    public NPCData data;
     private final Random random = new Random();
     public NPC citizen;
-    private RepeatingTask repeatingTask;
+    private RepeatingTask tickingTask;
     public boolean initialised;
 
-
     public PersonoidNPC(String name) {
-        citizen = PersonoidNPCHandler.registry.createNPC(EntityType.PLAYER, name);
+        citizen = NPCHandler.registry.createNPC(EntityType.PLAYER, name);
         citizen.setProtected(false);
         citizen.getNavigator().getLocalParameters().stuckAction(null);
         citizen.getNavigator().getLocalParameters().attackRange(10);
@@ -49,118 +45,18 @@ public class PersonoidNPC implements InventoryHolder {
         citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
         citizen.getNavigator().getLocalParameters().attackDelayTicks(15);
         citizen.getNavigator().getLocalParameters().useNewPathfinder(true);
-        data = new PersonoidNPCData(this);
-        data.makeResourceManager();
+        data = new NPCData(this);
         initGoals();
     }
 
-    public boolean breakBlock(Location location){
-        BlockBreaker.BlockBreakerConfiguration config = new BlockBreaker.BlockBreakerConfiguration();
-        config.item(((Player) getLivingEntity()).getInventory().getItemInMainHand());
-        config.radius(3);
-        if (!location.getBlock().getType().isAir()){
-            BlockBreaker breaker = citizen.getBlockBreaker(location.getBlock(), config);
-            if (breaker.shouldExecute()) {
-                TaskRunnable run = new TaskRunnable(breaker, getPersonoid(), location);
-                run.taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(FluidPlugin.getPlugin(), run, 0, 1);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static class TaskRunnable implements Runnable {
-        private int taskId;
-        private final BlockBreaker breaker;
-        private final Location location;
-        private final PersonoidNPC personoidNPC;
-
-        public TaskRunnable(BlockBreaker breaker, PersonoidNPC personoidNPC ,Location location) {
-            this.location = location;
-            this.breaker = breaker;
-            this.personoidNPC = personoidNPC;
-        }
-
-        @Override
-        public void run() {
-            if (breaker.run() != BehaviorStatus.RUNNING) {
-                Bukkit.getScheduler().cancelTask(taskId);
-                breaker.reset();
-                personoidNPC.resume();
-            }
-        }
-    }
-
-    public boolean isHibernating(){
-        return data.hibernating;
-    }
-
-    public void setHibernating(boolean hibernationState){
-        data.hibernating = hibernationState;
-    }
-
-    public Location getLastLocation(){
-        return data.lastLocation;
-    }
-
-    public boolean hitTarget(LivingEntity livingEntity, double damage, int cooldownTicks){
-        if (data.cooldownTicks == 0){
-            PlayerAnimation.ARM_SWING.play((Player) getLivingEntity());
-            livingEntity.damage(damage, getLivingEntity());
-            data.cooldownTicks = cooldownTicks;
-            return true;
-        }
-        return false;
-    }
-
-    public void setEntityTarget(LivingEntity entity){
-        data.target = new NPCTarget(entity);
-    }
-
-    public LivingEntity getEntityTarget() {
-        return data.target.getTarget(LivingEntity.class);
-    }
-
-    public void forgetCurrentTarget(){
-        citizen.getNavigator().cancelNavigation();
-        data.targetLocation = null;
-        data.target = null;
-        data.targetType = TargetHandler.TargetType.NOTHING;
-    }
-
-    public void initGoals(){
+    public void initGoals() {
         data.goals.add(new AttackMeanPlayersGoal());
         data.goals.add(new WanderRandomlyGoal());
     }
 
-    public void sendChatMessage(String message){
-        ChatMessage.send(getPersonoid(), message);
-    }
-
-    public void setTargetLocation(Location location){
-        data.targetLocation = location.clone();
-    }
-
-    public Location getTargetLocation(){
-        return data.targetLocation;
-    }
-
-    public void setMainHandItem(ItemStack item){
-        getNPCInventory().setItemInMainHand(item);
-    }
-
-    // For when we need the living entity rather than generic, saves precious casting time haha
-    public LivingEntity getLivingEntity() {
-        return (LivingEntity) citizen.getEntity();
-    }
-
-    public Player getPlayer() {
-        return (Player) citizen.getEntity();
-    }
-
     public PersonoidNPC spawn(Location location) {
         citizen.spawn(location);
-        PersonoidNPCHandler.getNPCs().put(citizen, this);
+        NPCHandler.getNPCs().put(citizen, this);
         data.spawnPoint = location.getWorld().getSpawnLocation();
         new DelayedTask(60) {
             @Override
@@ -172,28 +68,17 @@ public class PersonoidNPC implements InventoryHolder {
         return this;
     }
 
-    private void updateLocationOrAssumeStuck(){
-        if (!data.updatedLocationThisTick){
-            data.updatedLocationThisTick = true;
-            data.lastLocation = getLivingEntity().getLocation().clone();
-        }
-        else {
-            data.stuck = LocationUtilities.withinMargin(data.lastLocation.clone(), getLivingEntity().getLocation().clone(), 0.05);
-            data.updatedLocationThisTick = false;
-        }
-    }
-
     public void onInitialised() {
-        data.lastLocation = getLivingEntity().getLocation().clone();
-        //getPersonoid().resourceManager.attemptCraft(Material.CRAFTING_TABLE);
+        data.lastLocation = getEntity().getLocation().clone();
+        //data.resourceManager.attemptCraft(Material.IRON_HELMET);
     }
 
     public PersonoidNPC remove() {
-        repeatingTask.cancel();
-        PersonoidNPCHandler.getNPCs().remove(citizen);
+        tickingTask.cancel();
+        NPCHandler.getNPCs().remove(citizen);
         citizen.despawn();
         data.removalReason = RemovalReason.FULLY_REMOVED;
-        PersonoidNPCHandler.registry.deregister(citizen);
+        NPCHandler.registry.deregister(citizen);
         return this;
     }
 
@@ -209,81 +94,196 @@ public class PersonoidNPC implements InventoryHolder {
         return this;
     }
 
-    private PersonoidNPC getPersonoid(){
-        return this;
-    }
-
-    // This is for goals and whatnot, prevents having to check for closest player eeeverrryy time we want to do something in relation.
-    public Player getClosestPlayer(){
-        return data.getClosestPlayer();
-    }
-
-    // Moved it here as I didnt see the need for the ticking to be universal.
-    public void startNPCTicking() {
-        repeatingTask = new RepeatingTask(0, 1) {
+    public void startTicking() {
+        tickingTask = new RepeatingTask(0, 1) {
             @Override
             public void run() {
-                data.resourceManager.tick();
                 if (initialised && citizen.isSpawned()) {
                     if (data.cooldownTicks > 0){
                         data.cooldownTicks--;
                     }
                     if (!data.paused){
+                        // moved resource tick inside pause check, not sure if this breaks anything yet
+                        data.resourceManager.tick();
                         if (citizen.getNavigator().isNavigating()){
                             data.flocker.run();
                         }
-                        data.closestPlayer = LocationUtilities.getClosestPlayer(getLivingEntity().getLocation()).getUniqueId();
+                        data.closestPlayer = LocationUtilities.getClosestPlayer(getEntity().getLocation()).getUniqueId();
                         updateLocationOrAssumeStuck();
                         selectGoal();
                         if (data.currentGoal != null){
-                            data.currentGoal.tick(getPersonoid());
-                            if (data.currentGoal.shouldStop(getPersonoid())){
-                                data.currentGoal.endGoal(getPersonoid());
+                            data.currentGoal.tick(getNPC());
+                            if (data.currentGoal.shouldStop(getNPC())){
+                                data.currentGoal.endGoal(getNPC());
                                 data.currentGoal = null;
                                 data.resourceManager.isPaused = false;
                             }
                         }
                         for (Map.Entry<UUID, PlayerInfo> entry : data.players.entrySet()) {
                             for (Behavior.Mood mood : Behavior.Mood.values()) {
-                                entry.getValue().decrementMoodStrength(mood, data.behavior.getType().retentionDecrement);
+                                entry.getValue().decrementMoodStrength(mood, data.behavior.type().retentionDecrement);
                             }
+                        }
+                        if (citizen.getEntity().isInWater() && !getEntity().isSwimming()) {
+                            getEntity().setSwimming(true);
+                        } else if (!citizen.getEntity().isInWater() && getEntity().isSwimming()) {
+                            getEntity().setSwimming(false);
                         }
                     }
                 }
-                else {
-                    if (initialised){
-                        if (data.hibernating){
-                            unloadedEntityTicking();
-                        }
-                        if (data.removalReason == RemovalReason.DIED) {
-                            if (data.currentGoal != null){
-                                data.currentGoal.endGoal(getPersonoid());
-                                data.currentGoal = null;
-                            }
-                        }
-                        else if (data.removalReason == RemovalReason.FULLY_REMOVED) {
-                            data.currentGoal = null;
-                            cancel();
-                        }
-                        else {
-                            data.currentGoal = null;
-                            data.hibernating = true;
-                            data.originalLastLocation = data.lastLocation.clone();
-                        }
-                        initialised = false;
+                else if (initialised){
+                    if (data.hibernating){
+                        unloadedEntityTicking();
                     }
-
+                    if (data.removalReason == RemovalReason.DIED) {
+                        if (data.currentGoal != null){
+                            data.currentGoal.endGoal(getNPC());
+                            data.currentGoal = null;
+                        }
+                    }
+                    else if (data.removalReason == RemovalReason.FULLY_REMOVED) {
+                        data.currentGoal = null;
+                        cancel();
+                    }
+                    else {
+                        data.currentGoal = null;
+                        data.hibernating = true;
+                        data.originalLastLocation = data.lastLocation.clone();
+                    }
+                    initialised = false;
                 }
             }
         };
     }
 
-    public void getProperMiningTool(Block block){
+    public boolean breakBlock(Location location) {
+        BlockBreaker.BlockBreakerConfiguration config = new BlockBreaker.BlockBreakerConfiguration();
+        config.item(((Player) getEntity()).getInventory().getItemInMainHand());
+        config.radius(3);
+        if (!location.getBlock().getType().isAir()) {
+            BlockBreaker breaker = citizen.getBlockBreaker(location.getBlock(), config);
+            if (breaker.shouldExecute()) {
+                BlockBreakerTask run = new BlockBreakerTask(breaker, getNPC(), location);
+                run.taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(FluidPlugin.getPlugin(), run, 0, 1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hitTarget(LivingEntity livingEntity, double damage, int cooldownTicks){
+        if (data.cooldownTicks == 0){
+            PlayerAnimation.ARM_SWING.play((Player) getEntity());
+            livingEntity.damage(damage, getEntity());
+            data.cooldownTicks = cooldownTicks;
+            return true;
+        }
+        return false;
+    }
+
+    //region get/set/checks
+
+    public LivingEntity getEntity() {
+        return (LivingEntity) citizen.getEntity();
+    }
+
+    public Player getPlayer() {
+        return (Player) citizen.getEntity();
+    }
+
+    public void target(NPCTarget target) {
+        target.target(this);
+    }
+
+    public <T> T getTarget(Class<T> type) {
+        return data.target.getTarget(type);
+    }
+
+    public boolean hasTarget() {
+        return data.target != null;
+    }
+
+    public Location getLocationTarget() {
+        return data.target.getTarget(Location.class);
+    }
+
+    public LivingEntity getEntityTarget() {
+        return data.target.getTarget(LivingEntity.class);
+    }
+
+    public Block getBlockTarget() {
+        return data.target.getTarget(Block.class);
+    }
+
+    public void forgetTarget() {
+        data.target = null;
+        citizen.getNavigator().cancelNavigation();
+    }
+
+    public void sendMessage(String message) {
+        ChatMessage.send(getNPC(), message);
+    }
+
+    public void sendMessage(Behavior.Mood mood, String tag) {
+        ChatMessage.send(getNPC(), ChatMessage.getResponse(mood, tag));
+    }
+
+    private PersonoidNPC getNPC(){
+        return this;
+    }
+
+    public Player getClosestPlayer(){
+        return Bukkit.getPlayer(data.closestPlayer);
+    }
+
+    public NPCInventory getInventory() {
+        return data.inventory;
+    }
+
+    public Navigator getNavigator() {
+        return citizen.getNavigator();
+    }
+
+    public boolean isHibernating(){
+        return data.hibernating;
+    }
+
+    public void setHibernating(boolean hibernating){
+        data.hibernating = hibernating;
+    }
+
+    public Location getLastLocation(){
+        return data.lastLocation;
+    }
+
+    public void setItemInMainHand(ItemStack item){
+        getInventory().setItemInMainHand(item);
+    }
+
+    public boolean isTarget(Player player) {
+        return data.players.get(player.getUniqueId()).isTarget();
+    }
+
+    //endregion
+
+    public void setToolFromBlock(Block block){
         if (ResourceTypes.LOG.contains(block.getType())){
-            setMainHandItem(new ItemStack(Material.DIAMOND_AXE));
+            setItemInMainHand(new ItemStack(Material.DIAMOND_AXE));
         }
         if (ResourceTypes.ORES.contains(block.getType())){
-            setMainHandItem(new ItemStack(Material.DIAMOND_PICKAXE));
+            setItemInMainHand(new ItemStack(Material.DIAMOND_PICKAXE));
+        }
+    }
+
+    //region hibernation
+
+    private void updateLocationOrAssumeStuck() {
+        if (!data.updatedLocationThisTick) {
+            data.updatedLocationThisTick = true;
+            data.lastLocation = getEntity().getLocation().clone();
+        } else {
+            data.stuck = LocationUtilities.withinMargin(data.lastLocation.clone(), getEntity().getLocation().clone(), 0.05);
+            data.updatedLocationThisTick = false;
         }
     }
 
@@ -303,7 +303,6 @@ public class PersonoidNPC implements InventoryHolder {
         }
     }
 
-
     // How many blocks do player usually travel in a second? Ive got no idea, Google it is.
     // Back from Google, its 5 blocks per second at full sprint speed.
     // We'll go with three, since players usually stop and investigate something on their journey.
@@ -311,75 +310,85 @@ public class PersonoidNPC implements InventoryHolder {
         if (data.hibernationTicks % 20 == 0){
             int randomX = random.nextInt((3));
             int randomZ = random.nextInt((3));
-
             if (random.nextBoolean()){
                 randomX *= -1;
             }
             if (random.nextBoolean()){
                 randomZ *= -1;
             }
-
             data.lastLocation.add(randomX, 0, randomZ);
             data.lastLocation.setY(data.lastLocation.getWorld().getHighestBlockYAt(data.lastLocation.clone()));
         }
     }
 
+    //endregion
+
+    //region goals
+
     public void selectGoal(){
-
         // We start from the lowest goal priority for comparison
-        PersonoidGoal.GoalPriority highestPriorityFound = PersonoidGoal.GoalPriority.LOW;
-
+        NPCGoal.GoalPriority highestPriorityFound = NPCGoal.GoalPriority.LOW;
         // Keep personoid goals that have matched the highest priority at the time of the check
-        HashMap<PersonoidGoal.GoalPriority, PersonoidGoal> priorityWithGoal = new HashMap<>();
-
-        // Loop through all goals and changes highest found goal prio accordingly.
+        HashMap<NPCGoal.GoalPriority, NPCGoal> priorityWithGoal = new HashMap<>();
+        // Loop through all goals and changes highest found goal priority accordingly.
         // Makes sure the goal can start first before adding it to the list of potential selected goals.
-        for (PersonoidGoal goal : data.goals){
+        for (NPCGoal goal : data.goals){
             if ( !goal.equals(data.currentGoal)){
-                if (goal.canStart(getPersonoid())){
-                    if (goal.getGoalPriority().isHigherThan(highestPriorityFound)){
-                        highestPriorityFound = goal.getGoalPriority();
+                if (goal.canStart(getNPC())){
+                    if (goal.getPriority().isHigherThan(highestPriorityFound)){
+                        highestPriorityFound = goal.getPriority();
                         priorityWithGoal.put(highestPriorityFound, goal);
                     }
-                    else if (goal.getGoalPriority() == highestPriorityFound){
-                        priorityWithGoal.put(goal.getGoalPriority(), goal);
+                    else if (goal.getPriority() == highestPriorityFound){
+                        priorityWithGoal.put(goal.getPriority(), goal);
                     }
                 }
             }
         }
-
         // Final sweep.
-        List<PersonoidGoal> finalGoals = new ArrayList<>();
-        for (PersonoidGoal.GoalPriority goalPriority : priorityWithGoal.keySet()){
+        List<NPCGoal> finalGoals = new ArrayList<>();
+        for (NPCGoal.GoalPriority goalPriority : priorityWithGoal.keySet()){
             if (goalPriority == highestPriorityFound){
                 finalGoals.add(priorityWithGoal.get(goalPriority));
             }
         }
-
         if (!finalGoals.isEmpty()){
-            PersonoidGoal finalSelectedGoal = finalGoals.get(random.nextInt(finalGoals.size()));
-            if (!data.resourceManager.isDoingSomething || finalSelectedGoal.getGoalPriority().isHigherThan(PersonoidGoal.GoalPriority.LOW)){
+            NPCGoal finalSelectedGoal = finalGoals.get(random.nextInt(finalGoals.size()));
+            if (!data.resourceManager.isDoingSomething || finalSelectedGoal.getPriority().isHigherThan(NPCGoal.GoalPriority.LOW)){
                 if (data.currentGoal == null || finalSelectedGoal.shouldOverrideExisting()){
                     if (data.currentGoal != null) {
-                        data.currentGoal.endGoal(getPersonoid());
+                        data.currentGoal.endGoal(getNPC());
                     }
                     DebugMessage.attemptMessage("Selected a new goal!");
                     data.currentGoal = finalSelectedGoal;
-                    data.currentGoal.initializeGoal(getPersonoid());
+                    data.currentGoal.initializeGoal(getNPC());
                     data.resourceManager.isPaused = true;
                 }
             }
         }
     }
 
-    @NotNull
-    @Override
-    public Inventory getInventory() {
-        return data.inventory.getInventory();
-    }
+    //endregion
 
-    @NotNull
-    public PersonoidNPCInventory getNPCInventory() {
-        return data.inventory;
+    private static class BlockBreakerTask implements Runnable {
+        private int taskId;
+        private final BlockBreaker breaker;
+        private final Location location;
+        private final PersonoidNPC personoidNPC;
+
+        public BlockBreakerTask(BlockBreaker breaker, PersonoidNPC personoidNPC, Location location) {
+            this.location = location;
+            this.breaker = breaker;
+            this.personoidNPC = personoidNPC;
+        }
+
+        @Override
+        public void run() {
+            if (breaker.run() != BehaviorStatus.RUNNING) {
+                Bukkit.getScheduler().cancelTask(taskId);
+                breaker.reset();
+                personoidNPC.resume();
+            }
+        }
     }
 }
