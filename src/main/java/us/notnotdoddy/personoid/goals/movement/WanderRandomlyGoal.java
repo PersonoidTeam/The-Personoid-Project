@@ -2,6 +2,7 @@ package us.notnotdoddy.personoid.goals.movement;
 
 import org.bukkit.Location;
 import us.notnotdoddy.personoid.goals.NPCGoal;
+import us.notnotdoddy.personoid.npc.MovementType;
 import us.notnotdoddy.personoid.npc.NPCTarget;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
@@ -16,7 +17,7 @@ public class WanderRandomlyGoal extends NPCGoal {
 
     @Override
     public void initializeGoal(PersonoidNPC npc) {
-        npc.target(new NPCTarget(LocationUtilities.getRandomLoc(npc)));
+        npc.target(new NPCTarget(LocationUtilities.getRandomLoc(npc)).setMovementType(MovementType.SNEAKING));
         npc.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(0);
     }
 

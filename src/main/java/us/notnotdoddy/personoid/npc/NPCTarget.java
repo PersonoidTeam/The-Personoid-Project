@@ -9,6 +9,8 @@ import java.util.UUID;
 
 public class NPCTarget {
     private TargetType targetType;
+    private MovementType movementType;
+    private int straightness = -1;
     private EntityTargetType entityTargetType;
     private BlockTargetType blockTargetType;
     private Location location;
@@ -57,27 +59,46 @@ public class NPCTarget {
         blockTargetType = type;
     }
 
+    public NPCTarget setMovementType(MovementType type) {
+        movementType = type;
+        return this;
+    }
+
+    public NPCTarget setStraightness(int straightness) {
+        this.straightness = straightness;
+        return this;
+    }
+
     public NPCTarget target(PersonoidNPC npc) {
         npc.data.target = this;
         if (targetType == TargetType.LOCATION) {
+            npc.getNavigator().getLocalParameters().straightLineTargetingDistance(straightness == -1 ? 0 : straightness);
             npc.getNavigator().setTarget(location);
         } else if (targetType == TargetType.ENTITY) {
-            npc.getNavigator().getLocalParameters().straightLineTargetingDistance(0);
+            npc.getNavigator().getLocalParameters().straightLineTargetingDistance(straightness == -1 ? 0 : straightness);
             if (entityTargetType == EntityTargetType.FOLLOW) {
-                npc.citizen.getNavigator().setTarget(getTarget(LivingEntity.class), false);
+                npc.getNavigator().setTarget(getTarget(LivingEntity.class), false);
             } else if (entityTargetType == EntityTargetType.ATTACK) {
-                npc.citizen.getNavigator().setTarget(getTarget(LivingEntity.class), false);
+                npc.getNavigator().setTarget(getTarget(LivingEntity.class), false);
             }
         } else if (targetType == TargetType.BLOCK) {
-            npc.citizen.getNavigator().getLocalParameters().straightLineTargetingDistance(100);
+            npc.getNavigator().getLocalParameters().straightLineTargetingDistance(straightness == -1 ? 0 : straightness);
             // note to self: in future make sure entity stops near block if it can't get to it exactly
             if (blockTargetType == BlockTargetType.LOCATION) {
-                npc.citizen.getNavigator().setTarget(block.getLocation());
+                npc.getNavigator().setTarget(block.getLocation());
             } else if (blockTargetType == BlockTargetType.BREAK) {
                 npc.breakBlock(block.getLocation());
             } else if (blockTargetType == BlockTargetType.INTERACT) {
                 Bukkit.broadcastMessage("Block interaction is not yet implemented");
             }
+        }
+        if (movementType == MovementType.SNEAKING) {
+            npc.sneaking = true;
+        } else if (movementType == MovementType.SPRINTING) {
+            npc.sprinting = true;
+        } else if (movementType == MovementType.SPRINT_JUMPING) {
+            npc.sprinting = true;
+            npc.jumping = true;
         }
         return this;
     }

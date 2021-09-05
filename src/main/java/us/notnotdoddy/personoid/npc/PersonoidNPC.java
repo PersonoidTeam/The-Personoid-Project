@@ -16,6 +16,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import us.notnotdoddy.personoid.goals.NPCGoal;
 import us.notnotdoddy.personoid.goals.defense.AttackMeanPlayersGoal;
 import us.notnotdoddy.personoid.goals.movement.WanderRandomlyGoal;
@@ -30,11 +31,15 @@ import us.notnotdoddy.personoid.utils.LocationUtilities;
 import java.util.*;
 
 public class PersonoidNPC {
-    public NPCData data;
-    private final Random random = new Random();
     public NPC citizen;
-    private RepeatingTask tickingTask;
+    public NPCData data;
     public boolean initialised;
+    private final Random random = new Random();
+    private RepeatingTask tickingTask;
+    private int groundedTicks;
+    public boolean sprinting;
+    public boolean jumping;
+    public boolean sneaking;
 
     public PersonoidNPC(String name) {
         citizen = NPCHandler.registry.createNPC(EntityType.PLAYER, name);
@@ -70,6 +75,7 @@ public class PersonoidNPC {
 
     public void onInitialised() {
         data.lastLocation = getEntity().getLocation().clone();
+        //getPlayer().setSprinting(true);
         //data.resourceManager.attemptCraft(Material.IRON_HELMET);
     }
 
@@ -117,6 +123,9 @@ public class PersonoidNPC {
                                 data.currentGoal.endGoal(getNPC());
                                 data.currentGoal = null;
                                 data.resourceManager.isPaused = false;
+                                jumping = false;
+                                sneaking = false;
+                                sprinting = false;
                             }
                         }
                         for (Map.Entry<UUID, PlayerInfo> entry : data.players.entrySet()) {
@@ -124,11 +133,25 @@ public class PersonoidNPC {
                                 entry.getValue().decrementMoodStrength(mood, data.behavior.type().retentionDecrement);
                             }
                         }
-                        if (citizen.getEntity().isInWater() && !getEntity().isSwimming()) {
-                            getEntity().setSwimming(true);
-                        } else if (!citizen.getEntity().isInWater() && getEntity().isSwimming()) {
-                            getEntity().setSwimming(false);
+                        if (getPlayer().isInWater() && !getPlayer().isSwimming()) {
+                            getPlayer().setSwimming(true);
+                        } else if (!getPlayer().isInWater() && getPlayer().isSwimming()) {
+                            getPlayer().setSwimming(false);
                         }
+                        if (getPlayer().isOnGround() && jumping) {
+                            jump();
+/*                            groundedTicks++;
+                            if (groundedTicks >= 3) {
+                                jump();
+                                groundedTicks = 0;
+                            }*/
+                        }
+                        if (sneaking && !getPlayer().isSneaking()) {
+                            getPlayer().setSneaking(true);
+                        } else if (!sneaking && getPlayer().isSneaking()) {
+                            getPlayer().setSneaking(false);
+                        }
+                        getNavigator().getLocalParameters().baseSpeed(sprinting ? 1.6F : 1.15F);
                     }
                 }
                 else if (initialised){
@@ -139,6 +162,9 @@ public class PersonoidNPC {
                         if (data.currentGoal != null){
                             data.currentGoal.endGoal(getNPC());
                             data.currentGoal = null;
+                            jumping = false;
+                            sneaking = false;
+                            sprinting = false;
                         }
                     }
                     else if (data.removalReason == RemovalReason.FULLY_REMOVED) {
@@ -179,6 +205,10 @@ public class PersonoidNPC {
             return true;
         }
         return false;
+    }
+
+    public void jump() {
+        getPlayer().setVelocity(getPlayer().getVelocity().add(new Vector(0F, 0.4F, 0F)));
     }
 
     //region get/set/checks
@@ -358,6 +388,9 @@ public class PersonoidNPC {
                 if (data.currentGoal == null || finalSelectedGoal.shouldOverrideExisting()){
                     if (data.currentGoal != null) {
                         data.currentGoal.endGoal(getNPC());
+                        jumping = false;
+                        sneaking = false;
+                        sprinting = false;
                     }
                     DebugMessage.attemptMessage("Selected a new goal!");
                     data.currentGoal = finalSelectedGoal;

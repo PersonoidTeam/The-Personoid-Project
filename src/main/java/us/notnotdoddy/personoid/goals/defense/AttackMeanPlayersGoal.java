@@ -3,6 +3,7 @@ package us.notnotdoddy.personoid.goals.defense;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.goals.NPCGoal;
+import us.notnotdoddy.personoid.npc.MovementType;
 import us.notnotdoddy.personoid.npc.NPCTarget;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.status.Behavior;
@@ -18,7 +19,7 @@ public class AttackMeanPlayersGoal extends NPCGoal {
     public void initializeGoal(PersonoidNPC npc) {
         npc.sendMessage(Behavior.Mood.ANGRY, "attack-player");
         npc.setItemInMainHand(new ItemStack(Material.IRON_SWORD));
-        npc.target(new NPCTarget(npc.getClosestPlayer(), NPCTarget.EntityTargetType.ATTACK));
+        npc.target(new NPCTarget(npc.getClosestPlayer(), NPCTarget.EntityTargetType.ATTACK).setMovementType(MovementType.SPRINT_JUMPING));
     }
 
     @Override
