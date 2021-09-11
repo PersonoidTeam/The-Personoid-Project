@@ -4,7 +4,6 @@ import me.definedoddy.fluidapi.FluidPlugin;
 import me.definedoddy.fluidapi.tasks.DelayedTask;
 import me.definedoddy.fluidapi.tasks.RepeatingTask;
 import net.citizensnpcs.api.ai.Navigator;
-import net.citizensnpcs.api.ai.tree.BehaviorStatus;
 import net.citizensnpcs.api.npc.BlockBreaker;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.util.PlayerAnimation;
@@ -75,8 +74,16 @@ public class PersonoidNPC {
 
     public void onInitialised() {
         data.lastLocation = getEntity().getLocation().clone();
+        data.tickLocation = getEntity().getLocation();
         //getPlayer().setSprinting(true);
         //data.resourceManager.attemptCraft(Material.IRON_HELMET);
+    }
+
+    public void reset() {
+        data.foodLevel = 7F;
+        sneaking = false;
+        sprinting = false;
+        jumping = false;
     }
 
     public PersonoidNPC remove() {
@@ -104,13 +111,20 @@ public class PersonoidNPC {
         tickingTask = new RepeatingTask(0, 1) {
             @Override
             public void run() {
+                data.resourceManager.tick();
                 if (initialised && citizen.isSpawned()) {
                     if (data.cooldownTicks > 0){
                         data.cooldownTicks--;
                     }
+                    if (getNPC().data.target != null){
+                        if (getNPC().data.target.getTargetType() == NPCTarget.BlockTargetType.BREAK){
+                            if (getNPC().getBlockTarget().getLocation().distance(getEntity().getLocation()) < 3){
+                                setToolFromBlock(getNPC().data.target.block);
+                                breakBlock(getNPC().getBlockTarget().getLocation());
+                            }
+                        }
+                    }
                     if (!data.paused){
-                        // moved resource tick inside pause check, not sure if this breaks anything yet
-                        data.resourceManager.tick();
                         if (citizen.getNavigator().isNavigating()){
                             data.flocker.run();
                         }
@@ -127,6 +141,9 @@ public class PersonoidNPC {
                                 sneaking = false;
                                 sprinting = false;
                             }
+                        }
+                        else {
+                            data.resourceManager.isPaused = false;
                         }
                         for (Map.Entry<UUID, PlayerInfo> entry : data.players.entrySet()) {
                             for (Behavior.Mood mood : Behavior.Mood.values()) {
@@ -147,12 +164,46 @@ public class PersonoidNPC {
                             }*/
                         }
                         if (sneaking && !getPlayer().isSneaking()) {
-                            getPlayer().setSneaking(true);
+                            PlayerAnimation.SNEAK.play(getPlayer());
                         } else if (!sneaking && getPlayer().isSneaking()) {
-                            getPlayer().setSneaking(false);
+                            PlayerAnimation.STOP_SNEAKING.play(getPlayer());
                         }
-                        getNavigator().getLocalParameters().baseSpeed(sprinting ? 1.6F : 1.15F);
+                        if (sneaking) {
+                            getNavigator().getLocalParameters().baseSpeed(0.5F);
+                        } else if (sprinting && jumping) {
+                            getNavigator().getLocalParameters().baseSpeed(1.6F);
+                        } else if (sprinting) {
+                            getNavigator().getLocalParameters().baseSpeed(1.25F);
+                        } else {
+                            getNavigator().getLocalParameters().baseSpeed(1.15F);
+                        }
                     }
+                    data.moving = data.tickLocation.distance(getEntity().getLocation()) >= 0.00001F;
+                    data.tickLocation = getEntity().getLocation();
+                    if (data.moving) {
+                        if (sprinting) {
+                            data.saturation = Math.max(data.saturation - 0.002F, 0);
+                            if (data.saturation <= 0) {
+                                data.foodLevel = Math.max(data.foodLevel - 0.002F, 0);
+                            }
+                            if (data.foodLevel <= 6) {
+                                sprinting = false;
+                                jumping = false;
+                            }
+                        } else {
+                            data.saturation = Math.max(data.saturation - 0.00035F, 0);
+                            if (data.saturation <= 0) {
+                                data.foodLevel = Math.max(data.foodLevel - 0.0035F, 0);
+                            }
+                        }
+                    }
+                    if (data.saturation >= 0) {
+                        getEntity().setHealth(Math.min(getEntity().getHealth() + 0.001F, 20));
+                        data.saturation = Math.max(data.saturation - 0.001F, 0);
+                    }
+                    DebugMessage.attemptMessage("Saturation: " + data.saturation);
+                    DebugMessage.attemptMessage("Food level: " + data.foodLevel);
+                    data.target.tick();
                 }
                 else if (initialised){
                     if (data.hibernating){
@@ -357,7 +408,7 @@ public class PersonoidNPC {
 
     public void selectGoal(){
         // We start from the lowest goal priority for comparison
-        NPCGoal.GoalPriority highestPriorityFound = NPCGoal.GoalPriority.LOW;
+        NPCGoal.GoalPriority highestPriorityFound = NPCGoal.GoalPriority.LOWEST;
         // Keep personoid goals that have matched the highest priority at the time of the check
         HashMap<NPCGoal.GoalPriority, NPCGoal> priorityWithGoal = new HashMap<>();
         // Loop through all goals and changes highest found goal priority accordingly.
@@ -395,7 +446,9 @@ public class PersonoidNPC {
                     DebugMessage.attemptMessage("Selected a new goal!");
                     data.currentGoal = finalSelectedGoal;
                     data.currentGoal.initializeGoal(getNPC());
-                    data.resourceManager.isPaused = true;
+                    if (!data.resourceManager.isPaused){
+                        data.resourceManager.isPaused = true;
+                    }
                 }
             }
         }
@@ -408,6 +461,7 @@ public class PersonoidNPC {
         private final BlockBreaker breaker;
         private final Location location;
         private final PersonoidNPC personoidNPC;
+        int breakTicks = 0;
 
         public BlockBreakerTask(BlockBreaker breaker, PersonoidNPC personoidNPC, Location location) {
             this.location = location;
@@ -417,10 +471,13 @@ public class PersonoidNPC {
 
         @Override
         public void run() {
-            if (breaker.run() != BehaviorStatus.RUNNING) {
+            breakTicks++;
+            if (breakTicks >= 60){
+                location.getBlock().breakNaturally(new ItemStack(Material.DIAMOND_PICKAXE));
                 Bukkit.getScheduler().cancelTask(taskId);
-                breaker.reset();
-                personoidNPC.resume();
+            }
+            else {
+                PlayerAnimation.ARM_SWING.play(personoidNPC.getPlayer());
             }
         }
     }

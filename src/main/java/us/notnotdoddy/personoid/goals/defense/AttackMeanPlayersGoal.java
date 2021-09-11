@@ -9,7 +9,7 @@ import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.status.Behavior;
 
 public class AttackMeanPlayersGoal extends NPCGoal {
-    private final int botRange = 10;
+    private final int botRange = 20;
 
     public AttackMeanPlayersGoal() {
         super(true, GoalPriority.HIGH);
@@ -19,7 +19,7 @@ public class AttackMeanPlayersGoal extends NPCGoal {
     public void initializeGoal(PersonoidNPC npc) {
         npc.sendMessage(Behavior.Mood.ANGRY, "attack-player");
         npc.setItemInMainHand(new ItemStack(Material.IRON_SWORD));
-        npc.target(new NPCTarget(npc.getClosestPlayer(), NPCTarget.EntityTargetType.ATTACK).setMovementType(MovementType.SPRINT_JUMPING));
+        npc.target(new NPCTarget(npc.getClosestPlayer(), NPCTarget.EntityTargetType.ATTACK).setMovementType(MovementType.SPRINT_JUMPING).setStraightness(100));
     }
 
     @Override

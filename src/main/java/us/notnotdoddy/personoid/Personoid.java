@@ -1,17 +1,19 @@
 package us.notnotdoddy.personoid;
 
-import me.definedoddy.fluidapi.*;
+import me.definedoddy.fluidapi.FluidCommand;
+import me.definedoddy.fluidapi.FluidListener;
+import me.definedoddy.fluidapi.FluidMessage;
+import me.definedoddy.fluidapi.FluidPlugin;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.NPCEvents;
 import us.notnotdoddy.personoid.npc.NPCHandler;
+import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.utils.ChatMessage;
-import us.notnotdoddy.personoid.utils.DebugMessage;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
 
 import java.util.Arrays;
@@ -64,8 +66,8 @@ public final class Personoid extends JavaPlugin {
         new FluidCommand("toggledebug") {
             @Override
             public boolean run(CommandSender sender, Command cmd, String[] args) {
-                DebugMessage.enabled = !DebugMessage.enabled;
-                new FluidMessage("Toggled debug to " + (DebugMessage.enabled ? "on" : "off"), sender).send();
+/*                DebugMessage.enabled = !DebugMessage.enabled;
+                new FluidMessage("Toggled debug to " + (DebugMessage.enabled ? "on" : "off"), sender).send();*/
                 return true;
             }
         };
@@ -82,6 +84,7 @@ public final class Personoid extends JavaPlugin {
                                 npc.data.currentGoal = null;
                             }
                             npc.forgetTarget();
+                            npc.data.resourceManager.isPaused = false;
                             npc.data.resourceManager.isDoingSomething = true;
                             npc.data.resourceManager.attemptCraft(material);
                             new FluidMessage("Sent crafting instructions for &a" + material.getKey().getKey().toLowerCase() + "&r to &6" +

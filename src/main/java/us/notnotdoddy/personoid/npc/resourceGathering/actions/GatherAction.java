@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Furnace;
+import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
@@ -29,7 +30,7 @@ public class GatherAction {
     private Material materialWhenStarted = null;
     private Material pickedUpMaterial = null;
     private int targetAmount;
-    private boolean wasBreaking = false;
+    public boolean wasBreaking = false;
     private int currentAmount = 0;
     private int failSafeTicks = 0;
     private int successChecks = 0;
@@ -70,8 +71,7 @@ public class GatherAction {
                     npc.forgetTarget();
                     wasLooking = false;
                 }
-                npc.target(new NPCTarget(LocationUtilities.getNearestValidLocation(targetBlock.getLocation()).getBlock(),
-                        NPCTarget.BlockTargetType.BREAK));
+                npc.target(new NPCTarget(targetBlock.getLocation().getBlock(), NPCTarget.BlockTargetType.BREAK));
                 foundBlock = true;
                 DebugMessage.attemptMessage("Found block");
             }
@@ -98,7 +98,7 @@ public class GatherAction {
                 isCompleted = true;
             }
             else {
-                if (hasPlacedFurnace()){
+                if (hasPlacedFurnace() && furnaceBlock.getType() == Material.FURNACE){
                     Furnace furnace = (Furnace) furnaceBlock.getState();
                     if (npc.getEntity().getLocation().distance(furnaceBlock.getLocation()) >= 6){
                         npc.target(new NPCTarget(furnaceBlock.getRelative(BlockFace.UP)));
@@ -128,8 +128,13 @@ public class GatherAction {
                 else {
                     DebugMessage.attemptMessage("Placed furnace");
                     npc.setItemInMainHand(new ItemStack(Material.FURNACE));
-                    npc.getEntity().getLocation().clone().add(1,0,0).getBlock().setType(Material.FURNACE);
-                    furnaceBlock = npc.getEntity().getLocation().clone().add(1,0,0).getBlock();
+                    Location location = npc.getEntity().getLocation().clone().getBlock().getRelative(npc.getPlayer().getFacing()).getLocation();
+                    location.subtract(0,1,0);
+                    furnaceBlock = location.getBlock();
+                    furnaceBlock.setType(Material.FURNACE);
+                    Directional dir = ((Directional) furnaceBlock.getBlockData());
+                    dir.setFacing(npc.getPlayer().getFacing().getOppositeFace());
+                    furnaceBlock.setBlockData(dir);
                 }
             }
         }
@@ -142,6 +147,9 @@ public class GatherAction {
                             npc.forgetTarget();
                             targetBlock = null;
                             materialWhenStarted = null;
+                            if (targetBlock.getRelative(BlockFace.UP).getType().equals(Material.BARRIER)){
+                                targetBlock.getRelative(BlockFace.UP).setType(Material.AIR);
+                            }
                         }
                         if (wasBreaking){
                             DebugMessage.attemptMessage("was breaking!");
@@ -175,13 +183,6 @@ public class GatherAction {
                         }
                         npc.resume();
                         lookForNewBlock();
-                    }
-                    else {
-                        if (npc.getEntity().getLocation().distance(targetBlock.getLocation()) <= 3 && !npc.data.paused){
-                            wasBreaking = true;
-                            npc.setToolFromBlock(targetBlock);
-                            npc.breakBlock(targetBlock.getLocation());
-                        }
                     }
                 }
                 else {

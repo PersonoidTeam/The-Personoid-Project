@@ -20,6 +20,7 @@ public class NPCEvents {
                 PersonoidNPC npc = NPCHandler.getNPCs().get(getData().getNPC());
                 npc.initialised = false;
                 npc.spawn(npc.data.spawnPoint);
+                npc.reset();
                 if (npc.data.lastDamager != null) {
                     PlayerInfo info = npc.data.players.get(npc.data.lastDamager);
                     npc.data.players.get(npc.data.lastDamager).killedBy++;

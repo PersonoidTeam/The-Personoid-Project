@@ -6,8 +6,8 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
-import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.NPCHandler;
+import us.notnotdoddy.personoid.npc.PersonoidNPC;
 
 import java.util.ArrayList;
 import java.util.List;

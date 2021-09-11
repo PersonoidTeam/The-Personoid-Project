@@ -8,14 +8,15 @@ import org.bukkit.entity.LivingEntity;
 import java.util.UUID;
 
 public class NPCTarget {
-    private TargetType targetType;
+    private final TargetType targetType;
     private MovementType movementType;
-    private int straightness = -1;
+    private int straightness;
     private EntityTargetType entityTargetType;
     private BlockTargetType blockTargetType;
     private Location location;
     private UUID uuid;
-    private Block block;
+    public Block block;
+    private boolean travelingBeforeAction = false;
 
     public enum TargetType {
         LOCATION,
@@ -71,41 +72,46 @@ public class NPCTarget {
 
     public NPCTarget target(PersonoidNPC npc) {
         npc.data.target = this;
+        npc.getNavigator().cancelNavigation();
+        npc.getNavigator().getLocalParameters().straightLineTargetingDistance(straightness);
         if (targetType == TargetType.LOCATION) {
-            npc.getNavigator().getLocalParameters().straightLineTargetingDistance(straightness == -1 ? 0 : straightness);
             npc.getNavigator().setTarget(location);
         } else if (targetType == TargetType.ENTITY) {
-            npc.getNavigator().getLocalParameters().straightLineTargetingDistance(straightness == -1 ? 0 : straightness);
             if (entityTargetType == EntityTargetType.FOLLOW) {
                 npc.getNavigator().setTarget(getTarget(LivingEntity.class), false);
             } else if (entityTargetType == EntityTargetType.ATTACK) {
                 npc.getNavigator().setTarget(getTarget(LivingEntity.class), false);
             }
         } else if (targetType == TargetType.BLOCK) {
-            npc.getNavigator().getLocalParameters().straightLineTargetingDistance(straightness == -1 ? 0 : straightness);
             // note to self: in future make sure entity stops near block if it can't get to it exactly
             if (blockTargetType == BlockTargetType.LOCATION) {
                 npc.getNavigator().setTarget(block.getLocation());
-            } else if (blockTargetType == BlockTargetType.BREAK) {
-                npc.breakBlock(block.getLocation());
-            } else if (blockTargetType == BlockTargetType.INTERACT) {
+            }
+            else if (blockTargetType == BlockTargetType.BREAK) {
+                npc.getNavigator().setTarget(block.getLocation());
+            }
+            else if (blockTargetType == BlockTargetType.INTERACT) {
                 Bukkit.broadcastMessage("Block interaction is not yet implemented");
             }
         }
         if (movementType == MovementType.SNEAKING) {
             npc.sneaking = true;
-        } else if (movementType == MovementType.SPRINTING) {
+        } else if (movementType == MovementType.SPRINTING && npc.data.foodLevel >= 6) {
             npc.sprinting = true;
-        } else if (movementType == MovementType.SPRINT_JUMPING) {
+        } else if (movementType == MovementType.SPRINT_JUMPING && npc.data.foodLevel >= 6) {
             npc.sprinting = true;
             npc.jumping = true;
         }
         return this;
     }
 
+    public void tick() {
+
+    }
+
     public <T> T getTarget(Class<T> type) {
         if (type == LivingEntity.class) {
-            return (T)Bukkit.getEntity(uuid);
+            return Bukkit.getEntity(uuid) != null ? (T)Bukkit.getEntity(uuid) : null;
         } else if (type == Block.class) {
             return (T)block;
         } else if (type == Location.class) {

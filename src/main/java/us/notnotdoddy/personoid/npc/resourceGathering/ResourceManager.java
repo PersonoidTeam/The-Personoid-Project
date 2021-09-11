@@ -25,7 +25,7 @@ public class ResourceManager {
     public boolean isDoingSomething = false;
     public boolean isPaused = false;
     private final List<GatherStage> gatherStages = new ArrayList<>();
-    private GatherStage activeGatherStage = null;
+    public GatherStage activeGatherStage = null;
 
 
     public ResourceManager(PersonoidNPC personoidNPC) {

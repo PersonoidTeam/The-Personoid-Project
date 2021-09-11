@@ -11,7 +11,7 @@ import java.util.List;
 public class GatherStage {
 
     List<GatherAction> gatherActions = new ArrayList<>();
-    GatherAction activeAction = null;
+    public GatherAction activeAction = null;
     public boolean stageCompleted = false;
     PersonoidNPC personoidNPC = null;
     Material craftMaterial = null;

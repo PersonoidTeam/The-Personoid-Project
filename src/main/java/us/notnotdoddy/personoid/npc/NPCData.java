@@ -42,6 +42,10 @@ public class NPCData {
     public Location lastLocation;
     public Location originalLastLocation;
     public int cooldownTicks;
+    public Location tickLocation;
+    public boolean moving;
+    public float foodLevel = 7F;
+    public float saturation;
 
     public NPCData(PersonoidNPC npc) {
         this.npc = npc;
