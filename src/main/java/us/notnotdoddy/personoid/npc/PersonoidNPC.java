@@ -10,6 +10,7 @@ import net.citizensnpcs.util.PlayerAnimation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -345,6 +346,10 @@ public class PersonoidNPC {
         return data.players.get(player.getUniqueId()).isTarget();
     }
 
+    public boolean attemptCraft(Material material) {
+        return data.resourceManager.attemptCraft(material);
+    }
+
     //endregion
 
     public void setToolFromBlock(Block block){
@@ -473,7 +478,18 @@ public class PersonoidNPC {
         public void run() {
             breakTicks++;
             if (breakTicks >= 60){
-                location.getBlock().breakNaturally(new ItemStack(Material.DIAMOND_PICKAXE));
+                for (ItemStack itemStack : location.getBlock().getDrops(new ItemStack(Material.DIAMOND_PICKAXE))){
+                    personoidNPC.data.inventory.addItem(itemStack);
+                    personoidNPC.getPlayer().getWorld().playSound(personoidNPC.getPlayer().getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5F, 1F);
+                    if (!ResourceTypes.COAL.contains(itemStack.getType())){
+                        personoidNPC.data.resourceManager.activeGatherStage.activeAction.currentAmount++;
+                        personoidNPC.data.resourceManager.activeGatherStage.activeAction.pickedUpMaterial = itemStack.getType();
+                    }
+                    else {
+                        personoidNPC.data.resourceManager.activeGatherStage.activeAction.currentCoalCount++;
+                    }
+                }
+                location.getBlock().setType(Material.AIR);
                 Bukkit.getScheduler().cancelTask(taskId);
             }
             else {

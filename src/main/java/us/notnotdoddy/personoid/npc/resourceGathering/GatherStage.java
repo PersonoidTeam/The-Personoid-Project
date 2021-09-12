@@ -1,8 +1,10 @@
 package us.notnotdoddy.personoid.npc.resourceGathering;
 
 import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.resourceGathering.actions.GatherAction;
+import us.notnotdoddy.personoid.types.Types;
 import us.notnotdoddy.personoid.utils.DebugMessage;
 
 import java.util.ArrayList;
@@ -41,7 +43,12 @@ public class GatherStage {
             DebugMessage.attemptMessage("resource", "Stage completed!");
             stageCompleted = true;
             if (craftMaterial != null){
-                personoidNPC.data.resourceManager.attemptCraft(craftMaterial);
+                personoidNPC.attemptCraft(craftMaterial);
+            }
+            Material type = personoidNPC.getInventory().getItemInMainHand().getType();
+            if (Types.isArmor(type)) {
+                personoidNPC.getInventory().setItem(Types.getArmorSlotType(type), new ItemStack(type));
+                personoidNPC.setItemInMainHand(null);
             }
         }
     }

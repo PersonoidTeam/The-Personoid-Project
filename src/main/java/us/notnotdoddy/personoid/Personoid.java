@@ -4,6 +4,7 @@ import me.definedoddy.fluidapi.FluidCommand;
 import me.definedoddy.fluidapi.FluidListener;
 import me.definedoddy.fluidapi.FluidMessage;
 import me.definedoddy.fluidapi.FluidPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -17,7 +18,9 @@ import us.notnotdoddy.personoid.utils.ChatMessage;
 import us.notnotdoddy.personoid.utils.DebugMessage;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public final class Personoid extends JavaPlugin {
     //public static String colour = "#FF00AA";
@@ -45,7 +48,8 @@ public final class Personoid extends JavaPlugin {
                     String name = NPCHandler.getRandomName();
                     PersonoidNPC personoidNPC = NPCHandler.create(name, player.getLocation());
                     personoidNPC.startTicking();
-                    new FluidMessage("&aCreated new npc: &6" + name, player).usePrefix().send();
+                    new FluidMessage("&aCreated new npc: &6" + name,
+                            FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).usePrefix().send();
                 }
                 return true;
             }
@@ -56,9 +60,11 @@ public final class Personoid extends JavaPlugin {
                 if (sender instanceof Player player) {
                     if (NPCHandler.getNPCs().size() > 0) {
                         PersonoidNPC npc = NPCHandler.getNPCs().values().stream().toList().get(0).remove();
-                        new FluidMessage("&aRemoved npc: &6" + npc.citizen.getName(), player).usePrefix().send();
+                        new FluidMessage("&aRemoved npc: &6" + npc.citizen.getName(),
+                                FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).usePrefix().send();
                     } else {
-                        new FluidMessage("&cThere are no npcs to remove!", player).usePrefix().send();
+                        new FluidMessage("&cThere are no npcs to remove!",
+                                FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).usePrefix().send();
                     }
                 }
                 return true;
@@ -78,20 +84,22 @@ public final class Personoid extends JavaPlugin {
                     }
                     if (DebugMessage.isKeyActive(key.toString())) {
                         DebugMessage.removeKey(key.toString());
-                        new FluidMessage("Disabled debug for &c" + key, sender).send();
+                        new FluidMessage("Disabled debug for &c" + key,
+                                FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
                     } else {
                         DebugMessage.addKey(key.toString());
-                        FluidCommand.Argument argument = new FluidCommand.Argument(key.toString(), 1);
-                        new FluidMessage("Enabled debug for &c" + key, sender).send();
+                        new FluidMessage("Enabled debug for &c" + key,
+                                FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
                     }
                 } else {
                     if (DebugMessage.isKeyActive("default")) {
                         DebugMessage.removeKey("default");
-                        new FluidMessage("Disabled debug for &cdefault", sender).send();
+                        new FluidMessage("Disabled debug for &cdefault",
+                                FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
                     } else {
                         DebugMessage.addKey("default");
-                        FluidCommand.Argument argument = new FluidCommand.Argument("default", 1);
-                        new FluidMessage("Enabled debug for &cdefault", sender).send();
+                        new FluidMessage("Enabled debug for &cdefault",
+                                FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
                     }
                 }
                 return true;
@@ -104,7 +112,8 @@ public final class Personoid extends JavaPlugin {
             @Override
             public boolean run(CommandSender sender, Command cmd, String[] args) {
                 DebugMessage.toggleConsole();
-                new FluidMessage(DebugMessage.console() ? "Disabled debug for console" : "Enabled debug for console", sender).send();
+                new FluidMessage(DebugMessage.console() ? "Enabled debug for console" : "Disabled debug for console",
+                        FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
                 return true;
             }
         };
@@ -125,7 +134,7 @@ public final class Personoid extends JavaPlugin {
                             npc.data.resourceManager.isDoingSomething = true;
                             npc.data.resourceManager.attemptCraft(material);
                             new FluidMessage("Sent crafting instructions for &a" + material.getKey().getKey().toLowerCase() + "&r to &6" +
-                                    npc.citizen.getName(), sender).send();
+                                    npc.citizen.getName(), FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
                         }
                     } else return false;
                 }

@@ -6,8 +6,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Furnace;
 import org.bukkit.block.data.Directional;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.npc.NPCTarget;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
@@ -28,15 +26,15 @@ public class GatherAction {
     private final PersonoidNPC npc;
     private Block targetBlock = null;
     private Material materialWhenStarted = null;
-    private Material pickedUpMaterial = null;
+    public Material pickedUpMaterial = null;
     private int targetAmount;
     public boolean wasBreaking = false;
-    private int currentAmount = 0;
+    public int currentAmount = 0;
     private int failSafeTicks = 0;
     private int successChecks = 0;
     private Block furnaceBlock = null;
     private int probableCoalCount = 0;
-    private int currentCoalCount = 0;
+    public int currentCoalCount = 0;
     private boolean wasLooking = false;
 
     private int itemsTakenFromFurnace = 0;
@@ -145,42 +143,13 @@ public class GatherAction {
                         DebugMessage.attemptMessage("resource", "Target block is no longer correct.");
                         if (targetBlock != null){
                             npc.forgetTarget();
-                            targetBlock = null;
                             materialWhenStarted = null;
                             if (targetBlock.getRelative(BlockFace.UP).getType().equals(Material.BARRIER)){
                                 targetBlock.getRelative(BlockFace.UP).setType(Material.AIR);
                             }
+                            targetBlock = null;
                         }
-                        if (wasBreaking){
-                            DebugMessage.attemptMessage("resource", "was breaking!");
-                            for (Entity entity : npc.getEntity().getNearbyEntities(4, 4, 4)){
-                                if (entity instanceof Item item){
-                                    ItemStack itemStack = item.getItemStack();
-                                    DebugMessage.attemptMessage("resource", "itemstack");
-                                    if (gatherType.contains(itemStack.getType()) || shouldGetThatCoal(itemStack.getType())){
-                                        npc.data.inventory.addItem(itemStack);
-                                        item.remove();
-                                        if (gatherType.contains(itemStack.getType())){
-                                            if (pickedUpMaterial == null){
-                                                pickedUpMaterial = itemStack.getType();
-                                            }
-                                            currentAmount++;
-                                        }
-                                        else {
-                                            if (itemStack.getType().equals(Material.COAL)){
-                                                currentCoalCount += itemStack.getAmount();
-                                            }
-                                        }
-                                        DebugMessage.attemptMessage("resource", currentAmount+" blocks collected");
-                                        DebugMessage.attemptMessage("resource", "Target amount: "+targetAmount);
-                                        DebugMessage.attemptMessage("resource", currentCoalCount+" coal collected");
-                                        DebugMessage.attemptMessage("resource", "Target coal: "+probableCoalCount);
-
-                                    }
-                                }
-                            }
-                            wasBreaking = false;
-                        }
+                        wasBreaking = false;
                         npc.resume();
                         lookForNewBlock();
                     }
