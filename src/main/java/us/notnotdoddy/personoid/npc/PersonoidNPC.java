@@ -201,8 +201,8 @@ public class PersonoidNPC {
                         getEntity().setHealth(Math.min(getEntity().getHealth() + 0.001F, 20));
                         data.saturation = Math.max(data.saturation - 0.001F, 0);
                     }
-                    DebugMessage.attemptMessage("Saturation: " + data.saturation);
-                    DebugMessage.attemptMessage("Food level: " + data.foodLevel);
+                    DebugMessage.attemptMessage("food", "Saturation: " + data.saturation);
+                    DebugMessage.attemptMessage("food", "Food level: " + data.foodLevel);
                     data.target.tick();
                 }
                 else if (initialised){
@@ -443,7 +443,7 @@ public class PersonoidNPC {
                         sneaking = false;
                         sprinting = false;
                     }
-                    DebugMessage.attemptMessage("Selected a new goal!");
+                    DebugMessage.attemptMessage("goal", "Selected a new goal!");
                     data.currentGoal = finalSelectedGoal;
                     data.currentGoal.initializeGoal(getNPC());
                     if (!data.resourceManager.isPaused){

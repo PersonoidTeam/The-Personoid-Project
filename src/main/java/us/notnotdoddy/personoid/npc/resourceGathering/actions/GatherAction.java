@@ -50,7 +50,7 @@ public class GatherAction {
         if (gatherType.shouldBeSmelted){
             probableCoalCount = 4;
         }
-        DebugMessage.attemptMessage("Made gather action: "+gatherType.toString());
+        DebugMessage.attemptMessage("resource", "Made gather action: "+gatherType.toString());
     }
 
     public void init(){
@@ -73,12 +73,12 @@ public class GatherAction {
                 }
                 npc.target(new NPCTarget(targetBlock.getLocation().getBlock(), NPCTarget.BlockTargetType.BREAK));
                 foundBlock = true;
-                DebugMessage.attemptMessage("Found block");
+                DebugMessage.attemptMessage("resource", "Found block");
             }
         }
         if (!foundBlock){
             wasLooking = true;
-            DebugMessage.attemptMessage("Wandering because didnt find block");
+            DebugMessage.attemptMessage("resource", "Wandering because didnt find block");
             failSafeTicks++;
             if (!npc.hasTarget()){
                 Location location = LocationUtilities.getRandomLoc(npc);
@@ -93,7 +93,7 @@ public class GatherAction {
 
     public void tick(){
         if (targetAmount <= currentAmount && currentCoalCount >= probableCoalCount){
-            DebugMessage.attemptMessage("DONE!");
+            DebugMessage.attemptMessage("resource", "DONE!");
             if (!gatherType.shouldBeSmelted){
                 isCompleted = true;
             }
@@ -126,7 +126,7 @@ public class GatherAction {
                     }
                 }
                 else {
-                    DebugMessage.attemptMessage("Placed furnace");
+                    DebugMessage.attemptMessage("resource", "Placed furnace");
                     npc.setItemInMainHand(new ItemStack(Material.FURNACE));
                     Location location = npc.getEntity().getLocation().clone().getBlock().getRelative(npc.getPlayer().getFacing()).getLocation();
                     location.subtract(0,1,0);
@@ -142,7 +142,7 @@ public class GatherAction {
             if (!npc.isHibernating()){
                 if (targetBlock != null){
                     if (!targetBlock.getType().equals(materialWhenStarted)){
-                        DebugMessage.attemptMessage("Target block is no longer correct.");
+                        DebugMessage.attemptMessage("resource", "Target block is no longer correct.");
                         if (targetBlock != null){
                             npc.forgetTarget();
                             targetBlock = null;
@@ -152,11 +152,11 @@ public class GatherAction {
                             }
                         }
                         if (wasBreaking){
-                            DebugMessage.attemptMessage("was breaking!");
+                            DebugMessage.attemptMessage("resource", "was breaking!");
                             for (Entity entity : npc.getEntity().getNearbyEntities(4, 4, 4)){
                                 if (entity instanceof Item item){
                                     ItemStack itemStack = item.getItemStack();
-                                    DebugMessage.attemptMessage("itemstack");
+                                    DebugMessage.attemptMessage("resource", "itemstack");
                                     if (gatherType.contains(itemStack.getType()) || shouldGetThatCoal(itemStack.getType())){
                                         npc.data.inventory.addItem(itemStack);
                                         item.remove();
@@ -171,10 +171,10 @@ public class GatherAction {
                                                 currentCoalCount += itemStack.getAmount();
                                             }
                                         }
-                                        DebugMessage.attemptMessage(currentAmount+" blocks collected");
-                                        DebugMessage.attemptMessage("Target amount: "+targetAmount);
-                                        DebugMessage.attemptMessage(currentCoalCount+" coal collected");
-                                        DebugMessage.attemptMessage("Target coal: "+probableCoalCount);
+                                        DebugMessage.attemptMessage("resource", currentAmount+" blocks collected");
+                                        DebugMessage.attemptMessage("resource", "Target amount: "+targetAmount);
+                                        DebugMessage.attemptMessage("resource", currentCoalCount+" coal collected");
+                                        DebugMessage.attemptMessage("resource", "Target coal: "+probableCoalCount);
 
                                     }
                                 }
@@ -190,7 +190,7 @@ public class GatherAction {
                 }
             }
             else {
-                DebugMessage.attemptMessage("Im hibernating");
+                DebugMessage.attemptMessage("resource", "Im hibernating");
                 // Haha, now we can do the lame stuff. Funny how this is literally all code to DISPLAY them getting the resources in the case that someone is watching
                 // Which is probably not even going to be that common.
                 if (random.nextDouble() <= npc.data.behavior.type().resourceGatheringSkill){

@@ -38,7 +38,7 @@ public class GatherStage {
             }
         }
         else {
-            DebugMessage.attemptMessage("Stage completed!");
+            DebugMessage.attemptMessage("resource", "Stage completed!");
             stageCompleted = true;
             if (craftMaterial != null){
                 personoidNPC.data.resourceManager.attemptCraft(craftMaterial);

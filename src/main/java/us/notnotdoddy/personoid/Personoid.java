@@ -14,9 +14,10 @@ import us.notnotdoddy.personoid.npc.NPCEvents;
 import us.notnotdoddy.personoid.npc.NPCHandler;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.utils.ChatMessage;
+import us.notnotdoddy.personoid.utils.DebugMessage;
 import us.notnotdoddy.personoid.utils.LocationUtilities;
 
-import java.util.Arrays;
+import java.util.*;
 
 public final class Personoid extends JavaPlugin {
     //public static String colour = "#FF00AA";
@@ -63,15 +64,51 @@ public final class Personoid extends JavaPlugin {
                 return true;
             }
         };
-        new FluidCommand("toggledebug") {
+        FluidCommand debugCommand = new FluidCommand("toggledebug") {
             @Override
             public boolean run(CommandSender sender, Command cmd, String[] args) {
-/*                DebugMessage.enabled = !DebugMessage.enabled;
-                new FluidMessage("Toggled debug to " + (DebugMessage.enabled ? "on" : "off"), sender).send();*/
+                if (args.length > 0 && !args[0].equals(" ")) {
+                    StringBuilder key = new StringBuilder();
+                    List<String> filtered = new ArrayList<>(Arrays.stream(args).toList());
+                    for (int i = 0; i < filtered.size(); i++) {
+                        key.append(filtered.get(i));
+                        if (i < filtered.size() - 1) {
+                            key.append(" ");
+                        }
+                    }
+                    if (DebugMessage.isKeyActive(key.toString())) {
+                        DebugMessage.removeKey(key.toString());
+                        new FluidMessage("Disabled debug for &c" + key, sender).send();
+                    } else {
+                        DebugMessage.addKey(key.toString());
+                        FluidCommand.Argument argument = new FluidCommand.Argument(key.toString(), 1);
+                        new FluidMessage("Enabled debug for &c" + key, sender).send();
+                    }
+                } else {
+                    if (DebugMessage.isKeyActive("default")) {
+                        DebugMessage.removeKey("default");
+                        new FluidMessage("Disabled debug for &cdefault", sender).send();
+                    } else {
+                        DebugMessage.addKey("default");
+                        FluidCommand.Argument argument = new FluidCommand.Argument("default", 1);
+                        new FluidMessage("Enabled debug for &cdefault", sender).send();
+                    }
+                }
                 return true;
             }
         };
-        new FluidCommand("craft") {
+        for (String key : List.of("all", "default", "other", "food", "resource", "goal")) {
+           debugCommand.addTabArguments(new FluidCommand.Argument(key, 1));
+        }
+        new FluidCommand("debugconsole") {
+            @Override
+            public boolean run(CommandSender sender, Command cmd, String[] args) {
+                DebugMessage.toggleConsole();
+                new FluidMessage(DebugMessage.console() ? "Disabled debug for console" : "Enabled debug for console", sender).send();
+                return true;
+            }
+        };
+        FluidCommand craftCommand = new FluidCommand("craft") {
             @Override
             public boolean run(CommandSender sender, Command cmd, String[] args) {
                 if (sender instanceof Player player) {
@@ -95,6 +132,9 @@ public final class Personoid extends JavaPlugin {
                 return true;
             }
         };
+        for (Material material : Material.values()) {
+            craftCommand.addTabArguments(new FluidCommand.Argument(material.toString().toLowerCase(), 1));
+        }
     }
 
     private void initListeners() {
