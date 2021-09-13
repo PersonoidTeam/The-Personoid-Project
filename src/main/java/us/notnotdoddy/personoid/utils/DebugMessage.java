@@ -10,7 +10,7 @@ public class DebugMessage {
     private static final List<String> keys = new ArrayList<>();
     private static boolean console;
 
-    public static void attemptMessage(String key, String string) {
+    public static void log(String key, String string) {
         if (keys.contains(key)) {
             new FluidMessage("&c[DEBUG: " + key.toUpperCase() + "] &r" + string, FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
             if (console) {
@@ -19,8 +19,8 @@ public class DebugMessage {
         }
     }
 
-    public static void attemptMessage(String string) {
-        attemptMessage("default", string);
+    public static void log(String string) {
+        log("default", string);
     }
 
     public static void addKey(String key) {

@@ -85,7 +85,9 @@ public class NPCTarget {
         } else if (targetType == TargetType.BLOCK) {
             // note to self: in future make sure entity stops near block if it can't get to it exactly
             if (blockTargetType == BlockTargetType.LOCATION) {
+                // doesn't work well with larger distances atm
                 npc.getNavigator().setTarget(block.getLocation());
+                // block.getLocation().subtract(npc.getLocation()).multiply(0.90F)
             }
             else if (blockTargetType == BlockTargetType.BREAK) {
                 npc.getNavigator().setTarget(block.getLocation());

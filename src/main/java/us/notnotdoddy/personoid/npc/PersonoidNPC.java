@@ -7,10 +7,7 @@ import net.citizensnpcs.api.ai.Navigator;
 import net.citizensnpcs.api.npc.BlockBreaker;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.util.PlayerAnimation;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -26,7 +23,7 @@ import us.notnotdoddy.personoid.status.Behavior;
 import us.notnotdoddy.personoid.status.RemovalReason;
 import us.notnotdoddy.personoid.utils.ChatMessage;
 import us.notnotdoddy.personoid.utils.DebugMessage;
-import us.notnotdoddy.personoid.utils.LocationUtilities;
+import us.notnotdoddy.personoid.utils.LocationUtils;
 
 import java.util.*;
 
@@ -129,7 +126,7 @@ public class PersonoidNPC {
                         if (citizen.getNavigator().isNavigating()){
                             data.flocker.run();
                         }
-                        data.closestPlayer = LocationUtilities.getClosestPlayer(getEntity().getLocation()).getUniqueId();
+                        data.closestPlayer = LocationUtils.getClosestPlayer(getEntity().getLocation()).getUniqueId();
                         updateLocationOrAssumeStuck();
                         selectGoal();
                         if (data.currentGoal != null){
@@ -202,9 +199,11 @@ public class PersonoidNPC {
                         getEntity().setHealth(Math.min(getEntity().getHealth() + 0.001F, 20));
                         data.saturation = Math.max(data.saturation - 0.001F, 0);
                     }
-                    DebugMessage.attemptMessage("food", "Saturation: " + data.saturation);
-                    DebugMessage.attemptMessage("food", "Food level: " + data.foodLevel);
-                    data.target.tick();
+                    DebugMessage.log("food", "Saturation: " + data.saturation);
+                    DebugMessage.log("food", "Food level: " + data.foodLevel);
+                    if (data.target != null) {
+                        data.target.tick();
+                    }
                 }
                 else if (initialised){
                     if (data.hibernating){
@@ -350,6 +349,22 @@ public class PersonoidNPC {
         return data.resourceManager.attemptCraft(material);
     }
 
+    public World getWorld() {
+        return getEntity().getWorld();
+    }
+
+    public Location getLocation() {
+        return getEntity().getLocation();
+    }
+
+    public void playSound(Sound sound, float volume, float pitch) {
+        getWorld().playSound(getLocation(), sound, volume, pitch);
+    }
+
+    public void playSound(Sound sound) {
+        playSound(sound, 1, 0.5F);
+    }
+
     //endregion
 
     public void setToolFromBlock(Block block){
@@ -368,7 +383,7 @@ public class PersonoidNPC {
             data.updatedLocationThisTick = true;
             data.lastLocation = getEntity().getLocation().clone();
         } else {
-            data.stuck = LocationUtilities.withinMargin(data.lastLocation.clone(), getEntity().getLocation().clone(), 0.05);
+            data.stuck = LocationUtils.withinMargin(data.lastLocation.clone(), getEntity().getLocation().clone(), 0.05);
             data.updatedLocationThisTick = false;
         }
     }
@@ -448,7 +463,7 @@ public class PersonoidNPC {
                         sneaking = false;
                         sprinting = false;
                     }
-                    DebugMessage.attemptMessage("goal", "Selected a new goal!");
+                    DebugMessage.log("goal", "Selected a new goal!");
                     data.currentGoal = finalSelectedGoal;
                     data.currentGoal.initializeGoal(getNPC());
                     if (!data.resourceManager.isPaused){
@@ -480,7 +495,7 @@ public class PersonoidNPC {
             if (breakTicks >= 60){
                 for (ItemStack itemStack : location.getBlock().getDrops(new ItemStack(Material.DIAMOND_PICKAXE))){
                     personoidNPC.data.inventory.addItem(itemStack);
-                    personoidNPC.getPlayer().getWorld().playSound(personoidNPC.getPlayer().getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5F, 1F);
+                    personoidNPC.playSound(Sound.ENTITY_ITEM_PICKUP, 0.5F, 1F);
                     if (!ResourceTypes.COAL.contains(itemStack.getType())){
                         personoidNPC.data.resourceManager.activeGatherStage.activeAction.currentAmount++;
                         personoidNPC.data.resourceManager.activeGatherStage.activeAction.pickedUpMaterial = itemStack.getType();
@@ -492,7 +507,7 @@ public class PersonoidNPC {
                 location.getBlock().setType(Material.AIR);
                 Bukkit.getScheduler().cancelTask(taskId);
             }
-            else {
+            else if (breakTicks % 20 == 0) {
                 PlayerAnimation.ARM_SWING.play(personoidNPC.getPlayer());
             }
         }

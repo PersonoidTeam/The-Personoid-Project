@@ -4,7 +4,7 @@ import org.bukkit.Location;
 import us.notnotdoddy.personoid.goals.NPCGoal;
 import us.notnotdoddy.personoid.npc.NPCTarget;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
-import us.notnotdoddy.personoid.utils.LocationUtilities;
+import us.notnotdoddy.personoid.utils.LocationUtils;
 
 public class WanderRandomlyGoal extends NPCGoal {
     private int failSafeTicks;
@@ -16,7 +16,7 @@ public class WanderRandomlyGoal extends NPCGoal {
 
     @Override
     public void initializeGoal(PersonoidNPC npc) {
-        npc.target(new NPCTarget(LocationUtilities.getRandomLoc(npc)));
+        npc.target(new NPCTarget(LocationUtils.getRandomLoc(npc)));
     }
 
     @Override
@@ -34,12 +34,12 @@ public class WanderRandomlyGoal extends NPCGoal {
     public void tick(PersonoidNPC npc) {
         failSafeTicks++;
         if (failSafeTicks == 40){
-            npc.target(new NPCTarget(LocationUtilities.getRandomLoc(npc)));
+            npc.target(new NPCTarget(LocationUtils.getRandomLoc(npc)));
             failSafeTicks = 0;
         }
         if (npc.hasTarget()) {
             if (npc.data.target.getTarget(Location.class).distance(npc.getEntity().getLocation()) < 3) {
-                npc.target(new NPCTarget(LocationUtilities.getRandomLoc(npc)));
+                npc.target(new NPCTarget(LocationUtils.getRandomLoc(npc)));
                 failSafeTicks = 0;
             }
         }

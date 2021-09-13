@@ -16,7 +16,7 @@ import us.notnotdoddy.personoid.npc.NPCHandler;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.utils.ChatMessage;
 import us.notnotdoddy.personoid.utils.DebugMessage;
-import us.notnotdoddy.personoid.utils.LocationUtilities;
+import us.notnotdoddy.personoid.utils.LocationUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,7 +57,7 @@ public final class Personoid extends JavaPlugin {
         new FluidCommand("remove") {
             @Override
             public boolean run(CommandSender sender, Command cmd, String[] args) {
-                if (sender instanceof Player player) {
+                if (sender instanceof Player) {
                     if (NPCHandler.getNPCs().size() > 0) {
                         PersonoidNPC npc = NPCHandler.getNPCs().values().stream().toList().get(0).remove();
                         new FluidMessage("&aRemoved npc: &6" + npc.citizen.getName(),
@@ -124,7 +124,7 @@ public final class Personoid extends JavaPlugin {
                     if (args.length == 1) {
                         if (Arrays.stream(Material.values()).toList().toString().contains(args[0].toUpperCase())) {
                             Material material = Material.valueOf(args[0].toUpperCase());
-                            PersonoidNPC npc = LocationUtilities.getClosestNPC(player.getLocation());
+                            PersonoidNPC npc = LocationUtils.getClosestNPC(player.getLocation());
                             if (npc.data.currentGoal != null){
                                 npc.data.currentGoal.endGoal(npc);
                                 npc.data.currentGoal = null;

@@ -69,7 +69,7 @@ public class ResourceManager {
         for (Iterator<Recipe> it = Bukkit.getServer().recipeIterator(); it.hasNext(); ) {
             Recipe recipe = it.next();
             if (recipe.getResult().getType().equals(itemStack)) {
-                DebugMessage.attemptMessage("resource", "Found recipe");
+                DebugMessage.log("resource", "Found recipe");
                 if (recipe instanceof ShapelessRecipe shapelessRecipe) {
                     attemptCraftFromMaterialList(itemStack, recipe.getResult(), new ArrayList<>(shapelessRecipe.getIngredientList()));
                 } else if (recipe instanceof ShapedRecipe shapedRecipe) {
@@ -82,7 +82,7 @@ public class ResourceManager {
 
     private boolean attemptCraftFromMaterialList(Material itemStack, ItemStack result, List<ItemStack> requiredList){
         HashMap<Material, Integer> requiredItems = new HashMap<>();
-        DebugMessage.attemptMessage("resource", "Recipe has " + requiredItems.size() + " ingredients.");
+        DebugMessage.log("resource", "Recipe has " + requiredItems.size() + " ingredients.");
         for (ItemStack required : requiredList) {
             if (required != null) {
                 requiredItems.putIfAbsent(required.getType(), 0);
@@ -90,11 +90,11 @@ public class ResourceManager {
             }
         }
         int successChecks = 0;
-        DebugMessage.attemptMessage("resource", "This recipe requires: " + requiredItems.size() + " different items");
+        DebugMessage.log("resource", "This recipe requires: " + requiredItems.size() + " different items");
         List<Material> unsuccessfulMaterials = new ArrayList<>();
         for (Material finalPassItem : requiredItems.keySet()) {
-            DebugMessage.attemptMessage("resource", finalPassItem.toString());
-            DebugMessage.attemptMessage("resource", "NPC has: " + baseInventory.getAmountOf(finalPassItem) + ", requires " +
+            DebugMessage.log("resource", finalPassItem.toString());
+            DebugMessage.log("resource", "NPC has: " + baseInventory.getAmountOf(finalPassItem) + ", requires " +
                     requiredItems.get(finalPassItem));
             if (baseInventory.getAmountOf(finalPassItem) >= requiredItems.get(finalPassItem)) {
                 successChecks++;
@@ -108,33 +108,33 @@ public class ResourceManager {
             }
             //baseInventory.addItem(recipe.getResult());
             personoidNPC.setItemInMainHand(result);
-            DebugMessage.attemptMessage("resource", "NPC has successfully crafted the item!");
+            DebugMessage.log("resource", "NPC has successfully crafted the item!");
             return true;
         }
         else {
-            DebugMessage.attemptMessage("resource", "NPC was unable to craft item");
+            DebugMessage.log("resource", "NPC was unable to craft item");
             List<Material> ableToBeCraftedMaterials = new ArrayList<>();
             for (Material testCraft : unsuccessfulMaterials) {
                 if (!ResourceTypes.SMELTED_ORE.contains(testCraft)){
-                    DebugMessage.attemptMessage("resource", "Testing if NPC can craft sub-item: " + testCraft.toString());
+                    DebugMessage.log("resource", "Testing if NPC can craft sub-item: " + testCraft.toString());
                     // RECURSION OMG OMG OMG OMG OMG OMG
-                    DebugMessage.attemptMessage("resource", "Beginning craft for: " + testCraft.toString());
+                    DebugMessage.log("resource", "Beginning craft for: " + testCraft.toString());
                     if (attemptCraft(testCraft)) {
                         ableToBeCraftedMaterials.add(testCraft);
                     }
-                    DebugMessage.attemptMessage("resource", "Ending craft for: " + testCraft.toString());
+                    DebugMessage.log("resource", "Ending craft for: " + testCraft.toString());
                 }
             }
             for (Material craftable : ableToBeCraftedMaterials) {
                 unsuccessfulMaterials.remove(craftable);
             }
             if (!unsuccessfulMaterials.isEmpty()) {
-                DebugMessage.attemptMessage("resource", "NPC was unable to clear items required.");
+                DebugMessage.log("resource", "NPC was unable to clear items required.");
                 List<GatherAction> gatherActions = new ArrayList<>();
                 for (Material neededMaterials : unsuccessfulMaterials) {
                     GatherAction gatherAction = new GatherAction(getProperResourceType(neededMaterials), personoidNPC, requiredItems.get(neededMaterials));
                     gatherActions.add(gatherAction);
-                    DebugMessage.attemptMessage("resource", "Made a gather action for: " + getProperResourceType(neededMaterials).toString());
+                    DebugMessage.log("resource", "Made a gather action for: " + getProperResourceType(neededMaterials).toString());
                 }
                 GatherStage gatherStage = new GatherStage();
                 for (GatherAction gatherAction : gatherActions) {

@@ -1,11 +1,13 @@
 package us.notnotdoddy.personoid.npc.resourceGathering;
 
+import me.definedoddy.fluidapi.FluidUtils;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.resourceGathering.actions.GatherAction;
 import us.notnotdoddy.personoid.types.Types;
 import us.notnotdoddy.personoid.utils.DebugMessage;
+import us.notnotdoddy.personoid.utils.DelayedAction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,12 +17,12 @@ public class GatherStage {
     List<GatherAction> gatherActions = new ArrayList<>();
     public GatherAction activeAction = null;
     public boolean stageCompleted = false;
-    PersonoidNPC personoidNPC = null;
+    PersonoidNPC npc = null;
     Material craftMaterial = null;
 
     public void setCompletionCraft(Material material, PersonoidNPC personoidNPC){
         craftMaterial = material;
-        this.personoidNPC = personoidNPC;
+        this.npc = personoidNPC;
     }
 
     public void addGatherAction(GatherAction gatherAction){
@@ -40,15 +42,21 @@ public class GatherStage {
             }
         }
         else {
-            DebugMessage.attemptMessage("resource", "Stage completed!");
+            DebugMessage.log("resource", "Stage completed!");
             stageCompleted = true;
             if (craftMaterial != null){
-                personoidNPC.attemptCraft(craftMaterial);
+                npc.attemptCraft(craftMaterial);
             }
-            Material type = personoidNPC.getInventory().getItemInMainHand().getType();
+            Material type = npc.getInventory().getItemInMainHand().getType();
             if (Types.isArmor(type)) {
-                personoidNPC.getInventory().setItem(Types.getArmorSlotType(type), new ItemStack(type));
-                personoidNPC.setItemInMainHand(null);
+                new DelayedAction(npc, FluidUtils.random(20, 60)) {
+                    @Override
+                    public void run() {
+                        npc.getInventory().setItem(Types.getArmorSlotType(type), new ItemStack(type));
+                        npc.playSound(Types.getArmorEquipSound(type));
+                        npc.setItemInMainHand(null);
+                    }
+                };
             }
         }
     }
