@@ -40,6 +40,7 @@ public class PersonoidNPC {
     public boolean sprinting;
     public boolean jumping;
     public boolean sneaking;
+    public boolean breakingBlock;
 
     public PersonoidNPC(String name) {
         citizen = NPCHandler.registry.createNPC(EntityType.PLAYER, name);
@@ -114,8 +115,8 @@ public class PersonoidNPC {
                 }
                 if (getNPC().data.target != null){
                     if (getNPC().data.target.getTargetType() == NPCTarget.BlockTargetType.BREAK){
-                        if (getNPC().getBlockTarget().getLocation().distance(getEntity().getLocation()) < 3){
-                            setToolFromBlock(getNPC().data.target.getTarget(Block.class));
+                        if (getNPC().getBlockTarget().getLocation().distance(getEntity().getLocation()) < 3 && !breakingBlock){
+                            setToolFromBlock(getNPC().getTarget(Block.class));
                             breakBlock(getNPC().getBlockTarget().getLocation());
                         }
                     }
@@ -478,8 +479,8 @@ public class PersonoidNPC {
         private final BlockBreaker breaker;
         private final Location location;
         private final PersonoidNPC npc;
-        int breakTicks = 0;
-        int breakingStage;
+        private int breakTicks = 0;
+        private int breakingStage;
 
         public BlockBreakerTask(BlockBreaker breaker, PersonoidNPC personoidNPC, Location location) {
             this.location = location;
@@ -489,43 +490,57 @@ public class PersonoidNPC {
 
         @Override
         public void run() {
-            breakTicks++;
-            if (location.getBlock().getType().isAir() || npc.getLocation().distance(location) >= 5) {
-                Bukkit.getScheduler().cancelTask(taskId);
+            if (breakTicks == 0) {
+                npc.breakingBlock = true;
             }
-            if (breakTicks >= 30){
-                for (ItemStack itemStack : location.getBlock().getDrops(new ItemStack(Material.DIAMOND_PICKAXE))){
-                    npc.data.inventory.addItem(itemStack);
-                    npc.playSound(Sound.ENTITY_ITEM_PICKUP, 1F, 1F);
-                    if (!ResourceTypes.COAL.contains(itemStack.getType())){
-                        npc.data.resourceManager.activeGatherStage.activeAction.currentAmount++;
-                        npc.data.resourceManager.activeGatherStage.activeAction.pickedUpMaterial = itemStack.getType();
-                    }
-                    else {
-                        npc.data.resourceManager.activeGatherStage.activeAction.currentCoalCount++;
-                    }
+            BlockPosition blockPos = new BlockPosition(location.getBlock().getLocation().getX(),
+                    location.getBlock().getLocation().getY(), location.getBlock().getLocation().getZ());
+            if (npc.citizen.isSpawned()) {
+                breakTicks++;
+                if (location.getBlock().getType().isAir() || npc.getLocation().distance(location) >= 5) {
+                    Bukkit.getScheduler().cancelTask(taskId);
                 }
-                location.getBlock().setType(Material.AIR);
-                Bukkit.getScheduler().cancelTask(taskId);
-            }
-            else {
-                npc.getPlayer().swingMainHand();
-                if (breakTicks % 120 == 0 || breakTicks == 1) {
-                    npc.playSound(Sound.BLOCK_STONE_STEP, 1F, 0.8F);
-                    npc.getWorld().playEffect(location, Effect.STEP_SOUND, (Object) location.getBlock().getType());
-                    npc.getWorld().spawnParticle(Particle.ITEM_CRACK, location.getBlock().getLocation().clone().add(0.5D, 0.5D, 0.5D),
-                            50, 0.5D / 3D, 0.5D / 3D, 0.5D / 3D, 0.12D, new ItemStack(location.getBlock().getType()));
-                }
-                Bukkit.broadcastMessage("" + breakTicks % 10);
-                if (breakTicks % 10 == 0 || breakTicks == 1) {
-                    BlockPosition blockPos = new BlockPosition(location.getBlock().getLocation().getX(),
-                            location.getBlock().getLocation().getY(), location.getBlock().getLocation().getZ());
+                if (breakTicks >= 12){
+                    for (ItemStack itemStack : location.getBlock().getDrops(new ItemStack(Material.DIAMOND_PICKAXE))){
+                        npc.data.inventory.addItem(itemStack);
+                        npc.playSound(Sound.ENTITY_ITEM_PICKUP, 1F, 1F);
+                        if (!ResourceTypes.COAL.contains(itemStack.getType())){
+                            npc.data.resourceManager.activeGatherStage.activeAction.currentAmount++;
+                            npc.data.resourceManager.activeGatherStage.activeAction.pickedUpMaterial = itemStack.getType();
+                        }
+                        else {
+                            npc.data.resourceManager.activeGatherStage.activeAction.currentCoalCount++;
+                        }
+                    }
                     for (Player player : npc.getWorld().getPlayers()) {
                         PlayerConnection conn = ((CraftPlayer) player).getHandle().b;
-                        conn.sendPacket(new PacketPlayOutBlockBreakAnimation(npc.getEntity().getEntityId(), blockPos, Math.min(breakingStage, 9)));
+                        conn.sendPacket(new PacketPlayOutBlockBreakAnimation(npc.getEntity().getEntityId()+breakTicks, blockPos, -1));
+                    }
+                    location.getBlock().setType(Material.AIR);
+                    npc.breakingBlock = false;
+                    Bukkit.getScheduler().cancelTask(taskId);
+                }
+                else {
+                    npc.getPlayer().swingMainHand();
+                    for (Player player : npc.getWorld().getPlayers()) {
+                        PlayerConnection conn = ((CraftPlayer) player).getHandle().b;
+                        conn.sendPacket(new PacketPlayOutBlockBreakAnimation(npc.getEntity().getEntityId()+breakingStage, blockPos, Math.min(breakingStage, 9)));
+                    }
+                    if (breakTicks % 3 == 0 || breakTicks == 1) {
+                        npc.playSound(Sound.BLOCK_STONE_STEP, 1F, 0.8F);
+                        //npc.getWorld().playEffect(location, Effect.STEP_SOUND, (Object) location.getBlock().getType());
+                        npc.getWorld().spawnParticle(Particle.ITEM_CRACK, location.getBlock().getLocation().clone().add(0.5D, 0.5D, 0.5D),
+                                1, 0.5D / 3D, 0.5D / 3D, 0.5D / 3D, 0.12D, new ItemStack(location.getBlock().getType()));
                     }
                     breakingStage++;
                 }
+            } else {
+                for (Player player : npc.getWorld().getPlayers()) {
+                    PlayerConnection conn = ((CraftPlayer) player).getHandle().b;
+                    conn.sendPacket(new PacketPlayOutBlockBreakAnimation(npc.getEntity().getEntityId()+breakingStage + 1, blockPos, -1));
+                }
+                npc.breakingBlock = false;
+                Bukkit.getScheduler().cancelTask(taskId);
             }
         }
     }
