@@ -1,8 +1,9 @@
 package us.notnotdoddy.personoid.npc.resourceGathering.actions;
 
-import me.definedoddy.fluidapi.FluidUtils;
+import me.definedoddy.fluidapi.utils.JavaUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Furnace;
@@ -72,7 +73,7 @@ public class GatherAction {
                     npc.forgetTarget();
                     wasLooking = false;
                 }
-                npc.target(new NPCTarget(targetBlock.getLocation().getBlock(), NPCTarget.BlockTargetType.BREAK));
+                npc.target(new NPCTarget(targetBlock.getLocation().getBlock(), NPCTarget.BlockTargetType.BREAK).setDistance(2.5F));
                 foundBlock = true;
                 DebugMessage.log("resource", "Found block");
             }
@@ -94,7 +95,7 @@ public class GatherAction {
 
     public void tick(){
         if (targetAmount <= currentAmount && currentCoalCount >= probableCoalCount){
-            DebugMessage.log("resource", "DONE!");
+            DebugMessage.log("resource", "Waiting for smelting to finish");
             if (!gatherType.shouldBeSmelted){
                 isCompleted = true;
             }
@@ -128,17 +129,19 @@ public class GatherAction {
                 }
                 else if (!placedFurnace) {
                     placedFurnace = true;
-                    new DelayedAction(npc, FluidUtils.random(20, 60)) {
+                    new DelayedAction(npc, JavaUtils.random(20, 60)) {
                         @Override
                         public void run() {
                             DebugMessage.log("resource", "Placed furnace");
                             npc.setItemInMainHand(new ItemStack(Material.FURNACE));
-                            //Location location = npc.getLocation().clone().getBlock().getRelative(npc.getPlayer().getFacing()).getLocation();
+                            // Location location = npc.getLocation().clone().getBlock().getRelative(npc.getPlayer().getFacing()).getLocation();
+                            // location.subtract(0, 1, 0);
                             Location from = npc.getPlayer().getEyeLocation();
-                            from.setPitch(32);
+                            from.setPitch(46);
                             Location location = LocationUtils.getBlockInFront(from, 10).getLocation();
                             furnaceBlock = location.getBlock();
                             furnaceBlock.setType(Material.FURNACE);
+                            npc.playSound(Sound.BLOCK_STONE_PLACE, 1F, 0.8F);
                             Directional dir = ((Directional) furnaceBlock.getBlockData());
                             dir.setFacing(npc.getPlayer().getFacing().getOppositeFace());
                             furnaceBlock.setBlockData(dir);

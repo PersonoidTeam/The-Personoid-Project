@@ -5,9 +5,12 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class NPCTarget {
+    private List<PersonoidNPC> npcs = new ArrayList<>();
     private final TargetType targetType;
     private MovementType movementType;
     private int straightness;
@@ -15,8 +18,8 @@ public class NPCTarget {
     private BlockTargetType blockTargetType;
     private Location location;
     private UUID uuid;
-    public Block block;
-    private boolean travelingBeforeAction = false;
+    private Block block;
+    private float distance;
 
     public enum TargetType {
         LOCATION,
@@ -65,12 +68,30 @@ public class NPCTarget {
         return this;
     }
 
+    public MovementType getMovementType() {
+        return movementType;
+    }
+
     public NPCTarget setStraightness(int straightness) {
         this.straightness = straightness;
         return this;
     }
 
+    public int getStraightness() {
+        return straightness;
+    }
+
+    public NPCTarget setDistance(float distance) {
+        this.distance = distance;
+        return this;
+    }
+
+    public float getDistance() {
+        return distance;
+    }
+
     public NPCTarget target(PersonoidNPC npc) {
+        npcs.add(npc);
         npc.data.target = this;
         npc.getNavigator().cancelNavigation();
         npc.getNavigator().getLocalParameters().straightLineTargetingDistance(straightness);
@@ -85,9 +106,7 @@ public class NPCTarget {
         } else if (targetType == TargetType.BLOCK) {
             // note to self: in future make sure entity stops near block if it can't get to it exactly
             if (blockTargetType == BlockTargetType.LOCATION) {
-                // doesn't work well with larger distances atm
                 npc.getNavigator().setTarget(block.getLocation());
-                // block.getLocation().subtract(npc.getLocation()).multiply(0.90F)
             }
             else if (blockTargetType == BlockTargetType.BREAK) {
                 npc.getNavigator().setTarget(block.getLocation());
@@ -108,7 +127,14 @@ public class NPCTarget {
     }
 
     public void tick() {
-
+        List<PersonoidNPC> toRemove = new ArrayList<>();
+        for (PersonoidNPC npc : npcs) {
+            if (npc.getLocation().distance(getTarget(Location.class)) <= distance) {
+                npc.getNavigator().cancelNavigation();
+                toRemove.add(npc);
+            }
+        }
+        npcs.removeAll(toRemove);
     }
 
     public <T> T getTarget(Class<T> type) {

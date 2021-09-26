@@ -7,16 +7,16 @@ import com.google.gson.JsonParser;
 import me.definedoddy.fluidapi.FluidListener;
 import me.definedoddy.fluidapi.FluidMessage;
 import me.definedoddy.fluidapi.FluidPlugin;
-import me.definedoddy.fluidapi.FluidUtils;
-import me.definedoddy.fluidapi.tasks.DelayedTask;
+import me.definedoddy.fluidapi.FluidTask;
+import me.definedoddy.fluidapi.utils.JavaUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.jetbrains.annotations.Nullable;
-import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.npc.NPCHandler;
+import us.notnotdoddy.personoid.npc.PersonoidNPC;
 import us.notnotdoddy.personoid.status.Behavior;
 
 import java.io.*;
@@ -51,10 +51,10 @@ public class ChatMessage {
 
     public static void send(PersonoidNPC npc, String message) {
         if (message != null) {
-            int delay = Math.min(Math.max(message.length() * 5 + FluidUtils.random(0, 10), 5), 100);
+            int delay = Math.min(Math.max(message.length() * 5 + JavaUtils.random(0, 10), 5), 100);
             if (delay > 0 && message.length() > 0) {
                 npc.pause();
-                new DelayedTask(delay) {
+                new DelayedAction(npc, delay) {
                     @Override
                     public void run() {
                         new FluidMessage("<" + npc.citizen.getName() + "> " + message, FluidMessage.toPlayerArray(Bukkit.getOnlinePlayers())).send();
@@ -67,32 +67,26 @@ public class ChatMessage {
 
     public static void send(PersonoidNPC npc, String response, String message) {
         if (message.length() > 0) {
-            int delay = Math.min(Math.max(message.length() * 3 + FluidUtils.random(0, 10), 5), 75);
-            new DelayedTask(delay) {
-                @Override
-                public void run() {
-                    send(npc, response);
-                }
-            };
+            int delay = Math.min(Math.max(message.length() * 3 + JavaUtils.random(0, 10), 5), 75);
+            new FluidTask(() -> send(npc, response)).run(delay);
         }
     }
 
     private static void initListeners() {
-        new FluidListener<>(AsyncPlayerChatEvent.class) {
-            @Override
-            public void run() {
+        new FluidListener() {
+            public void playerChat(AsyncPlayerChatEvent e) {
                 PersonoidNPC npc = null;
                 List<PersonoidNPC> npcs = NPCHandler.getNPCs().values().stream().toList();
                 for (PersonoidNPC potential : npcs) {
-                    if (getData().getMessage().toLowerCase().contains(potential.citizen.getName().toLowerCase())) {
+                    if (e.getMessage().toLowerCase().contains(potential.citizen.getName().toLowerCase())) {
                         npc = potential;
                     }
                 }
                 if (npcs.size() > 0) {
                     if (npc == null) {
-                        npc = npcs.size() > 1 ? npcs.get(FluidUtils.random(0, NPCHandler.getNPCs().size() - 1)) : npcs.get(0);
+                        npc = npcs.size() > 1 ? npcs.get(JavaUtils.random(0, NPCHandler.getNPCs().size() - 1)) : npcs.get(0);
                     }
-                    send(npc, getResponse(getData().getPlayer(), getData().getMessage(), npc), getData().getMessage());
+                    send(npc, getResponse(e.getPlayer(), e.getMessage(), npc), e.getMessage());
                 }
             }
         };
@@ -153,7 +147,7 @@ public class ChatMessage {
             list = responses.get("default");
         }
         if (list != null) {
-            JsonElement response = list.getAsJsonArray().get(FluidUtils.random(0, list.getAsJsonArray().size() - 1));
+            JsonElement response = list.getAsJsonArray().get(JavaUtils.random(0, list.getAsJsonArray().size() - 1));
             if (response.isJsonNull()) {
                 return null;
             }

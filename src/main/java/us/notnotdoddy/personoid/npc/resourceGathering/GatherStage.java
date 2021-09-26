@@ -1,6 +1,6 @@
 package us.notnotdoddy.personoid.npc.resourceGathering;
 
-import me.definedoddy.fluidapi.FluidUtils;
+import me.definedoddy.fluidapi.utils.JavaUtils;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import us.notnotdoddy.personoid.npc.PersonoidNPC;
@@ -49,11 +49,11 @@ public class GatherStage {
             }
             Material type = npc.getInventory().getItemInMainHand().getType();
             if (Types.isArmor(type)) {
-                new DelayedAction(npc, FluidUtils.random(20, 60)) {
+                new DelayedAction(npc, JavaUtils.random(20, 60)) {
                     @Override
                     public void run() {
                         npc.getInventory().setItem(Types.getArmorSlotType(type), new ItemStack(type));
-                        npc.playSound(Types.getArmorEquipSound(type));
+                        npc.playSound(Types.getArmorEquipSound(type), 1F, 1F);
                         npc.setItemInMainHand(null);
                     }
                 };

@@ -1,6 +1,6 @@
 package us.notnotdoddy.personoid.utils;
 
-import me.definedoddy.fluidapi.FluidUtils;
+import me.definedoddy.fluidapi.utils.JavaUtils;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -26,8 +26,8 @@ public class LocationUtils {
 
     public static Location getRandomLoc(PersonoidNPC npc) {
         Location loc = npc.getEntity().getLocation().clone();
-        double x = loc.getX() + FluidUtils.random(-20, 20);
-        double z = loc.getZ() + FluidUtils.random(-20, 20);
+        double x = loc.getX() + JavaUtils.random(-20, 20);
+        double z = loc.getZ() + JavaUtils.random(-20, 20);
         double y = npc.getEntity().getLocation().getWorld().getHighestBlockYAt((int) x, (int) z) + 1;
         return new Location(npc.getEntity().getLocation().getWorld(), x, y, z);
     }

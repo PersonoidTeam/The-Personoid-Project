@@ -74,14 +74,14 @@
     <dependencies>
         <dependency>
             <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
+            <artifactId>spigot</artifactId>
             <version>1.17.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.github.DefineDoddy</groupId>
             <artifactId>fluid-api</artifactId>
-            <version>beta-0.5.0</version>
+            <version>beta-0.6.2</version>
         </dependency>
         <dependency>
             <groupId>net.citizensnpcs</groupId>

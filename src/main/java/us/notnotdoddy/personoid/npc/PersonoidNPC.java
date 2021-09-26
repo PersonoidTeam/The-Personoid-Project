@@ -1,14 +1,17 @@
 package us.notnotdoddy.personoid.npc;
 
 import me.definedoddy.fluidapi.FluidPlugin;
-import me.definedoddy.fluidapi.tasks.DelayedTask;
-import me.definedoddy.fluidapi.tasks.RepeatingTask;
+import me.definedoddy.fluidapi.FluidTask;
 import net.citizensnpcs.api.ai.Navigator;
 import net.citizensnpcs.api.npc.BlockBreaker;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.util.PlayerAnimation;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.network.protocol.game.PacketPlayOutBlockBreakAnimation;
+import net.minecraft.server.network.PlayerConnection;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -32,7 +35,7 @@ public class PersonoidNPC {
     public NPCData data;
     public boolean initialised;
     private final Random random = new Random();
-    private RepeatingTask tickingTask;
+    private FluidTask tickingTask;
     private int groundedTicks;
     public boolean sprinting;
     public boolean jumping;
@@ -60,13 +63,10 @@ public class PersonoidNPC {
         citizen.spawn(location);
         NPCHandler.getNPCs().put(citizen, this);
         data.spawnPoint = location.getWorld().getSpawnLocation();
-        new DelayedTask(60) {
-            @Override
-            public void run(){
-                initialised = true;
-                onInitialised();
-            }
-        };
+        new FluidTask(() -> {
+            initialised = true;
+            onInitialised();
+        }).run(60);
         return this;
     }
 
@@ -106,131 +106,128 @@ public class PersonoidNPC {
     }
 
     public void startTicking() {
-        tickingTask = new RepeatingTask(0, 1) {
-            @Override
-            public void run() {
-                data.resourceManager.tick();
-                if (initialised && citizen.isSpawned()) {
-                    if (data.cooldownTicks > 0){
-                        data.cooldownTicks--;
-                    }
-                    if (getNPC().data.target != null){
-                        if (getNPC().data.target.getTargetType() == NPCTarget.BlockTargetType.BREAK){
-                            if (getNPC().getBlockTarget().getLocation().distance(getEntity().getLocation()) < 3){
-                                setToolFromBlock(getNPC().data.target.block);
-                                breakBlock(getNPC().getBlockTarget().getLocation());
-                            }
+        tickingTask = new FluidTask(() -> {
+            data.resourceManager.tick();
+            if (initialised && citizen.isSpawned()) {
+                if (data.cooldownTicks > 0){
+                    data.cooldownTicks--;
+                }
+                if (getNPC().data.target != null){
+                    if (getNPC().data.target.getTargetType() == NPCTarget.BlockTargetType.BREAK){
+                        if (getNPC().getBlockTarget().getLocation().distance(getEntity().getLocation()) < 3){
+                            setToolFromBlock(getNPC().data.target.getTarget(Block.class));
+                            breakBlock(getNPC().getBlockTarget().getLocation());
                         }
-                    }
-                    if (!data.paused){
-                        if (citizen.getNavigator().isNavigating()){
-                            data.flocker.run();
-                        }
-                        data.closestPlayer = LocationUtils.getClosestPlayer(getEntity().getLocation()).getUniqueId();
-                        updateLocationOrAssumeStuck();
-                        selectGoal();
-                        if (data.currentGoal != null){
-                            data.currentGoal.tick(getNPC());
-                            if (data.currentGoal.shouldStop(getNPC())){
-                                data.currentGoal.endGoal(getNPC());
-                                data.currentGoal = null;
-                                data.resourceManager.isPaused = false;
-                                jumping = false;
-                                sneaking = false;
-                                sprinting = false;
-                            }
-                        }
-                        else {
-                            data.resourceManager.isPaused = false;
-                        }
-                        for (Map.Entry<UUID, PlayerInfo> entry : data.players.entrySet()) {
-                            for (Behavior.Mood mood : Behavior.Mood.values()) {
-                                entry.getValue().decrementMoodStrength(mood, data.behavior.type().retentionDecrement);
-                            }
-                        }
-                        if (getPlayer().isInWater() && !getPlayer().isSwimming()) {
-                            getPlayer().setSwimming(true);
-                        } else if (!getPlayer().isInWater() && getPlayer().isSwimming()) {
-                            getPlayer().setSwimming(false);
-                        }
-                        if (getPlayer().isOnGround() && jumping) {
-                            jump();
-/*                            groundedTicks++;
-                            if (groundedTicks >= 3) {
-                                jump();
-                                groundedTicks = 0;
-                            }*/
-                        }
-                        if (sneaking && !getPlayer().isSneaking()) {
-                            PlayerAnimation.SNEAK.play(getPlayer());
-                        } else if (!sneaking && getPlayer().isSneaking()) {
-                            PlayerAnimation.STOP_SNEAKING.play(getPlayer());
-                        }
-                        if (sneaking) {
-                            getNavigator().getLocalParameters().baseSpeed(0.5F);
-                        } else if (sprinting && jumping) {
-                            getNavigator().getLocalParameters().baseSpeed(1.6F);
-                        } else if (sprinting) {
-                            getNavigator().getLocalParameters().baseSpeed(1.25F);
-                        } else {
-                            getNavigator().getLocalParameters().baseSpeed(1.15F);
-                        }
-                    }
-                    data.moving = data.tickLocation.distance(getEntity().getLocation()) >= 0.00001F;
-                    data.tickLocation = getEntity().getLocation();
-                    if (data.moving) {
-                        if (sprinting) {
-                            data.saturation = Math.max(data.saturation - 0.002F, 0);
-                            if (data.saturation <= 0) {
-                                data.foodLevel = Math.max(data.foodLevel - 0.002F, 0);
-                            }
-                            if (data.foodLevel <= 6) {
-                                sprinting = false;
-                                jumping = false;
-                            }
-                        } else {
-                            data.saturation = Math.max(data.saturation - 0.00035F, 0);
-                            if (data.saturation <= 0) {
-                                data.foodLevel = Math.max(data.foodLevel - 0.0035F, 0);
-                            }
-                        }
-                    }
-                    if (data.saturation >= 0) {
-                        getEntity().setHealth(Math.min(getEntity().getHealth() + 0.001F, 20));
-                        data.saturation = Math.max(data.saturation - 0.001F, 0);
-                    }
-                    DebugMessage.log("food", "Saturation: " + data.saturation);
-                    DebugMessage.log("food", "Food level: " + data.foodLevel);
-                    if (data.target != null) {
-                        data.target.tick();
                     }
                 }
-                else if (initialised){
-                    if (data.hibernating){
-                        unloadedEntityTicking();
+                if (!data.paused){
+                    if (citizen.getNavigator().isNavigating()){
+                        data.flocker.run();
                     }
-                    if (data.removalReason == RemovalReason.DIED) {
-                        if (data.currentGoal != null){
+                    data.closestPlayer = LocationUtils.getClosestPlayer(getEntity().getLocation()).getUniqueId();
+                    updateLocationOrAssumeStuck();
+                    selectGoal();
+                    if (data.currentGoal != null){
+                        data.currentGoal.tick(getNPC());
+                        if (data.currentGoal.shouldStop(getNPC())){
                             data.currentGoal.endGoal(getNPC());
                             data.currentGoal = null;
+                            data.resourceManager.isPaused = false;
                             jumping = false;
                             sneaking = false;
                             sprinting = false;
                         }
                     }
-                    else if (data.removalReason == RemovalReason.FULLY_REMOVED) {
-                        data.currentGoal = null;
-                        cancel();
-                    }
                     else {
-                        data.currentGoal = null;
-                        data.hibernating = true;
-                        data.originalLastLocation = data.lastLocation.clone();
+                        data.resourceManager.isPaused = false;
                     }
-                    initialised = false;
+                    for (Map.Entry<UUID, PlayerInfo> entry : data.players.entrySet()) {
+                        for (Behavior.Mood mood : Behavior.Mood.values()) {
+                            entry.getValue().decrementMoodStrength(mood, data.behavior.type().retentionDecrement);
+                        }
+                    }
+                    if (getPlayer().isInWater() && !getPlayer().isSwimming()) {
+                        getPlayer().setSwimming(true);
+                    } else if (!getPlayer().isInWater() && getPlayer().isSwimming()) {
+                        getPlayer().setSwimming(false);
+                    }
+                    if (getPlayer().isOnGround() && jumping) {
+                        jump();
+/*                            groundedTicks++;
+                        if (groundedTicks >= 3) {
+                            jump();
+                            groundedTicks = 0;
+                        }*/
+                    }
+                    if (sneaking && !getPlayer().isSneaking()) {
+                        PlayerAnimation.SNEAK.play(getPlayer());
+                    } else if (!sneaking && getPlayer().isSneaking()) {
+                        PlayerAnimation.STOP_SNEAKING.play(getPlayer());
+                    }
+                    if (sneaking) {
+                        getNavigator().getLocalParameters().baseSpeed(0.5F);
+                    } else if (sprinting && jumping) {
+                        getNavigator().getLocalParameters().baseSpeed(1.6F);
+                    } else if (sprinting) {
+                        getNavigator().getLocalParameters().baseSpeed(1.25F);
+                    } else {
+                        getNavigator().getLocalParameters().baseSpeed(1.15F);
+                    }
+                }
+                data.moving = data.tickLocation.distance(getEntity().getLocation()) >= 0.00001F;
+                data.tickLocation = getEntity().getLocation();
+                if (data.moving) {
+                    if (sprinting) {
+                        data.saturation = Math.max(data.saturation - 0.002F, 0);
+                        if (data.saturation <= 0) {
+                            data.foodLevel = Math.max(data.foodLevel - 0.002F, 0);
+                        }
+                        if (data.foodLevel <= 6) {
+                            sprinting = false;
+                            jumping = false;
+                        }
+                    } else {
+                        data.saturation = Math.max(data.saturation - 0.00035F, 0);
+                        if (data.saturation <= 0) {
+                            data.foodLevel = Math.max(data.foodLevel - 0.0035F, 0);
+                        }
+                    }
+                }
+                if (data.saturation >= 0) {
+                    getEntity().setHealth(Math.min(getEntity().getHealth() + 0.001F, 20));
+                    data.saturation = Math.max(data.saturation - 0.001F, 0);
+                }
+                DebugMessage.log("food", "Saturation: " + data.saturation);
+                DebugMessage.log("food", "Food level: " + data.foodLevel);
+                if (data.target != null) {
+                    data.target.tick();
                 }
             }
-        };
+            else if (initialised){
+                if (data.hibernating){
+                    unloadedEntityTicking();
+                }
+                if (data.removalReason == RemovalReason.DIED) {
+                    if (data.currentGoal != null){
+                        data.currentGoal.endGoal(getNPC());
+                        data.currentGoal = null;
+                        jumping = false;
+                        sneaking = false;
+                        sprinting = false;
+                    }
+                }
+                else if (data.removalReason == RemovalReason.FULLY_REMOVED) {
+                    data.currentGoal = null;
+                    tickingTask.cancel();
+                }
+                else {
+                    data.currentGoal = null;
+                    data.hibernating = true;
+                    data.originalLastLocation = data.lastLocation.clone();
+                }
+                initialised = false;
+            }
+        }).repeat(0, 1);
     }
 
     public boolean breakBlock(Location location) {
@@ -480,35 +477,55 @@ public class PersonoidNPC {
         private int taskId;
         private final BlockBreaker breaker;
         private final Location location;
-        private final PersonoidNPC personoidNPC;
+        private final PersonoidNPC npc;
         int breakTicks = 0;
+        int breakingStage;
 
         public BlockBreakerTask(BlockBreaker breaker, PersonoidNPC personoidNPC, Location location) {
             this.location = location;
             this.breaker = breaker;
-            this.personoidNPC = personoidNPC;
+            this.npc = personoidNPC;
         }
 
         @Override
         public void run() {
             breakTicks++;
-            if (breakTicks >= 60){
+            if (location.getBlock().getType().isAir() || npc.getLocation().distance(location) >= 5) {
+                Bukkit.getScheduler().cancelTask(taskId);
+            }
+            if (breakTicks >= 30){
                 for (ItemStack itemStack : location.getBlock().getDrops(new ItemStack(Material.DIAMOND_PICKAXE))){
-                    personoidNPC.data.inventory.addItem(itemStack);
-                    personoidNPC.playSound(Sound.ENTITY_ITEM_PICKUP, 0.5F, 1F);
+                    npc.data.inventory.addItem(itemStack);
+                    npc.playSound(Sound.ENTITY_ITEM_PICKUP, 1F, 1F);
                     if (!ResourceTypes.COAL.contains(itemStack.getType())){
-                        personoidNPC.data.resourceManager.activeGatherStage.activeAction.currentAmount++;
-                        personoidNPC.data.resourceManager.activeGatherStage.activeAction.pickedUpMaterial = itemStack.getType();
+                        npc.data.resourceManager.activeGatherStage.activeAction.currentAmount++;
+                        npc.data.resourceManager.activeGatherStage.activeAction.pickedUpMaterial = itemStack.getType();
                     }
                     else {
-                        personoidNPC.data.resourceManager.activeGatherStage.activeAction.currentCoalCount++;
+                        npc.data.resourceManager.activeGatherStage.activeAction.currentCoalCount++;
                     }
                 }
                 location.getBlock().setType(Material.AIR);
                 Bukkit.getScheduler().cancelTask(taskId);
             }
-            else if (breakTicks % 20 == 0) {
-                PlayerAnimation.ARM_SWING.play(personoidNPC.getPlayer());
+            else {
+                npc.getPlayer().swingMainHand();
+                if (breakTicks % 120 == 0 || breakTicks == 1) {
+                    npc.playSound(Sound.BLOCK_STONE_STEP, 1F, 0.8F);
+                    npc.getWorld().playEffect(location, Effect.STEP_SOUND, (Object) location.getBlock().getType());
+                    npc.getWorld().spawnParticle(Particle.ITEM_CRACK, location.getBlock().getLocation().clone().add(0.5D, 0.5D, 0.5D),
+                            50, 0.5D / 3D, 0.5D / 3D, 0.5D / 3D, 0.12D, new ItemStack(location.getBlock().getType()));
+                }
+                Bukkit.broadcastMessage("" + breakTicks % 10);
+                if (breakTicks % 10 == 0 || breakTicks == 1) {
+                    BlockPosition blockPos = new BlockPosition(location.getBlock().getLocation().getX(),
+                            location.getBlock().getLocation().getY(), location.getBlock().getLocation().getZ());
+                    for (Player player : npc.getWorld().getPlayers()) {
+                        PlayerConnection conn = ((CraftPlayer) player).getHandle().b;
+                        conn.sendPacket(new PacketPlayOutBlockBreakAnimation(npc.getEntity().getEntityId(), blockPos, Math.min(breakingStage, 9)));
+                    }
+                    breakingStage++;
+                }
             }
         }
     }

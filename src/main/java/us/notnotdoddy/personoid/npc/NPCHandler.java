@@ -1,6 +1,6 @@
 package us.notnotdoddy.personoid.npc;
 
-import me.definedoddy.fluidapi.FluidUtils;
+import me.definedoddy.fluidapi.utils.JavaUtils;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
@@ -24,6 +24,6 @@ public class NPCHandler {
 
     public static String getRandomName() {
         File nameFile = new File("names.txt");
-        return FluidUtils.randomLineFromFile(nameFile);
+        return JavaUtils.randomLineFromFile(nameFile);
     }
 }
