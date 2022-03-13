@@ -1,12 +1,14 @@
-name: Personoid
-version: ${project.version}
-main: us.notnotdoddy.personoid.Personoid
-api-version: 1.17
-depend: [ Citizens ]
-authors: [ notnotnotswipez, DefineDoddy ]
+name: PersonoidAPI
+version: '${project.version}'
+main: com.notnotdoddy.personoid.PersonoidAPI
+api-version: 1.18
+authors: [ DefineDoddy, notnotnotswipez ]
+description: An API designed to make creating, managing, and interacting with NPC's easy
+website: www.personoid.com
 commands:
-  create:
-  remove:
-  toggledebug:
-  debugconsole:
-  craft:
+  npc:
+    usage: /<command>
+    description: Accesses the NPC commands
+  profiler:
+    usage: /<command>
+    description: Accesses the profiler commands
