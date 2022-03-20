@@ -1,49 +1,58 @@
 package com.notnotdoddy.personoid.npc.ai.pathfinding.goals;
 
 import com.notnotdoddy.personoid.npc.NPC;
-import com.notnotdoddy.personoid.npc.ai.pathfinding.PathNode;
+import com.notnotdoddy.personoid.npc.components.NPCComponent;
+import com.notnotdoddy.personoid.npc.enums.MovementType;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-public abstract class PathfinderGoal {
-    private Data data;
-    private final NPC npc;
-    private final Type type;
+public abstract class PathfinderGoal extends NPCComponent {
+    private final Map<Parameter.Type, Parameter> parameters = new HashMap<>();
     private final Priority priority;
-    private Location location;
+    private Location targetLocation;
+    private Location facingLocation;
 
-    public PathfinderGoal(NPC npc, Type type, Priority priority) {
-        this.npc = npc;
-        this.type = type;
+    public PathfinderGoal(NPC npc, Priority priority) {
+        super(npc);
         this.priority = priority;
+        for (Parameter.Type type : Parameter.Type.values()) {
+            parameters.put(type, new Parameter(type));
+        }
     }
 
-    public PathfinderGoal(NPC npc, Type type, Priority priority, Data data) {
-        this(npc, type, priority);
-        this.data = data;
+    public Location getNextNodeLocation() {
+        Vec3 pos = npc.getNavigation().getPath().getNPCPosAtNode(npc, npc.getNavigation().getPath().getNextNodeIndex() + 1);
+        return new Location(npc.getLocation().getWorld(), pos.x, pos.y, pos.z);
     }
 
-    public PathNode transform(List<PathNode> navigated, PathNode finish, PathNode node) {
-        //node.H = type.H; // FIXME: breaks pathfinding
-        return node;
-    }
+    /*Initialise any goal parameters here*/
+    public void initParameters() {
 
-    public Data getData() {
-        return data;
     }
 
     public Priority getPriority(){
         return priority;
     }
 
-    public Location getLocation() {
-        return location;
+    public Location getTargetLocation() {
+        return targetLocation;
     }
 
     /**Sets the location of the goal**/
-    public void setLocation(Location location) {
-        this.location = location;
+    public void setTargetLocation(Location location) {
+        this.targetLocation = location;
+    }
+
+    public Location getFacingLocation() {
+        return facingLocation;
+    }
+
+    /**Sets the facing location of the goal**/
+    public void setFacingLocation(Location location) {
+        this.facingLocation = location;
     }
 
     /**
@@ -71,28 +80,55 @@ public abstract class PathfinderGoal {
      **/
     public abstract boolean canStop(StopInfo info);
 
-    public static class Data {
-        private float stoppingDistance;
+    public static class Parameter {
+        private final Type type;
+        private Object value;
 
-        public float getStoppingDistance() {
-            return stoppingDistance;
+        private Parameter(Type type) {
+            this.type = type;
+            value = type.defaultValue;
         }
 
-        public Data setStoppingDistance(float distance) {
-            stoppingDistance = distance;
-            return this;
+        public <T> T get() {
+            return (T) value;
+        }
+
+        public void set(Object value) {
+            if (!type.clazz.isInstance(value)) {
+                throw new IllegalArgumentException("Value is not of the correct type " +
+                        value.getClass().getSimpleName() + " -> " + type.clazz.getSimpleName());
+            }
+            this.value = value;
+        }
+
+        public enum Type {
+            PREFER_TYPE(PreferType.class, PreferType.TOWARDS),
+            STOPPING_DISTANCE(Double.class, 1.5),
+            MOVEMENT_TYPE(MovementType.class, MovementType.WALKING);
+
+            private final Class<?> clazz;
+            private final Object defaultValue;
+
+            Type(Class<?> type, Object defaultValue) {
+                this.clazz = type;
+                this.defaultValue = defaultValue;
+            }
+
+            public enum PreferType {
+                TOWARDS(Double.NEGATIVE_INFINITY),
+                AGAINST(Double.POSITIVE_INFINITY);
+
+                final double H;
+
+                PreferType(double H) {
+                    this.H = H;
+                }
+            }
         }
     }
 
-    public enum Type {
-        PREFER(Double.NEGATIVE_INFINITY),
-        AGAINST(Double.POSITIVE_INFINITY);
-
-        final double H;
-
-        Type(double H) {
-            this.H = H;
-        }
+    public Parameter getParameter(Parameter.Type type) {
+        return parameters.get(type);
     }
 
     public enum Priority {

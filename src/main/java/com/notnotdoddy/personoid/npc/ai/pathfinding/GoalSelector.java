@@ -1,8 +1,8 @@
 package com.notnotdoddy.personoid.npc.ai.pathfinding;
 
 import com.notnotdoddy.personoid.npc.NPC;
-import com.notnotdoddy.personoid.npc.NPCTickingComponent;
 import com.notnotdoddy.personoid.npc.ai.pathfinding.goals.PathfinderGoal;
+import com.notnotdoddy.personoid.npc.components.NPCTickingComponent;
 import com.notnotdoddy.personoid.utils.debug.Profiler;
 
 import java.util.ArrayList;
@@ -106,6 +106,7 @@ public class GoalSelector extends NPCTickingComponent {
             }
             current = pathfinderGoal;
             Profiler.push(Profiler.Type.GOAL_SELECTION, "start goal " + current.getClass().getSimpleName());
+            current.initParameters();
             current.onStart();
         }
     }

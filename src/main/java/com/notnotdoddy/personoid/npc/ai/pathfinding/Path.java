@@ -1,35 +1,97 @@
 package com.notnotdoddy.personoid.npc.ai.pathfinding;
 
-import org.bukkit.Location;
+import com.notnotdoddy.personoid.npc.NPC;
+import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-public record Path(List<PathNode> nodes) {
+public class Path {
+    public net.minecraft.world.level.pathfinder.Path path;
+    private List<PathNode> nodes;
+    private int nextNodeIndex = 0;
+
+    public Path(net.minecraft.world.level.pathfinder.Path path) {
+        this.path = path;
+    }
+
+    public Path(List<PathNode> nodes) {
+        this.nodes = nodes;
+    }
+
+    public Path(PathNode... nodes) {
+        this.nodes = new ArrayList<>(Arrays.stream(nodes).toList());
+    }
+
+    public List<PathNode> nodes() {
+        return nodes;
+    }
+
+    public Path append(PathNode... nodes) {
+        this.nodes.addAll(Arrays.asList(nodes));
+        return this;
+    }
+
+    public Path append(List<PathNode> nodes) {
+        this.nodes.addAll(nodes);
+        return this;
+    }
+
+    public int getNextNodeIndex() {
+        return nextNodeIndex;
+    }
+
+    public PathNode getStart() {
+        return nodes.get(0);
+    }
+
+    public PathNode getEnd() {
+        return nodes.get(nodes.size() - 1);
+    }
+
     public PathNode getNode(int index) {
         return nodes.get(index);
     }
 
-    public Path merge(Path other) {
-        nodes.addAll(other.nodes());
-        return this;
+    public int size() {
+        return nodes.size();
     }
 
-    public Path append(PathNode node) {
-        nodes.add(node);
-        return this;
+    public Vec3 getNPCPosAtNode(NPC npc, int index) {
+        // FIXME: hacky workaround while I figure out what's going on :)
+        if (index >= this.nodes.size()) return new Vec3(npc.getLocation().getX(), npc.getLocation().getY(), npc.getLocation().getZ());
+
+        PathNode node = this.nodes.get(index);
+        double x = (double)node.x + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
+        double y = (double)node.z + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
+        return new Vec3(x, node.y, y);
     }
 
-    public void clean() {
-        if (nodes.size() >= 2){
-            nodes.remove(0);
+/*    public Vec3 getNPCPosAtNode(NPC npc, int index) {
+        try {
+            Node node = path.getNode(index);
+            double x = (double)node.x + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
+            double y = (double)node.z + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
+            return new Vec3(x, node.y, y);
+        } catch (IndexOutOfBoundsException e) {
+            return new Vec3(npc.getLocation().getX(), npc.getLocation().getY(), npc.getLocation().getZ());
         }
+    }*/
+
+    public Vec3 getNextNPCPos(NPC npc) {
+        return this.getNPCPosAtNode(npc, this.nextNodeIndex);
     }
 
-    public Location getStartLocation() {
-        return nodes.get(0).getLocation().add(0.5F, 0F, 0.5F);
+    public void advance() {
+        ++this.nextNodeIndex;
     }
 
-    public Location getEndLocation() {
-        return nodes.get(nodes.size() - 1).getLocation().add(0.5F, 0F, 0.5F);
+    public boolean notStarted() {
+        return this.nextNodeIndex <= 0;
+    }
+
+    public boolean isDone() {
+        return this.nextNodeIndex >= this.nodes.size();
     }
 }

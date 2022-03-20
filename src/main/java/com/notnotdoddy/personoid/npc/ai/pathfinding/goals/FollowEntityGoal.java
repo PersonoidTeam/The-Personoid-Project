@@ -7,7 +7,7 @@ public class FollowEntityGoal<T extends LivingEntity> extends PathfinderGoal {
     private final T target;
 
     public FollowEntityGoal(NPC npc, T target) {
-        super(npc, Type.PREFER, Priority.LOW, new Data().setStoppingDistance(1.5F));
+        super(npc, Priority.LOW);
         this.target = target;
     }
 
@@ -18,7 +18,12 @@ public class FollowEntityGoal<T extends LivingEntity> extends PathfinderGoal {
 
     @Override
     public void onUpdate() {
-        setLocation(target.getLocation());
+        setTargetLocation(target.getLocation());
+        if (target.getLocation().distance(npc.getLocation()) < 20) {
+            setFacingLocation(target.getLocation());
+        } else {
+            setFacingLocation(getNextNodeLocation().add(0, 1.5F, 0));
+        }
     }
 
     @Override

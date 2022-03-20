@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public class PacketUtils {
-    public static void sendAll(Packet<?>... packets) {
+    public static void send(Packet<?>... packets) {
         for (Packet<?> packet : packets) {
             Bukkit.getOnlinePlayers().forEach(player -> ((CraftPlayer) player).getHandle().connection.send(packet));
         }

@@ -1,132 +1,131 @@
 package com.notnotdoddy.personoid.npc.ai.pathfinding;
 
 import com.notnotdoddy.personoid.npc.NPC;
-import com.notnotdoddy.personoid.npc.NPCTickingComponent;
 import com.notnotdoddy.personoid.npc.ai.pathfinding.requirements.WalkablePathRequirement;
-import com.notnotdoddy.personoid.utils.debug.Profiler;
+import com.notnotdoddy.personoid.npc.components.NPCTickingComponent;
+import com.notnotdoddy.personoid.utils.other.LocationUtils;
 import com.notnotdoddy.personoid.utils.task.Task;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
 
 import java.util.List;
 
 public class Navigation extends NPCTickingComponent {
-    private final GoalSelector goalSelector;
-    private final Pathfinder pathfinder;
+    private final Pathfinder pathfinder = new Pathfinder();
+    private final double SPEED = 0.15D;
     private Path path;
+    private double progress;
+    private Vec3 currentPoint;
+    private final Villager villager;
 
-    private int nodeIndex;
-    Vector lastTravelingVector = null;
-
-    public Navigation(NPC npc, GoalSelector goalSelector) {
+    public Navigation(NPC npc) {
         super(npc);
-        this.goalSelector = goalSelector;
-        this.pathfinder = new Pathfinder(npc);
+        villager = new Villager(EntityType.VILLAGER, npc.getLevel());
     }
-
-    public Pathfinder getPathfinder() {
-        return pathfinder;
-    }
-
+    
     @Override
     public void tick() {
-        super.tick();
-        Profiler.push(Profiler.Type.NAVIGATION, (goalSelector.getCurrentGoal() != null) + " goal");
-        Profiler.push(Profiler.Type.NAVIGATION, (path != null) + " pathtask");
-        if (currentTick % 10 == 0 && goalSelector.getCurrentGoal() != null) {
-            new Task(() -> {
-                if (path == null){
-                    path = pathfinder.calculate(goalSelector.getCurrentGoal(), List.of(new WalkablePathRequirement()), -1, 500);
-                }
-                Path tempPath = pathfinder.calculate(goalSelector.getCurrentGoal(), List.of(new WalkablePathRequirement()), -1, 500);
-                if (tempPath != null) {
-                    int sizeOfPathWithMostNodes = Math.max(tempPath.nodes().size(), path.nodes().size());
-                    for (int i = 0; i < sizeOfPathWithMostNodes; i++) {
-                        PathNode pathNode = path.nodes().get(i);
-                        PathNode tempPathNode = tempPath.nodes().get(i);
-                        if (i > path.nodes().size() - 1) {
-                            path.append(tempPathNode);
-                            continue;
-                        }
-                        if (pathNode.getLocation() != tempPathNode.getLocation()) {
-                            path.nodes().set(i, tempPathNode);
-                        }
-                    }
-                }
-            }).async().run();
-        }
-        else {
-            if (path != null) {
-                if (lastTravelingVector != null) {
-                    npc.walk(lastTravelingVector);
-                }
-            }
-        }
+        updatePath();
+        npc.getLookController().face(npc.getGoalSelector().getCurrentGoal().getFacingLocation());
         if (path != null) {
-            npc.walk(getVelocity());
-            if (shouldJump()) {
-                npc.jump();
-            }
-            update();
-
-            // debugging
-            Profiler.push(Profiler.Type.NAVIGATION, "pathNodeIndex: " + nodeIndex);
-
             for (PathNode node : path.nodes()) {
-                npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, node.getLocation(), 5,
+                npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, node.getLocation().add(0.5F, 0, 0.5F), 5,
                         new Particle.DustTransition(Color.YELLOW, Color.RED, 1));
             }
-        }
-    }
-
-    public Vector getVelocity() {
-        if (npc.getLocation().distance(path.getEndLocation()) < npc.getGoalSelector().getCurrentGoal().getData().getStoppingDistance()) {
-            lastTravelingVector = null;
-            return new Vector();
-        }
-        Vector velocity = getTargetNode().getLocation().clone().subtract(npc.getLocation()).toVector().normalize();
-        lastTravelingVector = velocity;
-        return velocity;
-    }
-
-    public void update() {
-        if (path.getNode(nodeIndex).getLocation().distanceSquared(npc.getLocation()) < 1F) {
-            nodeIndex = Math.min(nodeIndex + 1, path.nodes().size() - 1) - 1;
-            path.clean();
-        }
-    }
-
-    private PathNode getTargetNode() {
-        return path.getNode(nodeIndex);
-    }
-
-    public boolean shouldJump() {
-        if (path.nodes().size() > 1 || nodeIndex == path.nodes().size() - 1) return false;
-        PathNode node = path.getNode(nodeIndex);
-        PathNode nextNode = path.getNode(nodeIndex + 1);
-        return nextNode.getLocation().getBlockY() - node.getLocation().getBlockY() == 1;
-    }
-
-    public boolean shouldJump(int atNodeIndex) {
-        PathNode atNode = path.getNode(atNodeIndex);
-        Location atLoc = atNode.getLocation();
-        if (atLoc.distance(npc.getLocation()) > 1) return false;
-        Block atBlock = atLoc.getBlock().getRelative(BlockFace.DOWN);
-        if (atBlock.getType().isSolid()) {
-            for (int i = atNodeIndex + 1; i < path.nodes().size(); i++) {
-                PathNode currentNode = path.getNode(i);
-                Location currentLoc = currentNode.getLocation();
-                if (atLoc.distance(currentLoc) > 3) continue;
-                Block currentBlock = currentLoc.getBlock().getRelative(BlockFace.DOWN);
-                if (npc.isOnGround() && atLoc.getBlockY() + 1 == currentLoc.getBlockY() && currentBlock.getType().isSolid()) {
-                    return true;
-                }
+            if (!updateLocation()) {
+                //this.path = null;
             }
         }
-        return false;
     }
+
+    public void updatePath() {
+        // FIXME: goal location null
+        if (Bukkit.getPlayer(npc.spawner).getLocation().distance(npc.getLocation()) > 1 && npc.getGoalSelector().getCurrentGoal().getTargetLocation() != null) {
+            new Task(() -> {
+                Location endLoc = LocationUtils.getBlockInDir(npc.getGoalSelector().getCurrentGoal().getTargetLocation(), BlockFace.DOWN).getLocation();
+                Path path = pathfinder.findPath(npc.getLocation(), endLoc, List.of(new WalkablePathRequirement()), -1, 500);
+                if (this.path == null && path != null) currentPoint = path.getNextNPCPos(npc);
+                this.path = path;
+            }).async().run();
+        }
+/*        Path tempPath = findPath(npc.getGoalSelector().getCurrentGoal().getTargetLocation(), 50);
+        if (path == null && tempPath != null) currentPoint = tempPath.getNextNPCPos(npc);
+        path = tempPath;
+        if (path != null) {
+            Bukkit.getPlayer(npc.spawner).sendMessage("Path: " + path.path);
+            Node node = path.path.getNextNode();
+            Location loc = new Location(npc.getLocation().getWorld(), node.asBlockPos().getX(), node.asBlockPos().getY(), node.asBlockPos().getZ());
+            npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, loc.add(0.5F, 0, 0.5F), 5,
+                    new Particle.DustTransition(Color.YELLOW, Color.RED, 1));
+            if (!updateLocation()) {
+                this.path = null;
+            }
+        }*/
+    }
+
+    public Path getPath() {
+        return path;
+    }
+
+    public boolean updateLocation() {
+        int current = Mth.floor(progress);
+        double d = progress - current;
+        double d1 = 1 - d;
+        if (d + SPEED < 1) {
+            double dx = (currentPoint.x - npc.getX()) * SPEED;
+            double dz = (currentPoint.z - npc.getZ()) * SPEED;
+
+            npc.getMoveController().move(new Vector(dx, 0, dz));
+            npc.checkMovementStatistics(dx, 0, dz);
+            progress += SPEED;
+        } else {
+            //First complete old point.
+            double bx = (currentPoint.x - npc.getX()) * d1;
+            double bz = (currentPoint.z - npc.getZ()) * d1;
+
+            //Check if new point exists
+            path.advance();
+            if (!path.notStarted()) {
+                //Append new movement
+                currentPoint = path.getNextNPCPos(npc);
+                double d2 = SPEED - d1;
+
+                double dx = bx + ((currentPoint.x - npc.getX()) * d2);
+                double dy = currentPoint.y - npc.getY(); //Jump if needed to reach next block.
+                double dz = bz + ((currentPoint.z - npc.getZ()) * d2);
+
+                npc.getMoveController().move(new Vector(dx, dy, dz));
+                npc.checkMovementStatistics(dx, dy, dz);
+                progress += SPEED;
+            } else {
+                //Complete final movement
+                npc.getMoveController().move(new Vector(bx, 0, bz));
+                npc.checkMovementStatistics(bx, 0, bz);
+                return false;
+            }
+        }
+        return true;
+    }
+
+/*    public Path findPath(Location to, double range) {
+        try {
+            double y = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getY();
+            villager.setPos(npc.getX(), y, npc.getZ());
+            BlockPos fromPos = new BlockPos(npc.getX(), npc.getY(), npc.getZ());
+            BlockPos toPos = new BlockPos(to.getX(), to.getY(), to.getZ());
+            int k = (int) (range + 8);
+            PathNavigationRegion region = new PathNavigationRegion(npc.getLevel(), fromPos.offset(-k, -k, -k), fromPos.offset(k, k, k));
+            return new Path(npc.getPathFinder().findPath(region, villager, ImmutableSet.of(toPos), (float) range, 1, 15));
+        } catch (Exception e) {
+            return null;
+        }
+    }*/
 }

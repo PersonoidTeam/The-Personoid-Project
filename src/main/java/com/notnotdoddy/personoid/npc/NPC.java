@@ -1,29 +1,29 @@
 package com.notnotdoddy.personoid.npc;
 
 import com.mojang.authlib.GameProfile;
+import com.notnotdoddy.personoid.npc.ai.controller.LookController;
+import com.notnotdoddy.personoid.npc.ai.controller.MoveController;
 import com.notnotdoddy.personoid.npc.ai.pathfinding.GoalSelector;
 import com.notnotdoddy.personoid.npc.ai.pathfinding.Navigation;
 import com.notnotdoddy.personoid.npc.ai.pathfinding.goals.FollowEntityGoal;
 import com.notnotdoddy.personoid.utils.npc.SkinUtils;
-import com.notnotdoddy.personoid.utils.other.MathUtils;
 import com.notnotdoddy.personoid.utils.other.NPCUtils;
 import com.notnotdoddy.personoid.utils.packet.PacketUtils;
 import net.minecraft.network.protocol.game.ClientboundAddPlayerPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoPacket;
-import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
+import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
@@ -31,6 +31,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.UUID;
 
 public class NPC extends ServerPlayer {
@@ -39,20 +40,25 @@ public class NPC extends ServerPlayer {
     public UUID spawner;
 
     private final GoalSelector goalSelector = new GoalSelector(this);
-    private final Navigation navigation = new Navigation(this, goalSelector);
+    private final Navigation navigation = new Navigation(this);
+    //private final PathFinder pathFinder;
+
+    private final MoveController moveController = new MoveController(this);
+    private final LookController lookController = new LookController(this);
 
     private int aliveTicks;
     private int knockbackTicks;
     private int groundTicks;
     private int jumpTicks;
 
-    public NPC(MinecraftServer minecraftserver, ServerLevel worldserver, GameProfile gameprofile, @NotNull Player player) {
+    public NPC(MinecraftServer minecraftserver, ServerLevel worldserver, GameProfile gameprofile, @NotNull Player spawner) {
         super(minecraftserver, worldserver, gameprofile);
-        SkinUtils.setSkin(this, SkinUtils.getFromName("Chalin"));
+        SkinUtils.setSkin(this, SkinUtils.getFromName("cvjk"));
         entityData.set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0xFF);
         cp = getBukkitEntity();
-        spawner = player.getUniqueId();
-        registerGoals();
+        this.spawner = spawner.getUniqueId();
+/*        WalkNodeEvaluator walkNodeEvaluator = new WalkNodeEvaluator();
+        pathFinder = new PathFinder(walkNodeEvaluator, 1);*/
     }
 
     public void registerGoals() {
@@ -61,36 +67,17 @@ public class NPC extends ServerPlayer {
         );
     }
 
-    public GoalSelector getGoalSelector() {
-        return goalSelector;
+    public void show(Player... players) {
+        ClientboundPlayerInfoPacket playerInfoPacket = new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, this);
+        ClientboundAddPlayerPacket addPlayerPacket = new ClientboundAddPlayerPacket(this);
+        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(getId(), entityData, true);
+        PacketUtils.send(List.of(players), playerInfoPacket, addPlayerPacket, dataPacket);
     }
 
-    public Navigation getNavigation() {
-        return navigation;
-    }
-
-    public void sendSpawnPackets() {
-        PacketUtils.sendAll(new ClientboundSetEntityDataPacket(getId(), entityData, true));
-    }
-
-    public void render() {
-        PacketUtils.sendAll(
-                new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, this),
-                new ClientboundAddPlayerPacket(this),
-                new ClientboundSetEntityDataPacket(getId(), entityData, true)
-        );
-    }
-
-    public void setVelocity(Vector vector) {
-        velocity = vector;
-    }
-
-    public void addVelocity(Vector vector) {
-        if (MathUtils.isNotFinite(vector)) {
-            velocity = vector;
-            return;
-        }
-        velocity.add(vector);
+    public void hide(Player... players) {
+        ClientboundPlayerInfoPacket playerInfoPacket = new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, this);
+        ClientboundRemoveEntitiesPacket removePacket = new ClientboundRemoveEntitiesPacket(this.getId());
+        PacketUtils.send(List.of(players), playerInfoPacket, removePacket);
     }
 
     @Override
@@ -108,11 +95,7 @@ public class NPC extends ServerPlayer {
             if (groundTicks < 5) {
                 groundTicks++;
             }
-        } else {
-            groundTicks = 0;
-        }
-
-        updateLocation();
+        } else groundTicks = 0;
 
         float health = getHealth();
         float maxHealth = getMaxHealth();
@@ -124,9 +107,9 @@ public class NPC extends ServerPlayer {
             outOfWorld();
         }
 
-        Player player = Bukkit.getPlayer(spawner);
+/*        Player player = Bukkit.getPlayer(spawner);
         Location targetLoc = player.getLocation();
-        faceLocation(targetLoc);
+        faceLocation(targetLoc);*/
 
         // FIXME: swimming not working
 
@@ -136,8 +119,37 @@ public class NPC extends ServerPlayer {
             setSwimming(false);
         }*/
 
-        navigation.tick();
+        tickAi();
+        fallDamageCheck();
+    }
+
+    private void tickAi() {
         goalSelector.tick();
+        navigation.tick();
+        moveController.tick();
+        lookController.tick();
+    }
+
+    /*
+    public PathFinder getPathFinder() {
+        return pathFinder;
+    }
+*/
+
+    public GoalSelector getGoalSelector() {
+        return goalSelector;
+    }
+
+    public Navigation getNavigation() {
+        return navigation;
+    }
+
+    public MoveController getMoveController() {
+        return moveController;
+    }
+
+    public LookController getLookController() {
+        return lookController;
     }
 
     private void loadChunks() {
@@ -153,42 +165,14 @@ public class NPC extends ServerPlayer {
         }
     }
 
-    public void walk(Vector vel) {
-        double max = 0.4;
-        Vector sum = velocity.clone().add(vel.setY(0));
-        if (sum.length() > max) {
-            sum.normalize().multiply(max);
-        }
-        velocity = sum;
-    }
-
-    public boolean isFalling() {
-        return velocity.getY() < -0.8F;
-    }
-
     public Location getLocation() {
         return cp.getLocation();
     }
 
-    public void updateLocation() {
-        double y;
-        MathUtils.clean(velocity);
-        if (isInWater()) {
-            y = Math.min(velocity.getY() + 0.1, 0.1);
-            addFriction(0.8);
-            velocity.setY(y);
-        } else {
-            if (groundTicks != 0) {
-                velocity.setY(0);
-                addFriction(0.5);
-                y = 0;
-            } else {
-                y = velocity.getY();
-                velocity.setY(Math.max(y - 0.1, -3.5));
-            }
+    private void fallDamageCheck() {
+        if (groundTicks != 0 && !moveController.isFalling() && moveController.getOldVelocity().getY() < -0.1F) {
+            hurt(DamageSource.FALL, (float) Math.pow(3.6, moveController.getOldVelocity().getY()));
         }
-
-        this.move(MoverType.SELF, new Vec3(velocity.getX(), y, velocity.getZ()));
     }
 
     @Override
@@ -204,15 +188,44 @@ public class NPC extends ServerPlayer {
         return false;
     }
 
-    public void jump() {
-        jump(new Vector(0, 0.5, 0));
+    @Override
+    public void push(Entity entity) {
+        // what the heck is this
+        if (!this.isPassengerOfSameVehicle(entity) && !entity.noPhysics && !this.noPhysics) {
+            double d0 = entity.getX() - this.getZ();
+            double d1 = entity.getX() - this.getZ();
+            double d2 = Mth.absMax(d0, d1);
+            if (d2 >= 0.009999999776482582D) {
+                d2 = Math.sqrt(d2);
+                d0 /= d2;
+                d1 /= d2;
+                double d3 = 1.0D / d2;
+                if (d3 > 1.0D) {
+                    d3 = 1.0D;
+                }
+
+                d0 *= d3;
+                d1 *= d3;
+                d0 *= 0.05000000074505806D;
+                d1 *= 0.05000000074505806D;
+
+                if (!this.isVehicle()) {
+                    velocity.add(new Vector(-d0, 0.0D, -d1));
+                }
+
+                if (!entity.isVehicle()) {
+                    entity.push(d0, 0.0D, d1);
+                }
+            }
+        }
     }
 
-    public void jump(Vector vel) {
-        if (jumpTicks == 0 && groundTicks > 1) {
-            jumpTicks = 4;
-            velocity = vel;
-        }
+    public int getGroundTicks() {
+        return groundTicks;
+    }
+
+    public void setGroundTicks(int groundTicks) {
+        this.groundTicks = groundTicks;
     }
 
     @Override
@@ -238,18 +251,6 @@ public class NPC extends ServerPlayer {
         return false;
     }
 
-    private void addFriction(double factor) {
-        double min = 0.01;
-        double x = velocity.getX();
-        double z = velocity.getZ();
-        velocity.setX(Math.abs(x) < min ? 0 : x * factor);
-        velocity.setZ(Math.abs(z) < min ? 0 : z * factor);
-    }
-
-    public void despawn() {
-        getBukkitEntity().remove();
-    }
-
     @Override
     public boolean damageEntity0(DamageSource damagesource, float f) {
         boolean damaged = super.damageEntity0(damagesource, f);
@@ -259,24 +260,9 @@ public class NPC extends ServerPlayer {
 
         if (damaged && attacker != null) {
             // TODO: check if still alive -> if not, call npc event
-            knockback(attacker.getBukkitEntity().getLocation());
+            moveController.applyKnockback(attacker.getBukkitEntity().getLocation());
         }
         return damaged;
-    }
-
-    private void knockback(Location from) {
-        Vector vel = getLocation().toVector().subtract(from.toVector()).normalize();
-        vel.multiply(0.25F).setY(0.5F);
-        velocity.add(vel);
-    }
-
-    public void faceLocation(Location loc) {
-        try {
-            Vector dir = loc.toVector().subtract(cp.getLocation().toVector()).normalize();
-            Location facing = cp.getLocation().setDirection(dir);
-            cp.teleport(facing);
-            PacketUtils.sendAll(new ClientboundRotateHeadPacket(cp.getHandle(), (byte) (facing.getYaw() * 256 / 360)));
-        } catch (IllegalArgumentException ignored) { }
     }
 
     // FIXME swimming throws error, npc disappears
@@ -302,6 +288,6 @@ public class NPC extends ServerPlayer {
     private void updatePose(Pose pose) {
         setPose(pose);
         entityData.set(new EntityDataAccessor<>(6, EntityDataSerializers.POSE), pose);
-        PacketUtils.sendAll(new ClientboundSetEntityDataPacket(getId(), entityData, false));
+        PacketUtils.send(new ClientboundSetEntityDataPacket(getId(), entityData, false));
     }
 }

@@ -3,6 +3,8 @@ package com.notnotdoddy.personoid.utils.other;
 import com.notnotdoddy.personoid.handlers.NPCHandler;
 import com.notnotdoddy.personoid.npc.NPC;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 
 public class LocationUtils {
     public static NPC getClosestNPC(Location location) {
@@ -13,5 +15,14 @@ public class LocationUtils {
             }
         }
         return closestNPC;
+    }
+
+    public static Block getBlockInDir(Location location, BlockFace direction) {
+        while (true) {
+            location = location.getBlock().getRelative(direction).getLocation();
+            if (location.getBlock().getType().isSolid()) {
+                return location.getBlock();
+            }
+        }
     }
 }
