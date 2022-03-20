@@ -36,7 +36,6 @@ import java.util.UUID;
 
 public class NPC extends ServerPlayer {
     private final CraftPlayer cp;
-    private Vector velocity = new Vector();
     public UUID spawner;
 
     private final GoalSelector goalSelector = new GoalSelector(this);
@@ -210,7 +209,7 @@ public class NPC extends ServerPlayer {
                 d1 *= 0.05000000074505806D;
 
                 if (!this.isVehicle()) {
-                    velocity.add(new Vector(-d0, 0.0D, -d1));
+                    moveController.addVelocity(new Vector(-d0, 0.0D, -d1));
                 }
 
                 if (!entity.isVehicle()) {
@@ -231,7 +230,7 @@ public class NPC extends ServerPlayer {
     @Override
     public boolean isOnGround() {
         // not mine, some smart person figured this out
-        double vy = velocity.getY();
+        double vy = moveController.getVelocity().getY();
         if (vy > 0) {
             return false;
         }

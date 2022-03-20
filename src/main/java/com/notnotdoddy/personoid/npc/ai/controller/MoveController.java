@@ -85,8 +85,16 @@ public class MoveController extends NPCTickingComponent {
         moveVel = vel;
     }
 
+    public void addVelocity(Vector velocity) {
+        moveVel.add(velocity);
+    }
+
     public boolean isFalling() {
         return gravVel < -0.1F;
+    }
+
+    public Vector getVelocity() {
+        return moveVel;
     }
 
     public Vector getOldVelocity() {
