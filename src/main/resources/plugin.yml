@@ -1,6 +1,6 @@
 name: Personoid
 version: ${project.version}
-main: us.notnotdoddy.personoid.Personoid
+main: com.personoid.PersonoidAPI
 api-version: 1.18
 authors: [ DefineDoddy, notnotnotswipez ]
 description: An API designed to make creating, managing, and interacting with NPC's easy
