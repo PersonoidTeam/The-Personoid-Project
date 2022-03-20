@@ -1,6 +1,7 @@
 package com.notnotdoddy.personoid.npc.ai.pathfinding.goals;
 
 import com.notnotdoddy.personoid.npc.NPC;
+import com.notnotdoddy.personoid.npc.ai.Priority;
 import org.bukkit.entity.LivingEntity;
 
 public class FollowEntityGoal<T extends LivingEntity> extends PathfinderGoal {
