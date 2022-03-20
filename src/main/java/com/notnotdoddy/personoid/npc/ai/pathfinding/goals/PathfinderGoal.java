@@ -1,8 +1,9 @@
 package com.notnotdoddy.personoid.npc.ai.pathfinding.goals;
 
 import com.notnotdoddy.personoid.npc.NPC;
+import com.notnotdoddy.personoid.npc.ai.Priority;
 import com.notnotdoddy.personoid.npc.components.NPCComponent;
-import com.notnotdoddy.personoid.npc.enums.MovementType;
+import com.notnotdoddy.personoid.npc.ai.pathfinding.MovementType;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 
@@ -129,28 +130,6 @@ public abstract class PathfinderGoal extends NPCComponent {
 
     public Parameter getParameter(Parameter.Type type) {
         return parameters.get(type);
-    }
-
-    public enum Priority {
-        HIGHEST(1F),
-        HIGH(0.75F),
-        NORMAL(0.5F),
-        LOW(0.25F),
-        LOWEST(0F);
-
-        final float value;
-
-        Priority(float value) {
-            this.value = value;
-        }
-
-        public float getValue(){
-            return value;
-        }
-
-        public boolean isHigherThan(Priority priority){
-            return priority.getValue() < getValue();
-        }
     }
 
     public enum StateReason {

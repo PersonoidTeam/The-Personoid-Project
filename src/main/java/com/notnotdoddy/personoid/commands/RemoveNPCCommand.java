@@ -3,8 +3,8 @@ package com.notnotdoddy.personoid.commands;
 import com.notnotdoddy.personoid.handlers.CommandHandler;
 import com.notnotdoddy.personoid.handlers.NPCHandler;
 import com.notnotdoddy.personoid.npc.NPC;
-import com.notnotdoddy.personoid.utils.message.Message;
-import com.notnotdoddy.personoid.utils.other.LocationUtils;
+import com.notnotdoddy.personoid.utils.bukkit.Message;
+import com.notnotdoddy.personoid.utils.LocationUtils;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 

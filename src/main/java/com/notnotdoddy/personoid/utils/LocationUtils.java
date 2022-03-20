@@ -1,4 +1,4 @@
-package com.notnotdoddy.personoid.utils.other;
+package com.notnotdoddy.personoid.utils;
 
 import com.notnotdoddy.personoid.handlers.NPCHandler;
 import com.notnotdoddy.personoid.npc.NPC;

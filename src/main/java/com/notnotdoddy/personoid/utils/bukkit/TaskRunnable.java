@@ -1,4 +1,4 @@
-package com.notnotdoddy.personoid.utils.task;
+package com.notnotdoddy.personoid.utils.bukkit;
 
 public interface TaskRunnable extends Runnable {
     Task task = null;

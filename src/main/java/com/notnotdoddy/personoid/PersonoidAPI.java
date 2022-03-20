@@ -3,7 +3,7 @@ package com.notnotdoddy.personoid;
 import com.notnotdoddy.personoid.handlers.CommandHandler;
 import com.notnotdoddy.personoid.handlers.NPCHandler;
 import com.notnotdoddy.personoid.listeners.Events;
-import com.notnotdoddy.personoid.utils.message.Message;
+import com.notnotdoddy.personoid.utils.bukkit.Message;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PersonoidAPI extends JavaPlugin {

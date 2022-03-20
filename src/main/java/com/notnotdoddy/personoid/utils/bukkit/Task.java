@@ -1,4 +1,4 @@
-package com.notnotdoddy.personoid.utils.task;
+package com.notnotdoddy.personoid.utils.bukkit;
 
 import com.notnotdoddy.personoid.PersonoidAPI;
 import org.bukkit.Bukkit;

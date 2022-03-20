@@ -1,4 +1,4 @@
-package com.notnotdoddy.personoid.utils.message;
+package com.notnotdoddy.personoid.utils.bukkit;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;

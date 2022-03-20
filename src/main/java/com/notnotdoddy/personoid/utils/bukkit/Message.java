@@ -1,8 +1,6 @@
-package com.notnotdoddy.personoid.utils.message;
+package com.notnotdoddy.personoid.utils.bukkit;
 
 import com.notnotdoddy.personoid.PersonoidAPI;
-import com.notnotdoddy.personoid.utils.task.Task;
-import com.notnotdoddy.personoid.utils.task.TaskRunnable;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;

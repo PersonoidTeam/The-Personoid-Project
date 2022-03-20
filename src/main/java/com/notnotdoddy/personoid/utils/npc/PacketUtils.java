@@ -1,4 +1,4 @@
-package com.notnotdoddy.personoid.utils.packet;
+package com.notnotdoddy.personoid.utils.npc;
 
 import net.minecraft.network.protocol.Packet;
 import org.bukkit.Bukkit;

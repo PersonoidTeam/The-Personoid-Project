@@ -1,4 +1,4 @@
-package com.notnotdoddy.personoid.utils.other;
+package com.notnotdoddy.personoid.utils;
 
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;

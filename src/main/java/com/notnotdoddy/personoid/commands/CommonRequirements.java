@@ -2,7 +2,7 @@ package com.notnotdoddy.personoid.commands;
 
 import com.notnotdoddy.personoid.handlers.CommandHandler.Command.Requirement;
 import com.notnotdoddy.personoid.handlers.CommandHandler.Command.Requirement.Type;
-import com.notnotdoddy.personoid.utils.message.Message;
+import com.notnotdoddy.personoid.utils.bukkit.Message;
 
 public class CommonRequirements {
     public static final Requirement player = new Requirement(Type.PLAYER) {

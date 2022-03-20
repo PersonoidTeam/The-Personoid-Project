@@ -1,4 +1,4 @@
-package com.notnotdoddy.personoid.utils.other;
+package com.notnotdoddy.personoid.utils.npc;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;

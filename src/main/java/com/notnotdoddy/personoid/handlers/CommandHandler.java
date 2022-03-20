@@ -5,7 +5,7 @@ import com.notnotdoddy.personoid.commands.CreateNPCCommand;
 import com.notnotdoddy.personoid.commands.ProfilerMessageCommand;
 import com.notnotdoddy.personoid.commands.RemoveNPCCommand;
 import com.notnotdoddy.personoid.commands.TestLocationCommand;
-import com.notnotdoddy.personoid.utils.message.Message;
+import com.notnotdoddy.personoid.utils.bukkit.Message;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;

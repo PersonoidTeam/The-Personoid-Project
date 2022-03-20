@@ -1,14 +1,15 @@
 package com.notnotdoddy.personoid.npc;
 
 import com.mojang.authlib.GameProfile;
+import com.notnotdoddy.personoid.npc.ai.NPCBrain;
 import com.notnotdoddy.personoid.npc.ai.controller.LookController;
 import com.notnotdoddy.personoid.npc.ai.controller.MoveController;
 import com.notnotdoddy.personoid.npc.ai.pathfinding.GoalSelector;
 import com.notnotdoddy.personoid.npc.ai.pathfinding.Navigation;
 import com.notnotdoddy.personoid.npc.ai.pathfinding.goals.FollowEntityGoal;
 import com.notnotdoddy.personoid.utils.npc.SkinUtils;
-import com.notnotdoddy.personoid.utils.other.NPCUtils;
-import com.notnotdoddy.personoid.utils.packet.PacketUtils;
+import com.notnotdoddy.personoid.utils.npc.NPCUtils;
+import com.notnotdoddy.personoid.utils.npc.PacketUtils;
 import net.minecraft.network.protocol.game.ClientboundAddPlayerPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
@@ -44,6 +45,7 @@ public class NPC extends ServerPlayer {
 
     private final MoveController moveController = new MoveController(this);
     private final LookController lookController = new LookController(this);
+    private final NPCBrain brain = new NPCBrain(this);
 
     private int aliveTicks;
     private int knockbackTicks;

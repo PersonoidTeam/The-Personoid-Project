@@ -2,7 +2,7 @@ package com.notnotdoddy.personoid.commands;
 
 import com.notnotdoddy.personoid.handlers.CommandHandler;
 import com.notnotdoddy.personoid.utils.debug.Profiler;
-import com.notnotdoddy.personoid.utils.message.Message;
+import com.notnotdoddy.personoid.utils.bukkit.Message;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 

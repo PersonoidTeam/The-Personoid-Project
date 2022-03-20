@@ -2,7 +2,7 @@ package com.notnotdoddy.personoid.npc.ai.controller;
 
 import com.notnotdoddy.personoid.npc.NPC;
 import com.notnotdoddy.personoid.npc.components.NPCTickingComponent;
-import com.notnotdoddy.personoid.utils.other.MathUtils;
+import com.notnotdoddy.personoid.utils.MathUtils;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
