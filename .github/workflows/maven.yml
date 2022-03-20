@@ -29,6 +29,11 @@ jobs:
 
     - name: Cache multiple paths
       uses: actions/cache@v2
+      with:
+        path: |
+          ~/cache
+          !~/cache/exclude
+        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
       
     - name: Build with Maven
       run: mvn -B package --file pom.xml
