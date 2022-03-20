@@ -11,12 +11,12 @@ public class Events implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        NPCHandler.getNpcs().forEach(npc -> npc.show(player));
+        NPCHandler.getNPCs().forEach(npc -> npc.show(player));
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        NPCHandler.getNpcs().forEach(npc -> npc.hide(player));
+        NPCHandler.getNPCs().forEach(npc -> npc.hide(player));
     }
 }

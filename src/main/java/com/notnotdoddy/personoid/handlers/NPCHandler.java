@@ -77,7 +77,7 @@ public class NPCHandler {
         return null;
     }
 
-    public static List<NPC> getNpcs() {
+    public static List<NPC> getNPCs() {
         return npcs;
     }
 
