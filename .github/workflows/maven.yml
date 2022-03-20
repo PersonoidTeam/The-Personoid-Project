@@ -11,14 +11,9 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    # Get BuildTools from https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
-    - name: "Getting BuildTools"
-      run: "curl https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar -o ./BuildTools.jar"
-      
     - uses: actions/checkout@v2
     - name: "Setting up Java Development Kit"
       uses: actions/setup-java@v2
@@ -26,35 +21,14 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-
-    # Build Spigot by BuildTools
-    - name: "Building Spigot"
-      # !! Change 'latest' to the version what you wanted. !!
-      # Also Java version need changing if you're trying building versions below 1.17.X!
-      run: "java -jar BuildTools.jar --rev latest --remapped"
-      
-    # Uploading the build jar files.
-    - name: "Uploading Build"
-      uses: "actions/upload-artifact@v2"
-      with:
-        name: "Spigot"
-        path: "./spigot*.jar"
         
-    - name: "Getting Current Date"
-      id: date
-      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-
-    - name: "Creating Release"
-      uses: "marvinpinto/action-automatic-releases@latest"
+    - name: Compile Minecraft Spigot or Paper (BuildTools)
+      uses: SpraxDev/Action-SpigotMC@v4.0.0
       with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: false
-        title: "Nightly Spigot ${{ steps.date.outputs.date }}"
-        automatic_release_tag: "${{ steps.date.outputs.date }}"
-        files: |
-          ./spigot*.jar
-    
+        remapped: true
+
     - name: Cache multiple paths
       uses: actions/cache@v2
+      
     - name: Build with Maven
       run: mvn -B package --file pom.xml
