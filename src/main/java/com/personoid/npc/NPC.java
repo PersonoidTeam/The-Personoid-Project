@@ -33,7 +33,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -140,6 +139,7 @@ public class NPC extends ServerPlayer {
         navigation.tick();
         moveController.tick();
         lookController.tick();
+        brain.tick();
         blockBreaker.tick();
     }
 
@@ -223,7 +223,7 @@ public class NPC extends ServerPlayer {
                 d1 *= 0.05000000074505806D;
 
                 if (!this.isVehicle()) {
-                    moveController.addVelocity(new Vector(-d0, 0.0D, -d1));
+                    //moveController.addVelocity(new Vector(-d0, 0.0D, -d1));
                 }
 
                 if (!entity.isVehicle()) {

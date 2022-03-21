@@ -20,7 +20,7 @@ public class GoalSelector extends NPCTickingComponent {
     public void registerGoals(PathfinderGoal... goals) {
         this.goals.addAll(Arrays.stream(goals).toList());
         for (PathfinderGoal pathfinderGoal : this.goals){
-            Profiler.push(Profiler.Type.GOAL_SELECTION, "registered goal " + pathfinderGoal.getClass().getSimpleName());
+            Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "registered goal " + pathfinderGoal.getClass().getSimpleName());
         }
     }
 
@@ -58,7 +58,7 @@ public class GoalSelector extends NPCTickingComponent {
                 }
             }
             if (pathfinderGoal.canStart(new PathfinderGoal.StartInfo(PathfinderGoal.StateReason.CHECK))){
-                Profiler.push(Profiler.Type.GOAL_SELECTION, "can start " + pathfinderGoal.getClass().getSimpleName());
+                Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "can start " + pathfinderGoal.getClass().getSimpleName());
                 goalsThatCanActivate.add(pathfinderGoal);
             }
         }
@@ -72,17 +72,17 @@ public class GoalSelector extends NPCTickingComponent {
         }
 
         if (highestPriorityGoal != null) {
-            Profiler.push(Profiler.Type.GOAL_SELECTION, "highest priority goal " + highestPriorityGoal.getClass().getSimpleName());
+            Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "highest priority goal " + highestPriorityGoal.getClass().getSimpleName());
             if (current != null) {
                 if (highestPriorityGoal.getPriority() == current.getPriority()) {
                     if (random.nextBoolean()){
-                        Profiler.push(Profiler.Type.GOAL_SELECTION, "select goal random " + highestPriorityGoal.getClass().getSimpleName());
+                        Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "select goal random " + highestPriorityGoal.getClass().getSimpleName());
                         selectGoal(highestPriorityGoal.getClass());
                     }
                 }
             }
             else {
-                Profiler.push(Profiler.Type.GOAL_SELECTION, "select goal " + highestPriorityGoal.getClass().getSimpleName());
+                Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "select goal " + highestPriorityGoal.getClass().getSimpleName());
                 selectGoal(highestPriorityGoal.getClass());
             }
         }
@@ -95,7 +95,7 @@ public class GoalSelector extends NPCTickingComponent {
         for (PathfinderGoal pathGoal : goals){
             if (pathGoal.getClass().equals(goal)){
                 pathfinderGoal = pathGoal;
-                Profiler.push(Profiler.Type.GOAL_SELECTION, "found similar goal " + pathfinderGoal.getClass().getSimpleName());
+                Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "found similar goal " + pathfinderGoal.getClass().getSimpleName());
                 break;
             }
         }
@@ -105,7 +105,7 @@ public class GoalSelector extends NPCTickingComponent {
                 current.onStop();
             }
             current = pathfinderGoal;
-            Profiler.push(Profiler.Type.GOAL_SELECTION, "start goal " + current.getClass().getSimpleName());
+            Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "start goal " + current.getClass().getSimpleName());
             current.initParameters();
             current.onStart();
         }

@@ -5,6 +5,7 @@ import com.personoid.npc.components.NPCTickingComponent;
 import com.personoid.utils.npc.PacketUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
+import net.minecraft.world.InteractionHand;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 
@@ -28,9 +29,10 @@ public class BlockBreaker extends NPCTickingComponent {
         Bukkit.broadcastMessage("Mapped value: " + getProgress()+"/9");
 
         PacketUtils.send(new ClientboundBlockDestructionPacket(npc.getBukkitEntity().getEntityId(), getBlockPos(), getProgress()));
+        npc.swing(InteractionHand.MAIN_HAND);
+        npc.getLookController().face(block.getLocation());
         if (hardnessOfBlock*currentProgress >= hardnessOfBlock) {
             block.breakNaturally(/*npc.getInventory().getItemInMainHand()*/);
-            PacketUtils.send(new ClientboundBlockDestructionPacket(npc.getBukkitEntity().getEntityId(), getBlockPos(), 10));
             stop();
         }
     }
@@ -44,6 +46,7 @@ public class BlockBreaker extends NPCTickingComponent {
     }
 
     public void stop() {
+        PacketUtils.send(new ClientboundBlockDestructionPacket(npc.getBukkitEntity().getEntityId(), getBlockPos(), 10));
         this.block = null;
     }
 
@@ -57,7 +60,6 @@ public class BlockBreaker extends NPCTickingComponent {
 
     private int getProgress(){
         double mappedValue = MathUtils.map(hardnessOfBlock * currentProgress, hardnessOfBlock, 0, 9);
-
         return Math.round((long) mappedValue);
     }
 }

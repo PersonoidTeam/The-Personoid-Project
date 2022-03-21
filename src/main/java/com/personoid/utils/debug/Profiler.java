@@ -28,7 +28,7 @@ public class Profiler {
 
     public enum Type {
         A_STAR,
-        GOAL_SELECTION,
+        ACTIVITY_MANAGER,
         NAVIGATION,
     }
 }
