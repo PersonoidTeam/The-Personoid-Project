@@ -34,7 +34,7 @@ public class NPCHandler {
         npcs.add(npc);
 
         // NPC registration methods
-        npc.registerGoals();
+        npc.registerActivities();
     }
 
     public static void unregisterNPC(NPC npc) {

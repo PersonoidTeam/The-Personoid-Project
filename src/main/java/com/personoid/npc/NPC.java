@@ -1,6 +1,8 @@
 package com.personoid.npc;
 
 import com.mojang.authlib.GameProfile;
+import com.personoid.activites.MineTreeActivity;
+import com.personoid.enums.LogType;
 import com.personoid.npc.ai.NPCBrain;
 import com.personoid.npc.ai.controller.LookController;
 import com.personoid.npc.ai.controller.MoveController;
@@ -68,7 +70,10 @@ public class NPC extends ServerPlayer {
         pathFinder = new PathFinder(walkNodeEvaluator, 1);*/
     }
 
-    public void registerGoals() {
+    public void registerActivities() {
+        brain.getActivityManager().register(
+                new MineTreeActivity(LogType.OAK)
+        );
 /*        goalSelector.registerGoals(
                 new FollowEntityGoal<>(this, Bukkit.getPlayer(spawner))
         );*/

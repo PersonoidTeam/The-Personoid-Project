@@ -9,7 +9,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -25,6 +24,7 @@ public class Navigation extends NPCTickingComponent {
     private double progress;
     private Vec3 currentPoint;
     private final Villager villager;
+    private Location target;
 
     public Navigation(NPC npc) {
         super(npc);
@@ -33,9 +33,10 @@ public class Navigation extends NPCTickingComponent {
     
     @Override
     public void tick() {
-        if (npc.getGoalSelector().getCurrentGoal() != null) {
+        if (target != null) {
             updatePath();
-            npc.getLookController().face(npc.getGoalSelector().getCurrentGoal().getFacingLocation());
+            // let the GoToLocationActivity handle this
+            npc.getLookController().face(target);
             if (path != null) {
                 for (PathNode node : path.nodes()) {
                     npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, node.getLocation().add(0.5F, 0, 0.5F), 5,
@@ -48,11 +49,19 @@ public class Navigation extends NPCTickingComponent {
         }
     }
 
+    public void setTarget(Location location) {
+        target = location;
+    }
+
+    public Location getTarget() {
+        return target;
+    }
+
     public void updatePath() {
         // FIXME: goal location null
-        if (Bukkit.getPlayer(npc.spawner).getLocation().distance(npc.getLocation()) > 1 && npc.getGoalSelector().getCurrentGoal().getTargetLocation() != null) {
+        if (target.distance(npc.getLocation()) > 1 && target != null) {
             new Task(() -> {
-                Location endLoc = LocationUtils.getBlockInDir(npc.getGoalSelector().getCurrentGoal().getTargetLocation(), BlockFace.DOWN).getLocation();
+                Location endLoc = LocationUtils.getBlockInDir(target, BlockFace.DOWN).getLocation();
                 Path path = pathfinder.findPath(npc.getLocation(), endLoc, List.of(new WalkablePathRequirement()), -1, 500);
                 if (this.path == null && path != null) currentPoint = path.getNextNPCPos(npc);
                 this.path = path;

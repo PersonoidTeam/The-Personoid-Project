@@ -9,6 +9,7 @@ import java.util.*;
 public class ActivityManager extends NPCTickingComponent {
     private final Set<Activity> registered = new HashSet<>();
     private final Queue<Activity> queue = new PriorityQueue<>(Collections.reverseOrder());
+    private final Set<Activity> paused = new HashSet<>();
     private Activity current;
 
     public ActivityManager(NPC npc) {
@@ -30,17 +31,20 @@ public class ActivityManager extends NPCTickingComponent {
     @Override
     public void tick() {
         if (current != null) {
+            current.internalUpdate();
+            current.onUpdate();
             if (current.isFinished()) {
                 startNextActivity();
             } else if (current.canStop(Activity.StopType.STOP)) {
+                current.internalStop(Activity.StopType.STOP);
                 current.onStop(Activity.StopType.STOP);
                 startNextActivity();
             } else if (!queue.isEmpty() && queue.peek().getPriority().isHigherThan(current.getPriority()) && current.canStop(Activity.StopType.PAUSE)) {
+                current.internalStop(Activity.StopType.PAUSE);
                 current.onStop(Activity.StopType.PAUSE);
                 current.setPaused(true);
+                paused.add(current);
             }
-            current.internalUpdate();
-            current.onUpdate();
         } startNextActivity();
     }
 
@@ -51,6 +55,8 @@ public class ActivityManager extends NPCTickingComponent {
                     activity.internalStart(this, Activity.StartType.RESUME);
                     activity.onStart(Activity.StartType.RESUME);
                     activity.setPaused(false);
+                    paused.remove(activity);
+                    current = activity;
                     return true;
                 }
             }
@@ -60,6 +66,8 @@ public class ActivityManager extends NPCTickingComponent {
                     activity.internalStart(this, Activity.StartType.RESUME);
                     activity.onStart(Activity.StartType.RESUME);
                     activity.setPaused(false);
+                    paused.remove(activity);
+                    current = activity;
                     return true;
                 }
             }
@@ -83,7 +91,8 @@ public class ActivityManager extends NPCTickingComponent {
 
     public void queueIfEmpty() {
         if (queue.isEmpty()) {
-            queueActivity(chooseViaPriority());
+            Activity chosen = chooseViaPriority();
+            if (chosen != null) queueActivity(chosen);
         }
     }
 

@@ -4,6 +4,7 @@ public enum ActivityType {
     IDLING,
     WANDERING,
     FOLLOWING,
+    LOCATION,
     GATHERING,
     BUILDING,
     FIGHTING,
