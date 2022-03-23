@@ -36,10 +36,6 @@ public class ActivityManager extends NPCTickingComponent {
             current.onUpdate();
             if (current.isFinished()) {
                 startNextActivity();
-            } else if (current.canStop(Activity.StopType.STOP)) {
-                current.internalStop(Activity.StopType.STOP);
-                current.onStop(Activity.StopType.STOP);
-                startNextActivity();
             } else if (!queue.isEmpty() && queue.peek().getPriority().isHigherThan(current.getPriority()) && current.canStop(Activity.StopType.PAUSE)) {
                 current.internalStop(Activity.StopType.PAUSE);
                 current.onStop(Activity.StopType.PAUSE);

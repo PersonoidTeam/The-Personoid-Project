@@ -32,6 +32,7 @@ public class MoveController extends NPCTickingComponent {
     private void tickMovement() {
         MathUtils.clean(moveVel);
         npc.move(MoverType.SELF, new Vec3(moveVel.getX(), moveVel.getY(), moveVel.getZ()));
+        moveVel = new Vector();
     }
 
     private void tickGravity() {

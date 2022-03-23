@@ -1,6 +1,7 @@
 package com.personoid.npc;
 
 import com.mojang.authlib.GameProfile;
+import com.personoid.activites.DanceActivity;
 import com.personoid.activites.MineTreeActivity;
 import com.personoid.enums.LogType;
 import com.personoid.npc.ai.NPCBrain;
@@ -29,10 +30,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.AABB;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -60,6 +58,8 @@ public class NPC extends ServerPlayer {
     private int knockbackTicks;
     private int groundTicks;
     private int jumpTicks;
+    private Pose pose = Pose.STANDING;
+    private boolean sneaking;
 
     public NPC(MinecraftServer minecraftserver, ServerLevel worldserver, GameProfile gameprofile, @NotNull Player spawner) {
         super(minecraftserver, worldserver, gameprofile);
@@ -73,7 +73,8 @@ public class NPC extends ServerPlayer {
 
     public void registerActivities() {
         brain.getActivityManager().register(
-                new MineTreeActivity(LogType.OAK)
+                new MineTreeActivity(LogType.OAK),
+                new DanceActivity()
         );
 /*        goalSelector.registerGoals(
                 new FollowEntityGoal<>(this, Bukkit.getPlayer(spawner))
@@ -138,6 +139,7 @@ public class NPC extends ServerPlayer {
         if (aliveTicks == 1) {
             //blockBreaker.start(getLocation().getBlock().getRelative(BlockFace.DOWN));
         }
+        updatePose();
     }
 
     private void tickAi() {
@@ -295,7 +297,7 @@ public class NPC extends ServerPlayer {
 
     public void setSwimming(boolean swimming) {
         getBukkitEntity().setSwimming(swimming);
-        updatePose(swimming ? Pose.SWIMMING : Pose.STANDING);
+        pose = swimming ? Pose.SWIMMING : Pose.STANDING;
     }
 
     public void setSneaking() {
@@ -303,13 +305,41 @@ public class NPC extends ServerPlayer {
     }
 
     public void setSneaking(boolean sneaking) {
-        getBukkitEntity().setSneaking(sneaking);
-        updatePose(sneaking ? Pose.CROUCHING : Pose.STANDING);
+        this.sneaking = sneaking;
+        pose = sneaking ? Pose.CROUCHING : Pose.STANDING;
     }
 
-    private void updatePose(Pose pose) {
-        setPose(pose);
+    public boolean isSneaking() {
+        return cp.isSneaking();
+    }
+
+    private void updatePose() {
+        super.updatePlayerPose();
+/*        this.setPose(pose);
+        //((Player) cp).setSneaking(true);
+        cp.getHandle().setPose(pose);
+        int id = switch (pose) {
+            case STANDING -> 0;
+            case FALL_FLYING -> 1;
+            case SLEEPING -> 2;
+            case SWIMMING -> 3;
+            case SPIN_ATTACK -> 4;
+            case CROUCHING -> 5;
+            case LONG_JUMPING -> 6;
+            case DYING -> 7;
+        };
+        entityData.set(new EntityDataAccessor<>(getId(), EntityDataSerializers.POSE), pose);
+        PacketUtils.send(new ClientboundSetEntityDataPacket(getId(), entityData, false));*/
+
+        cp.setSneaking(sneaking);
+        ((Player) cp).setSneaking(sneaking);
+
+        cp.getHandle().setPose(pose);
         entityData.set(new EntityDataAccessor<>(6, EntityDataSerializers.POSE), pose);
         PacketUtils.send(new ClientboundSetEntityDataPacket(getId(), entityData, false));
+/*        Bukkit.broadcastMessage("pose: " + pose);
+        Bukkit.broadcastMessage("sneaking: " + sneaking);
+        Bukkit.broadcastMessage("cpSneaking: " + cp.isSneaking());
+        Bukkit.broadcastMessage("playerSneaking" + ((Player) cp).isSneaking());*/
     }
 }
