@@ -59,6 +59,10 @@ public abstract class Activity implements Comparable<Activity> {
     }
 
     public void internalUpdate() {
+        if (currentlyRunning != null) {
+            currentlyRunning.internalUpdate();
+            currentlyRunning.onUpdate();
+        }
         currentDuration++;
     }
 
@@ -78,6 +82,10 @@ public abstract class Activity implements Comparable<Activity> {
     }
 
     public void run(Activity activity) {
+        if (currentlyRunning != null) {
+            currentlyRunning.internalStop(StopType.STOP);
+            currentlyRunning.onStop(StopType.STOP);
+        }
         currentlyRunning = activity;
         currentlyRunning.internalStart(manager, StartType.START);
         currentlyRunning.onStart(StartType.START);
@@ -86,6 +94,7 @@ public abstract class Activity implements Comparable<Activity> {
     protected void markAsFinished(Result<?> result) {
         finished = true;
         this.result = result;
+        onStop(StopType.FINISHED);
         callbacks.forEach(callback -> callback.accept(result));
     }
 
@@ -126,6 +135,7 @@ public abstract class Activity implements Comparable<Activity> {
 
     public enum StopType {
         STOP,
-        PAUSE
+        PAUSE,
+        FINISHED,
     }
 }

@@ -70,6 +70,18 @@ public class MoveController extends NPCTickingComponent {
         moveVel = sum;
     }
 
+    public void move(Vector velocity, boolean includeY) {
+        if (timeoutTicks > 0) return;
+        double max = 0.4;
+        Vector vel = velocity.clone();
+        if (!includeY) vel.setY(0);
+        Vector sum = moveVel.clone().add(vel);
+        if (sum.length() > max) {
+            sum.normalize().multiply(max);
+        }
+        moveVel = sum;
+    }
+
     public void jump() {
         if (jumpTicks == 0 && npc.getGroundTicks() > 1) {
             npc.setGroundTicks(0);

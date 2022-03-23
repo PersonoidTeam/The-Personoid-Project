@@ -25,4 +25,13 @@ public class LocationUtils {
             }
         }
     }
+
+    public static Block getAirInDir(Location location, BlockFace direction) {
+        while (true) {
+            location = location.getBlock().getRelative(direction).getLocation();
+            if (location.getBlock().getType().isAir()) {
+                return location.getBlock();
+            }
+        }
+    }
 }

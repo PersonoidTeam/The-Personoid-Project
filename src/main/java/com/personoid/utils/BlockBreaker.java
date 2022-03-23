@@ -6,7 +6,6 @@ import com.personoid.utils.npc.PacketUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import net.minecraft.world.InteractionHand;
-import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 
 public class BlockBreaker extends NPCTickingComponent {
@@ -23,10 +22,10 @@ public class BlockBreaker extends NPCTickingComponent {
     public void tick() {
         if (block == null) return;
         super.tick();
-        Bukkit.broadcastMessage("Break speed: "+block.getBreakSpeed(npc.getBukkitEntity()));
+        //Bukkit.broadcastMessage("Break speed: "+block.getBreakSpeed(npc.getBukkitEntity()));
         currentProgress += block.getBreakSpeed(npc.getBukkitEntity())*5F;
-        Bukkit.broadcastMessage(hardnessOfBlock*currentProgress+"/"+hardnessOfBlock+"%");
-        Bukkit.broadcastMessage("Mapped value: " + getProgress()+"/9");
+        //Bukkit.broadcastMessage(hardnessOfBlock*currentProgress+"/"+hardnessOfBlock+"%");
+        //Bukkit.broadcastMessage("Mapped value: " + getProgress()+"/9");
 
         PacketUtils.send(new ClientboundBlockDestructionPacket(npc.getBukkitEntity().getEntityId(), getBlockPos(), getProgress()));
         npc.swing(InteractionHand.MAIN_HAND);
@@ -55,6 +54,7 @@ public class BlockBreaker extends NPCTickingComponent {
     }
 
     private BlockPos getBlockPos() {
+        if (block == null) return null;
         return new BlockPos(block.getX(), block.getY(), block.getZ());
     }
 

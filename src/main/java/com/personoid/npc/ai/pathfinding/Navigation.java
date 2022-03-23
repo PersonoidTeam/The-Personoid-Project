@@ -59,19 +59,20 @@ public class Navigation extends NPCTickingComponent {
 
     public void updatePath() {
         // FIXME: goal location null
-        if (target.distance(npc.getLocation()) > 1 && target != null) {
+        if (target.distance(npc.getLocation()) > 1) {
             new Task(() -> {
+                if (target == null) return;
                 Location endLoc = LocationUtils.getBlockInDir(target, BlockFace.DOWN).getLocation();
                 Path path = pathfinder.findPath(npc.getLocation(), endLoc, List.of(new WalkablePathRequirement()), -1, 500);
                 if (this.path == null && path != null) currentPoint = path.getNextNPCPos(npc);
                 this.path = path;
             }).async().run();
         }
-/*        Path tempPath = findPath(npc.getGoalSelector().getCurrentGoal().getTargetLocation(), 50);
+/*        Path tempPath = findPath(target, 50);
         if (path == null && tempPath != null) currentPoint = tempPath.getNextNPCPos(npc);
         path = tempPath;
         if (path != null) {
-            Bukkit.getPlayer(npc.spawner).sendMessage("Path: " + path.path);
+           // Bukkit.getPlayer(npc.spawner).sendMessage("Path: " + path.path);
             Node node = path.path.getNextNode();
             Location loc = new Location(npc.getLocation().getWorld(), node.asBlockPos().getX(), node.asBlockPos().getY(), node.asBlockPos().getZ());
             npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, loc.add(0.5F, 0, 0.5F), 5,
@@ -113,7 +114,7 @@ public class Navigation extends NPCTickingComponent {
                 double dy = currentPoint.y - npc.getY(); //Jump if needed to reach next block.
                 double dz = bz + ((currentPoint.z - npc.getZ()) * d2);
 
-                npc.getMoveController().move(new Vector(dx, dy, dz));
+                npc.getMoveController().move(new Vector(dx, dy, dz), true);
                 npc.checkMovementStatistics(dx, dy, dz);
                 progress += SPEED;
             } else {

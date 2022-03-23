@@ -9,4 +9,5 @@ public enum ActivityType {
     BUILDING,
     FIGHTING,
     SEARCHING,
+    INTERACTION,
 }

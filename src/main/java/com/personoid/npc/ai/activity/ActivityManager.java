@@ -3,6 +3,7 @@ package com.personoid.npc.ai.activity;
 import com.personoid.npc.NPC;
 import com.personoid.npc.components.NPCTickingComponent;
 import com.personoid.utils.debug.Profiler;
+import org.bukkit.Bukkit;
 
 import java.util.*;
 
@@ -52,22 +53,14 @@ public class ActivityManager extends NPCTickingComponent {
         if (queue.isEmpty()) {
             for (Activity activity : paused) {
                 if (activity.canStart(Activity.StartType.RESUME)) {
-                    activity.internalStart(this, Activity.StartType.RESUME);
-                    activity.onStart(Activity.StartType.RESUME);
-                    activity.setPaused(false);
-                    paused.remove(activity);
-                    current = activity;
+                    startActivity(activity, Activity.StartType.RESUME);
                     return true;
                 }
             }
         } else if (!paused.isEmpty()) {
             for (Activity activity : paused) {
                 if (activity.getPriority().isHigherThan(queue.peek().getPriority()) && activity.canStart(Activity.StartType.RESUME)) {
-                    activity.internalStart(this, Activity.StartType.RESUME);
-                    activity.onStart(Activity.StartType.RESUME);
-                    activity.setPaused(false);
-                    paused.remove(activity);
-                    current = activity;
+                    startActivity(activity, Activity.StartType.RESUME);
                     return true;
                 }
             }
@@ -78,11 +71,21 @@ public class ActivityManager extends NPCTickingComponent {
     public void startNextActivity() {
         if (attemptStartPaused()) return;
         queueIfEmpty();
-        current = queue.poll();
-        if (current != null && current.canStart(Activity.StartType.START)) {
-            current.internalStart(this, Activity.StartType.START);
-            current.onStart(Activity.StartType.START);
+        Activity next = queue.poll();
+        if (next != null && next.canStart(Activity.StartType.START)) {
+            startActivity(next, Activity.StartType.START);
         }
+    }
+
+    public void startActivity(Activity activity, Activity.StartType startType) {
+        Bukkit.broadcastMessage("Starting activity " + activity.getClass().getSimpleName());
+        activity.internalStart(this, startType);
+        activity.onStart(startType);
+        if (startType == Activity.StartType.RESUME) {
+            activity.setPaused(false);
+            paused.remove(activity);
+        }
+        current = activity;
     }
 
     public void queueActivity(Activity activity) {

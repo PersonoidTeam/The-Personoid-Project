@@ -26,13 +26,14 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.pathfinder.PathFinder;
+import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.AABB;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +47,7 @@ public class NPC extends ServerPlayer {
 
     private final GoalSelector goalSelector = new GoalSelector(this);
     private final Navigation navigation = new Navigation(this);
-    //private final PathFinder pathFinder;
+    private final PathFinder pathFinder;
 
     private final MoveController moveController = new MoveController(this);
     private final LookController lookController = new LookController(this);
@@ -66,8 +67,8 @@ public class NPC extends ServerPlayer {
         entityData.set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0xFF);
         cp = getBukkitEntity();
         this.spawner = spawner.getUniqueId();
-/*        WalkNodeEvaluator walkNodeEvaluator = new WalkNodeEvaluator();
-        pathFinder = new PathFinder(walkNodeEvaluator, 1);*/
+        WalkNodeEvaluator walkNodeEvaluator = new WalkNodeEvaluator();
+        pathFinder = new PathFinder(walkNodeEvaluator, 1);
     }
 
     public void registerActivities() {
@@ -135,7 +136,7 @@ public class NPC extends ServerPlayer {
         fallDamageCheck();
 
         if (aliveTicks == 1) {
-            blockBreaker.start(getLocation().getBlock().getRelative(BlockFace.DOWN));
+            //blockBreaker.start(getLocation().getBlock().getRelative(BlockFace.DOWN));
         }
     }
 
@@ -148,11 +149,9 @@ public class NPC extends ServerPlayer {
         blockBreaker.tick();
     }
 
-    /*
     public PathFinder getPathFinder() {
         return pathFinder;
     }
-*/
 
     public GoalSelector getGoalSelector() {
         return goalSelector;
@@ -168,6 +167,10 @@ public class NPC extends ServerPlayer {
 
     public LookController getLookController() {
         return lookController;
+    }
+
+    public BlockBreaker getBlockBreaker() {
+        return blockBreaker;
     }
 
     private void loadChunks() {
@@ -188,9 +191,10 @@ public class NPC extends ServerPlayer {
     }
 
     private void fallDamageCheck() {
-        if (groundTicks != 0 && !moveController.isFalling() && moveController.getOldVelocity().getY() < -0.1F) {
+        // FIXME: doesn't work :(
+/*        if (groundTicks != 0 && !moveController.isFalling() && moveController.getOldVelocity().getY() < -0.1F) {
             hurt(DamageSource.FALL, (float) Math.pow(3.6, moveController.getOldVelocity().getY()));
-        }
+        }*/
     }
 
     @Override

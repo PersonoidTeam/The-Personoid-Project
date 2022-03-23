@@ -3,7 +3,9 @@ package com.personoid.activites;
 import com.personoid.npc.ai.activity.Activity;
 import com.personoid.npc.ai.activity.ActivityType;
 import com.personoid.npc.ai.activity.Result;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.util.Vector;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
@@ -16,11 +18,13 @@ public class GoToLocationActivity extends Activity {
     @Override
     public void onStart(StartType startType) {
         getActiveNPC().getNavigation().setTarget(location);
+        Bukkit.broadcastMessage("Target: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
     }
 
     @Override
     public void onUpdate() {
-        if (getActiveNPC().getNavigation().getTarget().distance(getActiveNPC().getLocation()) < 1) {
+        if (location.distance(getActiveNPC().getLocation()) <= 1) {
+            Bukkit.broadcastMessage("Reached target");
             markAsFinished(new Result<>(Result.Type.SUCCESS));
         }
     }
@@ -28,6 +32,7 @@ public class GoToLocationActivity extends Activity {
     @Override
     public void onStop(StopType stopType) {
         getActiveNPC().getNavigation().setTarget(null);
+        getActiveNPC().getMoveController().move(new Vector());
     }
 
     @Override
