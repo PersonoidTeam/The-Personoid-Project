@@ -34,4 +34,18 @@ public class LocationUtils {
             }
         }
     }
+
+    public static Location getNear(Location from, Location to, float distance) {
+        float x = (float) Math.abs(to.getX() - from.getX());
+        float y = (float) Math.abs(to.getY() - from.getY());
+        float z = (float) Math.abs(to.getZ() - from.getZ());
+        float dist = (float) Math.sqrt(x * x + y * y + z * z);
+        if (dist < distance) {
+            return to;
+        }
+        x = x / dist * distance;
+        y = y / dist * distance;
+        z = z / dist * distance;
+        return new Location(from.getWorld(), from.getX() + x, from.getY() + y, from.getZ() + z);
+    }
 }

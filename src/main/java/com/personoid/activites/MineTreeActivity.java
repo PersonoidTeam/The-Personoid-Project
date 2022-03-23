@@ -5,7 +5,9 @@ import com.personoid.enums.Structure;
 import com.personoid.npc.ai.activity.Activity;
 import com.personoid.npc.ai.activity.ActivityType;
 import com.personoid.npc.ai.activity.Result;
+import com.personoid.utils.LocationUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 
 public class MineTreeActivity extends Activity {
@@ -44,7 +46,8 @@ public class MineTreeActivity extends Activity {
     }
 
     private void mineTree(Block block) {
-        run(new GoToLocationActivity(block.getLocation()).onFinished((result) -> {
+        Location loc = LocationUtils.getNear(getActiveNPC().getLocation(), block.getLocation(), 100);
+        run(new GoToLocationActivity(loc).onFinished((result) -> {
             Bukkit.broadcastMessage("Mining tree at: " + block.getX() + ", " + block.getY() + ", " + block.getZ());
             if (result.getType() == Result.Type.SUCCESS) {
                 Bukkit.broadcastMessage(getActiveNPC().getMoveController().getVelocity().toString());

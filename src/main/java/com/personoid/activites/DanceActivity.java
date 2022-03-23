@@ -9,7 +9,6 @@ import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
 public class DanceActivity extends Activity {
-    private Location facing;
     private int nextToggleCrouchTick;
     private int nextPunchTick;
     private int nextLookTick;
@@ -36,7 +35,7 @@ public class DanceActivity extends Activity {
         if (nextLookTick <= 0) {
             nextLookTick = MathUtils.random(5, 15);
             Vector randomVec = new Vector(MathUtils.random(-5, 5), MathUtils.random(-5, 5), MathUtils.random(-5, 5));
-            facing = getActiveNPC().getLocation().clone().add(randomVec);
+            Location facing = getActiveNPC().getLocation().clone().add(randomVec);
             getActiveNPC().getLookController().face(facing);
         }
         nextToggleCrouchTick--;

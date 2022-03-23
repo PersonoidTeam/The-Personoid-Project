@@ -10,9 +10,8 @@ import org.bukkit.block.Block;
 
 public class BlockBreaker extends NPCTickingComponent {
     private Block block;
-    private int stage;
-    private float currentProgress = 0;
-    private float hardnessOfBlock = 0;
+    private float currentProgress;
+    private float hardnessOfBlock;
 
     public BlockBreaker(NPC npc) {
         super(npc);
@@ -21,19 +20,17 @@ public class BlockBreaker extends NPCTickingComponent {
     @Override
     public void tick() {
         if (block == null) return;
-        super.tick();
-        //Bukkit.broadcastMessage("Break speed: "+block.getBreakSpeed(npc.getBukkitEntity()));
         currentProgress += block.getBreakSpeed(npc.getBukkitEntity())*5F;
-        //Bukkit.broadcastMessage(hardnessOfBlock*currentProgress+"/"+hardnessOfBlock+"%");
-        //Bukkit.broadcastMessage("Mapped value: " + getProgress()+"/9");
-
-        PacketUtils.send(new ClientboundBlockDestructionPacket(npc.getBukkitEntity().getEntityId(), getBlockPos(), getProgress()));
+        sendPacket(getProgress());
         npc.swing(InteractionHand.MAIN_HAND);
-        npc.getLookController().face(block.getLocation());
         if (hardnessOfBlock*currentProgress >= hardnessOfBlock) {
             block.breakNaturally(/*npc.getInventory().getItemInMainHand()*/);
             stop();
         }
+
+        //Bukkit.broadcastMessage("Break speed: "+block.getBreakSpeed(npc.getBukkitEntity()));
+        //Bukkit.broadcastMessage(hardnessOfBlock*currentProgress+"/"+hardnessOfBlock+"%");
+        //Bukkit.broadcastMessage("Mapped value: " + getProgress()+"/9");
     }
 
     public void start(Block block) {
@@ -44,8 +41,13 @@ public class BlockBreaker extends NPCTickingComponent {
         currentTick = 0;
     }
 
+    private void sendPacket(int stage) {
+        if (block == null) return;
+        PacketUtils.send(new ClientboundBlockDestructionPacket(npc.getBukkitEntity().getEntityId(), getBlockPos(), stage));
+    }
+
     public void stop() {
-        PacketUtils.send(new ClientboundBlockDestructionPacket(npc.getBukkitEntity().getEntityId(), getBlockPos(), 10));
+        sendPacket(10);
         this.block = null;
     }
 
@@ -54,7 +56,6 @@ public class BlockBreaker extends NPCTickingComponent {
     }
 
     private BlockPos getBlockPos() {
-        if (block == null) return null;
         return new BlockPos(block.getX(), block.getY(), block.getZ());
     }
 

@@ -5,7 +5,6 @@ import com.personoid.npc.ai.activity.ActivityType;
 import com.personoid.npc.ai.activity.Result;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.util.Vector;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
@@ -32,7 +31,6 @@ public class GoToLocationActivity extends Activity {
     @Override
     public void onStop(StopType stopType) {
         getActiveNPC().getNavigation().setTarget(null);
-        getActiveNPC().getMoveController().move(new Vector());
     }
 
     @Override
