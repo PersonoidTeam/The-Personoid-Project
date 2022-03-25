@@ -2,7 +2,6 @@ package com.personoid.npc.ai.activity;
 
 import com.personoid.npc.NPC;
 import com.personoid.npc.ai.Priority;
-import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -112,6 +111,10 @@ public abstract class Activity implements Comparable<Activity> {
         callbacks.forEach(callback -> callback.accept(result));
         onStop(StopType.FINISHED);
         internalStop(StopType.FINISHED);
+    }
+
+    public Result<?> getResult() {
+        return result;
     }
 
     public boolean isFinished() {

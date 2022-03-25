@@ -48,7 +48,7 @@ public class MineTreeActivity extends Activity {
 
     private void mineTree(Block block) {
         Location loc = LocationUtils.getNear(getActiveNPC().getLocation(), block.getLocation(), 100);
-        run(new GoToLocationActivity(loc, 5).onFinished((result) -> {
+        run(new GoToLocationActivity(loc, 3).onFinished((result) -> {
             Bukkit.broadcastMessage("Mining tree at: " + block.getX() + ", " + block.getY() + ", " + block.getZ());
             if (result.getType() == Result.Type.SUCCESS) {
                 Bukkit.broadcastMessage(getActiveNPC().getMoveController().getVelocity().toString());
@@ -67,7 +67,10 @@ public class MineTreeActivity extends Activity {
 
     @Override
     public void onUpdate() {
-
+        if (isFinished()) {
+            Bukkit.broadcastMessage("Finished mining tree");
+            //throw new RuntimeException("yo what goin on");
+        }
     }
 
     @Override

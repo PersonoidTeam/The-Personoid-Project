@@ -26,6 +26,7 @@ public class BreakBlockActivity extends Activity {
     @Override
     public void onUpdate() {
         if (getActiveNPC().getLocation().distance(block.getLocation()) > 5) {
+            Bukkit.broadcastMessage("too far away - distance: " + getActiveNPC().getLocation().distance(block.getLocation()));
             markAsFinished(new Result<>(Result.Type.FAILURE));
         }
         // Broke the block

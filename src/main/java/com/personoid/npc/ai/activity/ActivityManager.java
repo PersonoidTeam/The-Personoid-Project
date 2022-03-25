@@ -32,43 +32,36 @@ public class ActivityManager extends NPCTickingComponent {
     @Override
     public void tick() {
         if (current != null) {
-            current.internalUpdate();
-            current.onUpdate();
+            //Bukkit.broadcastMessage(current.getClass().getSimpleName() + " is ticking");
             if (current.isFinished()) {
-                startNextActivity();
+                current = null;
             } else if (!queue.isEmpty() && queue.peek().getPriority().isHigherThan(current.getPriority()) && current.canStop(Activity.StopType.PAUSE)) {
                 current.internalStop(Activity.StopType.PAUSE);
                 current.onStop(Activity.StopType.PAUSE);
                 current.setPaused(true);
                 paused.add(current);
+            } else {
+                current.internalUpdate();
+                current.onUpdate();
             }
 
             // MAKE SURE THIS STAYS THE LAST METHOD CALLED. THIS STOPS THE ACTIVITY IF SOMETHING REQUESTED IT. (IE. NULLS IT)
-            current.satisfyRequestedStop();
-        } startNextActivity();
-    }
-
-    public boolean attemptStartPaused() {
-        if (queue.isEmpty()) {
-            for (Activity activity : paused) {
-                if (activity.canStart(Activity.StartType.RESUME)) {
-                    startActivity(activity, Activity.StartType.RESUME);
-                    return true;
-                }
-            }
-        } else if (!paused.isEmpty()) {
-            for (Activity activity : paused) {
-                if (activity.getPriority().isHigherThan(queue.peek().getPriority()) && activity.canStart(Activity.StartType.RESUME)) {
-                    startActivity(activity, Activity.StartType.RESUME);
-                    return true;
-                }
-            }
-        } else queueIfEmpty();
-        return false;
+            //current.satisfyRequestedStop();
+        } else startNextActivity();
     }
 
     public void startNextActivity() {
-        if (attemptStartPaused()) return;
+        Bukkit.broadcastMessage("Starting next activity");
+        if (!paused.isEmpty()) {
+            for (Activity activity : paused) {
+                boolean higherThanNext = queue.isEmpty() || activity.getPriority().isHigherThan(queue.peek().getPriority());
+                if (higherThanNext && activity.canStart(Activity.StartType.RESUME)) {
+                    startActivity(activity, Activity.StartType.RESUME);
+                    Bukkit.broadcastMessage("attempt start paused true");
+                    return;
+                }
+            }
+        }
         queueIfEmpty();
         Activity next = queue.poll();
         if (next != null && next.canStart(Activity.StartType.START)) {

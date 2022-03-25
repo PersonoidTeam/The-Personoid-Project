@@ -289,6 +289,10 @@ public class NPC extends ServerPlayer {
         return damaged;
     }
 
+    public void remove() {
+        blockBreaker.stop();
+    }
+
     // FIXME swimming throws error, npc disappears
 
     public void setSwimming() {
@@ -335,7 +339,7 @@ public class NPC extends ServerPlayer {
         ((Player) cp).setSneaking(sneaking);
 
         cp.getHandle().setPose(pose);
-        entityData.set(new EntityDataAccessor<>(6, EntityDataSerializers.POSE), pose);
+        //entityData.set(new EntityDataAccessor<>(6, EntityDataSerializers.POSE), pose);
         PacketUtils.send(new ClientboundSetEntityDataPacket(getId(), entityData, false));
 /*        Bukkit.broadcastMessage("pose: " + pose);
         Bukkit.broadcastMessage("sneaking: " + sneaking);

@@ -65,6 +65,7 @@ public class NPCHandler {
         ClientboundPlayerInfoPacket playerInfoPacket = new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, npc);
         ClientboundRemoveEntitiesPacket removePacket = new ClientboundRemoveEntitiesPacket(npc.getId());
         PacketUtils.send(playerInfoPacket, removePacket);
+        npc.remove();
         npc.remove(Entity.RemovalReason.DISCARDED);
     }
 

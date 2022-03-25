@@ -39,6 +39,7 @@ public class BlockBreaker extends NPCTickingComponent {
         this.block = block;
         hardnessOfBlock = block.getType().getHardness();
         currentTick = 0;
+        currentProgress = 0;
     }
 
     private void sendPacket(int stage) {

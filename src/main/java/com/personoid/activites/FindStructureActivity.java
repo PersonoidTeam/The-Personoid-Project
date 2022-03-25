@@ -48,7 +48,7 @@ public class FindStructureActivity extends Activity {
         Material treeType = info.get(0);
 
         switch (structure) {
-            case TREE:
+            case TREE -> {
                 Location tree = checkForTree(treeType);
                 if (tree != null) {
                     markAsFinished(new Result<>(Result.Type.SUCCESS, tree.getBlock()));
@@ -57,16 +57,10 @@ public class FindStructureActivity extends Activity {
                     loc = new Location(loc.getWorld(), loc.getX(), LocationUtils.getAirInDir(loc.subtract(0, 1, 0), BlockFace.UP).getLocation().getY(), loc.getZ());
                     Bukkit.broadcastMessage("Trying new location: " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ());
                     attempted.add(loc);
-
-                    run(new GoToLocationActivity(loc, 4).onFinished((result) -> {
-                        if (result.getType() == Result.Type.SUCCESS) {
-                            checkLocation();
-                        } else checkLocation();
-                    }));
+                    run(new GoToLocationActivity(loc, 4).onFinished((result) -> checkLocation()));
                 }
-                break;
-            default:
-                throw new NullPointerException("No method set for structure: "+structure.name());
+            }
+            default -> throw new NullPointerException("No method set for structure: " + structure.name());
         }
 
 
@@ -76,9 +70,7 @@ public class FindStructureActivity extends Activity {
         // TODO: better tree detection
         // check every block in 20 block radius
         Bukkit.broadcastMessage("Finding logs...");
-        Location loc1 = checkFrom(0, 15, true, material);
-        if (loc1 != null) return loc1;
-        else return checkFrom(-15, 0, true, material);
+        return checkFrom(-15, 15, true, material);
     }
 
     private Location checkFrom(int min, int max, boolean flipExclusions, Material... exclude) {
@@ -129,7 +121,8 @@ public class FindStructureActivity extends Activity {
     // Might not be helpful if used improperly, theoretically shouldnt be a problem though.
     // Dont know how performant raytrace result is.
     private boolean isOccluded(Location check, Location center, int maxDistance){
-        RayTraceResult result = check.getWorld().rayTrace(check, check.toVector().subtract(center.getDirection()), maxDistance, FluidCollisionMode.NEVER, true, maxDistance, null);
+        RayTraceResult result = check.getWorld().rayTrace(check, check.toVector().subtract(center.toVector()), maxDistance, FluidCollisionMode.NEVER,
+                true, maxDistance, null);
 
         if (result == null){
             return false;
