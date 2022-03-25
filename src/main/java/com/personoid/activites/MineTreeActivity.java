@@ -33,12 +33,13 @@ public class MineTreeActivity extends Activity {
     }
 
     private void tryFindTree() {
-        run(new FindStructureActivity(Structure.TREE).onFinished((result) -> {
+        run(new FindStructureActivity(Structure.TREE, new FindStructureActivity.BlockInfo(logType.getBase())).onFinished((result) -> {
             // check if it found a tree
             if (result.getType() == Result.Type.SUCCESS) {
                 // if it did, get the location of the tree
                 Block block = result.getResult(Block.class);
                 // TODO: check if it is correct log type
+                // Ez
                 Bukkit.broadcastMessage("Found tree at: " + block.getX() + ", " + block.getY() + ", " + block.getZ());
                 mineTree(block);
             }
@@ -47,12 +48,13 @@ public class MineTreeActivity extends Activity {
 
     private void mineTree(Block block) {
         Location loc = LocationUtils.getNear(getActiveNPC().getLocation(), block.getLocation(), 100);
-        run(new GoToLocationActivity(loc).onFinished((result) -> {
+        run(new GoToLocationActivity(loc, 5).onFinished((result) -> {
             Bukkit.broadcastMessage("Mining tree at: " + block.getX() + ", " + block.getY() + ", " + block.getZ());
             if (result.getType() == Result.Type.SUCCESS) {
                 Bukkit.broadcastMessage(getActiveNPC().getMoveController().getVelocity().toString());
                 run(new BreakBlockActivity(block).onFinished((result1) -> {
                     if (result1.getType() == Result.Type.SUCCESS) {
+                        Bukkit.broadcastMessage("Mined tree successfully!");
                         markAsFinished(new Result<>(Result.Type.SUCCESS, block));
                     } else {
                         Bukkit.broadcastMessage("Too far away from tree");

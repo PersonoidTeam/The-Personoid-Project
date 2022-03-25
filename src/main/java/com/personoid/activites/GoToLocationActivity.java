@@ -8,10 +8,12 @@ import org.bukkit.Location;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
+    private final int stopDistance;
 
-    public GoToLocationActivity(Location location) {
+    public GoToLocationActivity(Location location, int stopDistance) {
         super(ActivityType.LOCATION);
         this.location = location;
+        this.stopDistance = stopDistance;
     }
 
     @Override
@@ -22,7 +24,7 @@ public class GoToLocationActivity extends Activity {
 
     @Override
     public void onUpdate() {
-        if (location.distance(getActiveNPC().getLocation()) <= 1) {
+        if (location.distance(getActiveNPC().getLocation()) <= stopDistance) {
             Bukkit.broadcastMessage("Reached target");
             markAsFinished(new Result<>(Result.Type.SUCCESS));
         }

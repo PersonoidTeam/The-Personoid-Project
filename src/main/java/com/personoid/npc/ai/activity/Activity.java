@@ -2,6 +2,7 @@ package com.personoid.npc.ai.activity;
 
 import com.personoid.npc.NPC;
 import com.personoid.npc.ai.Priority;
+import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -16,6 +17,7 @@ public abstract class Activity implements Comparable<Activity> {
     private boolean finished;
     private Result<?> result;
     private boolean paused;
+    private boolean stopRequested = false;
 
     private final Set<Consumer<Result<?>>> callbacks = new HashSet<>();
     private Activity currentlyRunning;
@@ -56,6 +58,19 @@ public abstract class Activity implements Comparable<Activity> {
             currentlyRunning.internalStop(StopType.PAUSE);
             currentlyRunning.onStop(StopType.PAUSE);
         }
+        else if (stopType == StopType.FINISHED || stopType == StopType.STOP){
+            if (currentlyRunning == null) return;
+            stopRequested = true;
+        }
+    }
+
+    public void satisfyRequestedStop(){
+        if (stopRequested){
+            if (currentlyRunning == null) return;
+            currentlyRunning.onStop(StopType.FINISHED);
+            manager.current = null;
+            currentlyRunning = null;
+        }
     }
 
     public void internalUpdate() {
@@ -94,8 +109,9 @@ public abstract class Activity implements Comparable<Activity> {
     protected void markAsFinished(Result<?> result) {
         finished = true;
         this.result = result;
-        onStop(StopType.FINISHED);
         callbacks.forEach(callback -> callback.accept(result));
+        onStop(StopType.FINISHED);
+        internalStop(StopType.FINISHED);
     }
 
     public boolean isFinished() {

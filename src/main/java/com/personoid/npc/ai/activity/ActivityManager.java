@@ -11,7 +11,7 @@ public class ActivityManager extends NPCTickingComponent {
     private final Set<Activity> registered = new HashSet<>();
     private final Queue<Activity> queue = new PriorityQueue<>(Collections.reverseOrder());
     private final Set<Activity> paused = new HashSet<>();
-    private Activity current;
+    public Activity current;
 
     public ActivityManager(NPC npc) {
         super(npc);
@@ -42,6 +42,9 @@ public class ActivityManager extends NPCTickingComponent {
                 current.setPaused(true);
                 paused.add(current);
             }
+
+            // MAKE SURE THIS STAYS THE LAST METHOD CALLED. THIS STOPS THE ACTIVITY IF SOMETHING REQUESTED IT. (IE. NULLS IT)
+            current.satisfyRequestedStop();
         } startNextActivity();
     }
 

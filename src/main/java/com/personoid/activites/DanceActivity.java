@@ -14,7 +14,7 @@ public class DanceActivity extends Activity {
     private int nextLookTick;
 
     public DanceActivity() {
-        super(ActivityType.IDLING, Priority.HIGH);
+        super(ActivityType.IDLING, Priority.LOWEST);
     }
 
     @Override
