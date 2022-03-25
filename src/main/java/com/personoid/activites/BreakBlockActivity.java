@@ -8,6 +8,8 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 
 public class BreakBlockActivity extends Activity {
+    // I love breaking blocks
+
     private final Block block;
     private Material originalMaterial;
 
