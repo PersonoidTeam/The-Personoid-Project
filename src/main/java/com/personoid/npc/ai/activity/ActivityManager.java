@@ -44,9 +44,6 @@ public class ActivityManager extends NPCTickingComponent {
                 current.internalUpdate();
                 current.onUpdate();
             }
-
-            // MAKE SURE THIS STAYS THE LAST METHOD CALLED. THIS STOPS THE ACTIVITY IF SOMETHING REQUESTED IT. (IE. NULLS IT)
-            //current.satisfyRequestedStop();
         } else startNextActivity();
     }
 
@@ -55,6 +52,7 @@ public class ActivityManager extends NPCTickingComponent {
         if (!paused.isEmpty()) {
             for (Activity activity : paused) {
                 boolean higherThanNext = queue.isEmpty() || activity.getPriority().isHigherThan(queue.peek().getPriority());
+                activity.setManager(this);
                 if (higherThanNext && activity.canStart(Activity.StartType.RESUME)) {
                     startActivity(activity, Activity.StartType.RESUME);
                     Bukkit.broadcastMessage("attempt start paused true");
@@ -64,14 +62,17 @@ public class ActivityManager extends NPCTickingComponent {
         }
         queueIfEmpty();
         Activity next = queue.poll();
-        if (next != null && next.canStart(Activity.StartType.START)) {
-            startActivity(next, Activity.StartType.START);
+        if (next != null) {
+            next.setManager(this);
+            if (next.canStart(Activity.StartType.START)) {
+                startActivity(next, Activity.StartType.START);
+            }
         }
     }
 
     public void startActivity(Activity activity, Activity.StartType startType) {
         Bukkit.broadcastMessage("Starting activity " + activity.getClass().getSimpleName());
-        activity.internalStart(this, startType);
+        activity.internalStart(startType);
         activity.onStart(startType);
         if (startType == Activity.StartType.RESUME) {
             activity.setPaused(false);
@@ -101,6 +102,7 @@ public class ActivityManager extends NPCTickingComponent {
                     continue;
                 }
             }
+            activity.setManager(this);
             if (activity.canStart(Activity.StartType.START)){
                 Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "can start " + activity.getClass().getSimpleName());
                 canStart.add(activity);

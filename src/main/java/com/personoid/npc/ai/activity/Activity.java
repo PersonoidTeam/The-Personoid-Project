@@ -16,7 +16,6 @@ public abstract class Activity implements Comparable<Activity> {
     private boolean finished;
     private Result<?> result;
     private boolean paused;
-    private boolean stopRequested = false;
 
     private final Set<Consumer<Result<?>>> callbacks = new HashSet<>();
     private Activity currentlyRunning;
@@ -39,14 +38,17 @@ public abstract class Activity implements Comparable<Activity> {
         return currentDuration;
     }
 
-    public void internalStart(ActivityManager manager, StartType startType) {
+    public void setManager(ActivityManager manager) {
         this.manager = manager;
+    }
+
+    public void internalStart(StartType startType) {
         if (startType == StartType.START) {
             currentDuration = 0;
             finished = false;
         } else if (startType == StartType.RESUME) {
             if (currentlyRunning == null) return;
-            currentlyRunning.internalStart(manager, StartType.RESUME);
+            currentlyRunning.internalStart(StartType.RESUME);
             currentlyRunning.onStart(StartType.RESUME);
         }
     }
@@ -56,19 +58,6 @@ public abstract class Activity implements Comparable<Activity> {
             if (currentlyRunning == null) return;
             currentlyRunning.internalStop(StopType.PAUSE);
             currentlyRunning.onStop(StopType.PAUSE);
-        }
-        else if (stopType == StopType.FINISHED || stopType == StopType.STOP){
-            if (currentlyRunning == null) return;
-            stopRequested = true;
-        }
-    }
-
-    public void satisfyRequestedStop(){
-        if (stopRequested){
-            if (currentlyRunning == null) return;
-            currentlyRunning.onStop(StopType.FINISHED);
-            manager.current = null;
-            currentlyRunning = null;
         }
     }
 
@@ -96,21 +85,24 @@ public abstract class Activity implements Comparable<Activity> {
     }
 
     public void run(Activity activity) {
-        if (currentlyRunning != null) {
-            currentlyRunning.internalStop(StopType.STOP);
-            currentlyRunning.onStop(StopType.STOP);
+        activity.setManager(manager);
+        if (activity.canStart(StartType.START)) {
+            if (currentlyRunning != null) {
+                currentlyRunning.internalStop(StopType.STOP);
+                currentlyRunning.onStop(StopType.STOP);
+            }
+            currentlyRunning = activity;
+            activity.internalStart(StartType.START);
+            activity.onStart(StartType.START);
         }
-        currentlyRunning = activity;
-        currentlyRunning.internalStart(manager, StartType.START);
-        currentlyRunning.onStart(StartType.START);
     }
 
     protected void markAsFinished(Result<?> result) {
         finished = true;
         this.result = result;
         callbacks.forEach(callback -> callback.accept(result));
-        onStop(StopType.FINISHED);
-        internalStop(StopType.FINISHED);
+        onStop(result.getType() == Result.Type.SUCCESS ? StopType.SUCCESS : StopType.FAILURE);
+        internalStop(StopType.SUCCESS);
     }
 
     public Result<?> getResult() {
@@ -155,6 +147,7 @@ public abstract class Activity implements Comparable<Activity> {
     public enum StopType {
         STOP,
         PAUSE,
-        FINISHED,
+        SUCCESS,
+        FAILURE,
     }
 }

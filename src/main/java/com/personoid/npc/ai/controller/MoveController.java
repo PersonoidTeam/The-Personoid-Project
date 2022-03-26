@@ -24,7 +24,6 @@ public class MoveController extends NPCTickingComponent {
     public void tick() {
         if (--timeoutTicks > 0) timeoutTicks--;
         tickMovement();
-        tickWater();
         tickGravity();
         oldVel = moveVel.clone().add(new Vector(0, gravVel, 0));
     }
@@ -32,26 +31,14 @@ public class MoveController extends NPCTickingComponent {
     private void tickMovement() {
         MathUtils.clean(moveVel);
         npc.move(MoverType.SELF, new Vec3(moveVel.getX(), moveVel.getY(), moveVel.getZ()));
-        moveVel.multiply(0.5F);
-        if (moveVel.length() < 0.01) moveVel = new Vector();
+        addFriction(npc.isInWater() ? 0.8 : 0.5);
     }
 
     private void tickGravity() {
-        if (npc.isOnGround() || npc.isInWater()) {
-            gravVel = 0;
-        } else {
-            addFriction(0.5);
-            gravVel = Math.max(gravVel - 0.1, -3.5);
-        }
+        if (npc.isInWater()) gravVel = Math.min(gravVel + 0.1, 0.1);
+        else if (npc.isOnGround()) gravVel = 0;
+        else gravVel = Math.max(gravVel - 0.1, -3.5);
         npc.move(MoverType.SELF, new Vec3(0, gravVel, 0));
-    }
-
-    private void tickWater() {
-        if (npc.isInWater()) {
-            addFriction(0.8);
-            gravVel = Math.min(gravVel + 0.1, 0.1);
-            npc.move(MoverType.SELF, new Vec3(0, gravVel, 0));
-        }
     }
 
     private void addFriction(double factor) {
@@ -95,7 +82,7 @@ public class MoveController extends NPCTickingComponent {
     public void applyKnockback(Location source) {
         Vector vel = npc.getLocation().toVector().subtract(source.toVector()).setY(0).normalize().multiply(0.3);
         if (npc.isOnGround()) vel.multiply(1.7).setY(0.55);
-        timeoutTicks = 12;
+        timeoutTicks = 10;
         moveVel = vel;
     }
 

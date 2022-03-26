@@ -3,6 +3,7 @@ package com.personoid.activites;
 import com.personoid.npc.ai.activity.Activity;
 import com.personoid.npc.ai.activity.ActivityType;
 import com.personoid.npc.ai.activity.Result;
+import com.personoid.utils.LocationUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -27,7 +28,7 @@ public class BreakBlockActivity extends Activity {
 
     @Override
     public void onUpdate() {
-        if (getActiveNPC().getLocation().distance(block.getLocation()) > 5) {
+        if (!LocationUtils.canReach(block.getLocation(), getActiveNPC().getLocation())) {
             Bukkit.broadcastMessage("too far away - distance: " + getActiveNPC().getLocation().distance(block.getLocation()));
             markAsFinished(new Result<>(Result.Type.FAILURE));
         }
@@ -41,7 +42,9 @@ public class BreakBlockActivity extends Activity {
     @Override
     public void onStop(StopType stopType) {
         getActiveNPC().getLookController().forget();
-        getActiveNPC().getBlockBreaker().stop();
+        if (stopType == StopType.FAILURE) {
+            getActiveNPC().getBlockBreaker().stop();
+        }
     }
 
     @Override

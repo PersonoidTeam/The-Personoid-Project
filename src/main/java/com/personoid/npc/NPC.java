@@ -7,12 +7,11 @@ import com.personoid.enums.LogType;
 import com.personoid.npc.ai.NPCBrain;
 import com.personoid.npc.ai.controller.LookController;
 import com.personoid.npc.ai.controller.MoveController;
-import com.personoid.npc.ai.pathfinding.GoalSelector;
 import com.personoid.npc.ai.pathfinding.Navigation;
 import com.personoid.utils.BlockBreaker;
-import com.personoid.utils.npc.NPCUtils;
-import com.personoid.utils.npc.PacketUtils;
-import com.personoid.utils.npc.SkinUtils;
+import com.personoid.utils.LocationUtils;
+import com.personoid.utils.PacketUtils;
+import com.personoid.utils.SkinUtils;
 import net.minecraft.network.protocol.game.ClientboundAddPlayerPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
@@ -30,7 +29,10 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.AABB;
-import org.bukkit.*;
+import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -43,7 +45,6 @@ public class NPC extends ServerPlayer {
     private final CraftPlayer cp;
     public UUID spawner;
 
-    private final GoalSelector goalSelector = new GoalSelector(this);
     private final Navigation navigation = new Navigation(this);
     private final PathFinder pathFinder;
 
@@ -143,7 +144,6 @@ public class NPC extends ServerPlayer {
     }
 
     private void tickAi() {
-        goalSelector.tick();
         navigation.tick();
         moveController.tick();
         lookController.tick();
@@ -153,10 +153,6 @@ public class NPC extends ServerPlayer {
 
     public PathFinder getPathFinder() {
         return pathFinder;
-    }
-
-    public GoalSelector getGoalSelector() {
-        return goalSelector;
     }
 
     public Navigation getNavigation() {
@@ -267,7 +263,7 @@ public class NPC extends ServerPlayer {
             for (double z : zVals) {
                 Location loc = new Location(world, x, getY() - 0.01, z);
                 Block block = world.getBlockAt(loc);
-                if (block.getType().isSolid() && NPCUtils.solidAt(loc)) {
+                if (block.getType().isSolid() && LocationUtils.solidAt(loc)) {
                     return true;
                 }
             }

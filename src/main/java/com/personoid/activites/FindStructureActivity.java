@@ -54,7 +54,8 @@ public class FindStructureActivity extends Activity {
                     markAsFinished(new Result<>(Result.Type.SUCCESS, tree.getBlock()));
                 } else {
                     Location loc = getActiveNPC().getLocation().add(MathUtils.random(-50, 50), 0, MathUtils.random(-50, 50));
-                    loc = new Location(loc.getWorld(), loc.getX(), LocationUtils.getAirInDir(loc.subtract(0, 1, 0), BlockFace.UP).getLocation().getY(), loc.getZ());
+                    loc = new Location(loc.getWorld(), loc.getX(), LocationUtils.getAirInDir(
+                            loc.subtract(0, 1, 0), BlockFace.UP).getLocation().getY(), loc.getZ());
                     Bukkit.broadcastMessage("Trying new location: " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ());
                     attempted.add(loc);
                     run(new GoToLocationActivity(loc, 4).onFinished((result) -> checkLocation()));
@@ -62,15 +63,13 @@ public class FindStructureActivity extends Activity {
             }
             default -> throw new NullPointerException("No method set for structure: " + structure.name());
         }
-
-
     }
 
     private Location checkForTree(Material material) {
         // TODO: better tree detection
         // check every block in 20 block radius
         Bukkit.broadcastMessage("Finding logs...");
-        return checkFrom(-15, 15, true, material);
+        return checkFrom(-20, 20, true, material);
     }
 
     private Location checkFrom(int min, int max, boolean flipExclusions, Material... exclude) {
@@ -97,13 +96,21 @@ public class FindStructureActivity extends Activity {
                         }
                     }
 
-                    Bukkit.broadcastMessage("We want: "+material);
+                    if (!LocationUtils.canReach(checkLoc, LocationUtils.getPathableLocation(checkLoc, getActiveNPC().getLocation()))) {
+                        continue;
+                    }
+
+                    if (isOccluded(checkLoc, getActiveNPC().getLocation().add(0, 2, 0), 6)){
+                        continue;
+                    }
+
+                    //Bukkit.broadcastMessage("We want: "+material);
 
                     if (material.isSolid()) {
                         if (material.toString().toLowerCase().contains("log")) {
                             // found a log
-                            Bukkit.broadcastMessage("Found a log at: " + checkLoc.getBlockX() + ", " + checkLoc.getBlockY() + ", " + checkLoc.getBlockZ());
-                            Bukkit.broadcastMessage("Log type: " + checkLoc.getBlock().getType());
+                            //Bukkit.broadcastMessage("Found a log at: " + checkLoc.getBlockX() + ", " + checkLoc.getBlockY() + ", " + checkLoc.getBlockZ());
+                            //Bukkit.broadcastMessage("Log type: " + checkLoc.getBlock().getType());
                             if (closestLog == null){
                                 closestLog = checkLoc;
                             }
@@ -121,7 +128,7 @@ public class FindStructureActivity extends Activity {
     // Might not be helpful if used improperly, theoretically shouldnt be a problem though.
     // Dont know how performant raytrace result is.
     private boolean isOccluded(Location check, Location center, int maxDistance){
-        RayTraceResult result = check.getWorld().rayTrace(check, check.toVector().subtract(center.toVector()), maxDistance, FluidCollisionMode.NEVER,
+        RayTraceResult result = check.getWorld().rayTrace(check, center.toVector().subtract(check.toVector()), maxDistance, FluidCollisionMode.NEVER,
                 true, maxDistance, null);
 
         if (result == null){
@@ -130,7 +137,12 @@ public class FindStructureActivity extends Activity {
         if (result.getHitBlock() == null){
             return false;
         }
-        Bukkit.broadcastMessage(check.getBlock().getType()+" Is occluded!");
+        else {
+            if (result.getHitBlock().getType().equals(check.getBlock().getType())){
+                return false;
+            }
+        }
+        //Bukkit.broadcastMessage(check.getBlock().getType()+" Is occluded!");
         return true;
     }
 

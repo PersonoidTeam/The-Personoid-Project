@@ -1,4 +1,4 @@
-package com.personoid.utils.npc;
+package com.personoid.utils;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

@@ -2,7 +2,7 @@ package com.personoid.npc.ai.controller;
 
 import com.personoid.npc.NPC;
 import com.personoid.npc.components.NPCTickingComponent;
-import com.personoid.utils.npc.PacketUtils;
+import com.personoid.utils.PacketUtils;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;

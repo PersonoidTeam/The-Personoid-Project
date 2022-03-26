@@ -2,7 +2,7 @@ package com.personoid.handlers;
 
 import com.mojang.authlib.GameProfile;
 import com.personoid.npc.NPC;
-import com.personoid.utils.npc.PacketUtils;
+import com.personoid.utils.PacketUtils;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import net.minecraft.network.Connection;

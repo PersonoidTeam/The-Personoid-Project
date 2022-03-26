@@ -7,7 +7,7 @@ import com.personoid.npc.ai.activity.ActivityType;
 import com.personoid.npc.ai.activity.Result;
 import com.personoid.utils.LocationUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 
 public class MineTreeActivity extends Activity {
@@ -47,8 +47,7 @@ public class MineTreeActivity extends Activity {
     }
 
     private void mineTree(Block block) {
-        Location loc = LocationUtils.getNear(getActiveNPC().getLocation(), block.getLocation(), 100);
-        run(new GoToLocationActivity(loc, 3).onFinished((result) -> {
+        run(new GoToLocationActivity(LocationUtils.getPathableLocation(block.getLocation(), getActiveNPC().getLocation()), 3).onFinished((result) -> {
             Bukkit.broadcastMessage("Mining tree at: " + block.getX() + ", " + block.getY() + ", " + block.getZ());
             if (result.getType() == Result.Type.SUCCESS) {
                 Bukkit.broadcastMessage(getActiveNPC().getMoveController().getVelocity().toString());
@@ -69,7 +68,7 @@ public class MineTreeActivity extends Activity {
     public void onUpdate() {
         if (isFinished()) {
             Bukkit.broadcastMessage("Finished mining tree");
-            //throw new RuntimeException("yo what goin on");
+            // TODO: shouldn't really be updating the activity after it's finished (even if it's only once)
         }
     }
 
@@ -80,11 +79,79 @@ public class MineTreeActivity extends Activity {
 
     @Override
     public boolean canStart(StartType startType) {
-        return true;
+        Biome biome = getActiveNPC().getLocation().getBlock().getBiome();
+        return hasTreesInBiome(biome); // TODO: look up which biomes have trees
     }
 
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    private boolean hasTreesInBiome(Biome biome) {
+        return switch (biome) {
+            case OCEAN -> false;
+            case PLAINS -> false;
+            case DESERT -> false;
+            case WINDSWEPT_HILLS -> true;
+            case FOREST -> true;
+            case TAIGA -> true;
+            case SWAMP -> true;
+            case RIVER -> false;
+            case NETHER_WASTES -> true;
+            case THE_END -> false;
+            case FROZEN_OCEAN -> false;
+            case FROZEN_RIVER -> false;
+            case SNOWY_PLAINS -> true;
+            case MUSHROOM_FIELDS -> false;
+            case BEACH -> false;
+            case JUNGLE -> true;
+            case SPARSE_JUNGLE -> true;
+            case DEEP_OCEAN -> false;
+            case STONY_SHORE -> false;
+            case SNOWY_BEACH -> false;
+            case BIRCH_FOREST -> true;
+            case DARK_FOREST -> true;
+            case SNOWY_TAIGA -> true;
+            case OLD_GROWTH_PINE_TAIGA -> true;
+            case WINDSWEPT_FOREST -> true;
+            case SAVANNA -> true;
+            case SAVANNA_PLATEAU -> true;
+            case BADLANDS -> false;
+            case WOODED_BADLANDS -> true;
+            case SMALL_END_ISLANDS -> false;
+            case END_MIDLANDS -> true;
+            case END_HIGHLANDS -> true;
+            case END_BARRENS -> false;
+            case WARM_OCEAN -> false;
+            case LUKEWARM_OCEAN -> false;
+            case COLD_OCEAN -> false;
+            case DEEP_LUKEWARM_OCEAN -> false;
+            case DEEP_COLD_OCEAN -> false;
+            case DEEP_FROZEN_OCEAN -> false;
+            case THE_VOID -> false;
+            case SUNFLOWER_PLAINS -> false;
+            case WINDSWEPT_GRAVELLY_HILLS -> true;
+            case FLOWER_FOREST -> true;
+            case ICE_SPIKES -> false;
+            case OLD_GROWTH_BIRCH_FOREST -> true;
+            case OLD_GROWTH_SPRUCE_TAIGA -> true;
+            case WINDSWEPT_SAVANNA -> true;
+            case ERODED_BADLANDS -> false;
+            case BAMBOO_JUNGLE -> true;
+            case SOUL_SAND_VALLEY -> false;
+            case CRIMSON_FOREST -> true;
+            case WARPED_FOREST -> false;
+            case BASALT_DELTAS -> false;
+            case DRIPSTONE_CAVES -> false;
+            case LUSH_CAVES -> false;
+            case MEADOW -> true;
+            case GROVE -> false;
+            case SNOWY_SLOPES -> false;
+            case FROZEN_PEAKS -> false;
+            case JAGGED_PEAKS -> false;
+            case STONY_PEAKS -> false;
+            case CUSTOM -> false;
+        };
     }
 }
