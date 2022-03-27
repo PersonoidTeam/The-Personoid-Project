@@ -29,10 +29,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.AABB;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -50,10 +47,9 @@ public class NPC extends ServerPlayer {
 
     private final MoveController moveController = new MoveController(this);
     private final LookController lookController = new LookController(this);
-
     private final NPCBrain brain = new NPCBrain(this);
-
     private final BlockBreaker blockBreaker = new BlockBreaker(this);
+    private final NPCInventory inventory = new NPCInventory(this);
 
     private int aliveTicks;
     private int knockbackTicks;
@@ -141,6 +137,13 @@ public class NPC extends ServerPlayer {
             //blockBreaker.start(getLocation().getBlock().getRelative(BlockFace.DOWN));
         }
         updatePose();
+/*        Location loc = getLocation().add(getLocation().getDirection().multiply(50));
+        Block hit = LocationUtils.rayTraceBlocks(getLocation().add(0, 2, 0), loc, 30, false);
+        Bukkit.getOnlinePlayers().forEach(player -> {
+            if (hit != null) {
+                player.sendBlockChange(hit.getLocation(), Bukkit.createBlockData(Material.GOLD_BLOCK));
+            }
+        });*/
     }
 
     private void tickAi() {
@@ -169,6 +172,14 @@ public class NPC extends ServerPlayer {
 
     public BlockBreaker getBlockBreaker() {
         return blockBreaker;
+    }
+
+    public NPCInventory getNPCInventory() {
+        return inventory;
+    }
+
+    public Player toPlayer() {
+        return cp;
     }
 
     private void loadChunks() {

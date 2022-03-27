@@ -6,12 +6,9 @@ import com.personoid.npc.ai.activity.ActivityType;
 import com.personoid.npc.ai.activity.Result;
 import com.personoid.utils.LocationUtils;
 import com.personoid.utils.MathUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.FluidCollisionMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.util.RayTraceResult;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,11 +93,17 @@ public class FindStructureActivity extends Activity {
                         }
                     }
 
-                    if (!LocationUtils.canReach(checkLoc, LocationUtils.getPathableLocation(checkLoc, getActiveNPC().getLocation()))) {
+                    Location pathableLocation = LocationUtils.getPathableLocation(checkLoc, getActiveNPC().getLocation());
+
+                    if (pathableLocation == null){
                         continue;
                     }
 
-                    if (isOccluded(checkLoc, getActiveNPC().getLocation().add(0, 2, 0), 6)){
+                    if (!LocationUtils.canReach(checkLoc, pathableLocation)) {
+                        continue;
+                    }
+
+                    if (isOccluded(checkLoc, pathableLocation, 6)){
                         continue;
                     }
 
@@ -127,24 +130,49 @@ public class FindStructureActivity extends Activity {
 
     // Might not be helpful if used improperly, theoretically shouldnt be a problem though.
     // Dont know how performant raytrace result is.
-    private boolean isOccluded(Location check, Location center, int maxDistance){
-        RayTraceResult result = check.getWorld().rayTrace(check, center.toVector().subtract(check.toVector()), maxDistance, FluidCollisionMode.NEVER,
-                true, maxDistance, null);
+    private boolean isOccluded(Location from, Location to, int maxDistance){
+/*        RayTraceResult result = check.getWorld().rayTrace(check.add(0.5, 0.5, 0.5), center.toVector().subtract(check.toVector()), maxDistance, FluidCollisionMode.NEVER,
+                true, maxDistance, null);*/
 
-        if (result == null){
+        Block hit = LocationUtils.rayTraceBlocks(from, to, maxDistance, false);
+        Bukkit.getOnlinePlayers().forEach(player -> {
+            if (hit != null) {
+                player.sendBlockChange(hit.getLocation(), Bukkit.createBlockData(Material.GOLD_BLOCK));
+            }
+        });
+
+        if (hit == null){
             return false;
         }
-        if (result.getHitBlock() == null){
+/*        if (result.getHitBlock() == null){
             return false;
-        }
+        }*/
         else {
-            if (result.getHitBlock().getType().equals(check.getBlock().getType())){
+
+            if (hit.getType().equals(from.getBlock().getType())){
                 return false;
+            }
+            else {
+                getActiveNPC().getLocation().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, hit.getLocation()
+                        , 10, new Particle.DustTransition(Color.BLUE, Color.AQUA, 2));
             }
         }
         //Bukkit.broadcastMessage(check.getBlock().getType()+" Is occluded!");
         return true;
     }
+
+/*    public boolean traceLocation(Location g, Location l, Player p) {
+        double x = g.getX()-l.getX(), y = g.getY()-l.getY(), z = g.getZ()-l.getZ();
+        Vector direction = new Vector(x, y, z).normalize();
+        p.sendMessage(""+g.distanceSquared(l));
+        for (int i = 0; i < 15; i++) {
+            l.add(direction);
+            if (l.getBlock().getType() != Material.AIR) {
+                return false;
+            }
+        }
+        return true;
+    }*/
 
     @Override
     public void onUpdate() {

@@ -60,7 +60,7 @@ public class BlockBreaker extends NPCTickingComponent {
 
     public void stop() {
         canTick = false;
-        sendPacket(10);
+        if (block != null) sendPacket(10);
     }
 
     public Block getCurrentBlock() {

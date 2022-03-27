@@ -2,7 +2,9 @@ package com.personoid.utils;
 
 import com.personoid.handlers.NPCHandler;
 import com.personoid.npc.NPC;
+import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.BoundingBox;
@@ -138,4 +140,33 @@ public class LocationUtils {
         z = z / dist * distance;
         return new Location(from.getWorld(), from.getX() + x, from.getY() + y, from.getZ() + z);
     }*/
+
+    public static boolean isSolid(Block block) {
+        return block.getType().isSolid() || block.getType().toString().contains("LEAVES");
+    }
+
+    // ray trace blocks from location a to location b and return hit block
+
+    public static Block rayTraceBlocks(Location from, Location to, int maxDistance, boolean stopOnLiquid){
+        Block block = null;
+        Vector vector = to.toVector().subtract(from.toVector()).normalize();
+
+        vector = vector.normalize();
+
+        for (int i = 1; i <= maxDistance; i++){
+            Location loc = from.clone().add(vector.clone().multiply(i));
+            Block b1 = loc.getBlock();
+            loc.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, loc
+                    , 5, new Particle.DustTransition(Color.BLUE, Color.AQUA, 1));
+            if (LocationUtils.isSolid(b1)){
+                block = b1;
+                break;
+            }
+            else if (stopOnLiquid && b1.isLiquid()){
+                block = b1;
+                break;
+            }
+        }
+        return block;
+    }
 }
