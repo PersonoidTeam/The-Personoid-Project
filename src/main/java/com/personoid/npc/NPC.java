@@ -130,7 +130,7 @@ public class NPC extends ServerPlayer {
             setSwimming(false);
         }*/
 
-        tickAi();
+        tickComponents();
         fallDamageCheck();
 
         if (aliveTicks == 1) {
@@ -146,12 +146,13 @@ public class NPC extends ServerPlayer {
         });*/
     }
 
-    private void tickAi() {
+    private void tickComponents() {
         navigation.tick();
         moveController.tick();
         lookController.tick();
         brain.tick();
         blockBreaker.tick();
+        inventory.tick();
     }
 
     public PathFinder getPathFinder() {

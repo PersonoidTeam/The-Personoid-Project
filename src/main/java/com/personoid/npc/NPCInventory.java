@@ -1,9 +1,21 @@
 package com.personoid.npc;
 
-import com.personoid.npc.components.NPCComponent;
+import com.personoid.events.NPCPickupItemEvent;
+import com.personoid.npc.components.NPCTickingComponent;
+import com.personoid.utils.PacketUtils;
+import net.minecraft.network.protocol.game.ClientboundTakeItemEntityPacket;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 
-public class NPCInventory extends NPCComponent {
+import java.util.ArrayList;
+import java.util.List;
+
+public class NPCInventory extends NPCTickingComponent {
+    private static final int MAX_SIZE = 36;
+
     private final ItemStack[] contents = new ItemStack[27];
     private final ItemStack[] armorContents = new ItemStack[4];
     private final ItemStack[] hotbar = new ItemStack[9];
@@ -15,6 +27,34 @@ public class NPCInventory extends NPCComponent {
         super(npc);
     }
 
+    @Override
+    public void tick() {
+        handleItemPickup();
+    }
+
+    private void handleItemPickup() {
+        for (Entity entity : getNPC().getBukkitEntity().getNearbyEntities(2, 1, 2)) {
+            if (entity instanceof Item item && getContents().size() < MAX_SIZE) {
+                if (item.getPickupDelay() == 0) {
+                    if (item.getThrower() != null && Bukkit.getEntity(item.getThrower()) != null) {
+                        LivingEntity thrower = (LivingEntity) Bukkit.getEntity(item.getThrower());
+                        NPCPickupItemEvent event = new NPCPickupItemEvent(npc, item, thrower);
+                        Bukkit.getPluginManager().callEvent(event);
+                        if (event.isCancelled()) return;
+                    } else {
+                        NPCPickupItemEvent event = new NPCPickupItemEvent(npc, item);
+                        Bukkit.getPluginManager().callEvent(event);
+                        if (event.isCancelled()) return;
+                    }
+                    PacketUtils.send(new ClientboundTakeItemEntityPacket(item.getEntityId(),
+                            npc.getBukkitEntity().getEntityId(), item.getItemStack().getAmount()));
+                    this.addItem(item.getItemStack());
+                    item.remove();
+                }
+            }
+        }
+    }
+
     // armour OR armor :)
 
     public void setHelmet(ItemStack itemStack){
@@ -24,21 +64,18 @@ public class NPCInventory extends NPCComponent {
     }
 
     public void setChestplate(ItemStack itemStack){
-        ItemStack clone = itemStack.clone();
         removeItem(itemStack);
-        armorContents[SlotIndex.CHESTPLATE.index] = clone;
+        armorContents[SlotIndex.CHESTPLATE.index] = itemStack.clone();
     }
 
     public void setLeggings(ItemStack itemStack){
-        ItemStack clone = itemStack.clone();
         removeItem(itemStack);
-        armorContents[SlotIndex.LEGGINGS.index] = clone;
+        armorContents[SlotIndex.LEGGINGS.index] = itemStack.clone();
     }
 
     public void setBoots(ItemStack itemStack){
-        ItemStack clone = itemStack.clone();
         removeItem(itemStack);
-        armorContents[SlotIndex.BOOTS.index] = clone;
+        armorContents[SlotIndex.BOOTS.index] = itemStack.clone();
     }
 
     // contents
@@ -88,6 +125,15 @@ public class NPCInventory extends NPCComponent {
         return sameCount.equals(b);
     }
 
+    public List<ItemStack> getContents() {
+        List<ItemStack> contents = new ArrayList<>();
+        for (int i = 0; i < this.contents.length - 1; i++) {
+            if (this.contents[i] != null) {
+                contents.add(this.contents[i]);
+            }
+        }
+        return contents;
+    }
 
     public enum SlotIndex {
         HELMET(0),
