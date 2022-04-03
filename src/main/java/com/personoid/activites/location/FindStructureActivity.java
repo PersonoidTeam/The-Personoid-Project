@@ -1,4 +1,4 @@
-package com.personoid.activites;
+package com.personoid.activites.location;
 
 import com.personoid.enums.Structure;
 import com.personoid.npc.ai.activity.Activity;
@@ -135,11 +135,11 @@ public class FindStructureActivity extends Activity {
                 true, maxDistance, null);*/
 
         Block hit = LocationUtils.rayTraceBlocks(from, to, maxDistance, false);
-        Bukkit.getOnlinePlayers().forEach(player -> {
+/*        Bukkit.getOnlinePlayers().forEach(player -> {
             if (hit != null) {
                 player.sendBlockChange(hit.getLocation(), Bukkit.createBlockData(Material.GOLD_BLOCK));
             }
-        });
+        });*/
 
         if (hit == null){
             return false;

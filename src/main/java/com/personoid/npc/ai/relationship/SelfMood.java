@@ -1,0 +1,26 @@
+package com.personoid.npc.ai.relationship;
+
+public enum SelfMood {
+    NEUTRAL,
+    ANGRY,
+    ANXIOUS,
+    DEPRESSED,
+    DISGUSTED,
+    PANICKED,
+    HAPPY,
+    HOPELESS,
+    HOSTILE,
+    IMPATIENT,
+    LONELY,
+    PROUD,
+    RELIEVED,
+    REGRETFUL,
+    SAD,
+    CONFIDENT,
+    SCARED,
+    SHOCKED,
+    SUSPICIOUS,
+    TIRED,
+    UNHAPPY,
+    WORRIED,
+}

@@ -133,6 +133,10 @@ public abstract class Activity implements Comparable<Activity> {
         return paused;
     }
 
+    public Activity getCurrentlyRunning() {
+        return currentlyRunning;
+    }
+
     @Override
     public int compareTo(@NotNull Activity activity) {
         return Double.compare(priority.getValue(), activity.priority.getValue());

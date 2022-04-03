@@ -1,8 +1,8 @@
 package com.personoid.npc;
 
 import com.mojang.authlib.GameProfile;
-import com.personoid.activites.DanceActivity;
-import com.personoid.activites.MineTreeActivity;
+import com.personoid.activites.misc.DanceActivity;
+import com.personoid.activites.gathering.MineTreeActivity;
 import com.personoid.enums.LogType;
 import com.personoid.npc.ai.NPCBrain;
 import com.personoid.npc.ai.controller.LookController;
@@ -33,6 +33,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -73,9 +74,6 @@ public class NPC extends ServerPlayer {
                 new MineTreeActivity(LogType.OAK),
                 new DanceActivity()
         );
-/*        goalSelector.registerGoals(
-                new FollowEntityGoal<>(this, Bukkit.getPlayer(spawner))
-        );*/
     }
 
     public void show(Player... players) {
@@ -144,6 +142,10 @@ public class NPC extends ServerPlayer {
                 player.sendBlockChange(hit.getLocation(), Bukkit.createBlockData(Material.GOLD_BLOCK));
             }
         });*/
+
+        if (aliveTicks == 40) {
+            sendMessage(brain.getMessageManager().getResponse(getName().getString() + " greets everyone."));
+        }
     }
 
     private void tickComponents() {
@@ -179,6 +181,10 @@ public class NPC extends ServerPlayer {
         return inventory;
     }
 
+    public NPCBrain getNPCBrain() {
+        return brain;
+    }
+
     public Player toPlayer() {
         return cp;
     }
@@ -205,6 +211,20 @@ public class NPC extends ServerPlayer {
 /*        if (groundTicks != 0 && !moveController.isFalling() && moveController.getOldVelocity().getY() < -0.1F) {
             hurt(DamageSource.FALL, (float) Math.pow(3.6, moveController.getOldVelocity().getY()));
         }*/
+    }
+
+    public void sendMessage(String message) {
+        Bukkit.broadcastMessage("<" + getName().getString() + "> " + message);
+    }
+
+    public void placeBlock(ItemStack itemStack) {
+        Location location = getLocation();
+        Block block = LocationUtils.getBlockInFront(location, 1);
+        if (block != null) {
+            block.setType(itemStack.getType());
+            block.setBlockData(itemStack.getType().createBlockData());
+            block.getWorld().playSound(block.getLocation(), block.getBlockData().getSoundGroup().getPlaceSound(), 0.5F, 1F);
+        }
     }
 
     @Override

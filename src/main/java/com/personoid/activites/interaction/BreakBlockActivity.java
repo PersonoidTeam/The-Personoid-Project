@@ -1,4 +1,4 @@
-package com.personoid.activites;
+package com.personoid.activites.interaction;
 
 import com.personoid.npc.ai.activity.Activity;
 import com.personoid.npc.ai.activity.ActivityType;
@@ -12,7 +12,7 @@ public class BreakBlockActivity extends Activity {
     // I love breaking blocks
 
     private final Block block;
-    private Material originalMaterial;
+    private final Material originalMaterial;
 
     public BreakBlockActivity(Block block) {
         super(ActivityType.INTERACTION);

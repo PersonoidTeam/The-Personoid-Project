@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.util.BlockIterator;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
@@ -168,5 +169,19 @@ public class LocationUtils {
             }
         }
         return block;
+    }
+
+    public static Block getBlockInFront(Location location, int distance) {
+        BlockIterator blocks = new BlockIterator(location, 1, distance);
+        Block lastNonSolidBlock = null;
+        while (blocks.hasNext()) {
+            Block block = blocks.next();
+            if (block.getType().isSolid()) {
+                return lastNonSolidBlock;
+            } else {
+                lastNonSolidBlock = block;
+            }
+        }
+        return null;
     }
 }

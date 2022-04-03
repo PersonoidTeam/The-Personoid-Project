@@ -1,5 +1,8 @@
-package com.personoid.activites;
+package com.personoid.activites.gathering;
 
+import com.personoid.activites.interaction.BreakBlockActivity;
+import com.personoid.activites.location.FindStructureActivity;
+import com.personoid.activites.location.GoToLocationActivity;
 import com.personoid.enums.LogType;
 import com.personoid.enums.Structure;
 import com.personoid.npc.ai.activity.Activity;
@@ -7,6 +10,7 @@ import com.personoid.npc.ai.activity.ActivityType;
 import com.personoid.npc.ai.activity.Result;
 import com.personoid.utils.LocationUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 
@@ -15,7 +19,7 @@ public class MineTreeActivity extends Activity {
 
     public MineTreeActivity() {
         super(ActivityType.GATHERING);
-        logType = LogType.OAK; // search for nearest tree type?
+        logType = LogType.OAK; // TODO: search for nearest tree type? search for tree based on needs?
     }
 
     public MineTreeActivity(LogType logType) {
@@ -47,10 +51,10 @@ public class MineTreeActivity extends Activity {
     }
 
     private void mineTree(Block block) {
-        run(new GoToLocationActivity(LocationUtils.getPathableLocation(block.getLocation(), getActiveNPC().getLocation()), 3).onFinished((result) -> {
+        Location pathableLoc = LocationUtils.getPathableLocation(block.getLocation(), getActiveNPC().getLocation());
+        run(new GoToLocationActivity(pathableLoc, 3).onFinished((result) -> {
             Bukkit.broadcastMessage("Mining tree at: " + block.getX() + ", " + block.getY() + ", " + block.getZ());
             if (result.getType() == Result.Type.SUCCESS) {
-                Bukkit.broadcastMessage(getActiveNPC().getMoveController().getVelocity().toString());
                 run(new BreakBlockActivity(block).onFinished((result1) -> {
                     if (result1.getType() == Result.Type.SUCCESS) {
                         Bukkit.broadcastMessage("Mined tree successfully!");

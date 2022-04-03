@@ -1,4 +1,4 @@
-package com.personoid.activites;
+package com.personoid.activites.misc;
 
 import com.personoid.npc.ai.Priority;
 import com.personoid.npc.ai.activity.Activity;

@@ -9,9 +9,12 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class NPCInventory extends NPCTickingComponent {
     private static final int MAX_SIZE = 36;
@@ -19,9 +22,8 @@ public class NPCInventory extends NPCTickingComponent {
     private final ItemStack[] contents = new ItemStack[27];
     private final ItemStack[] armorContents = new ItemStack[4];
     private final ItemStack[] hotbar = new ItemStack[9];
-
-    private int mainHandIndex = 0;
-    private int offHandIndex = -1;
+    private ItemStack offhand;
+    private int selectedSlot = 0;
 
     public NPCInventory(NPC npc) {
         super(npc);
@@ -30,6 +32,8 @@ public class NPCInventory extends NPCTickingComponent {
     @Override
     public void tick() {
         handleItemPickup();
+        npc.getBukkitEntity().setItemInHand(hotbar[selectedSlot]);
+        drop();
     }
 
     private void handleItemPickup() {
@@ -46,12 +50,43 @@ public class NPCInventory extends NPCTickingComponent {
                         Bukkit.getPluginManager().callEvent(event);
                         if (event.isCancelled()) return;
                     }
-                    PacketUtils.send(new ClientboundTakeItemEntityPacket(item.getEntityId(),
-                            npc.getBukkitEntity().getEntityId(), item.getItemStack().getAmount()));
-                    this.addItem(item.getItemStack());
-                    item.remove();
+                    int diff = this.addItem(item.getItemStack());
+                    //Bukkit.broadcastMessage("diff: " + diff);
+                    if (diff != item.getItemStack().getAmount()) {
+                        PacketUtils.send(new ClientboundTakeItemEntityPacket(item.getEntityId(),
+                                npc.getBukkitEntity().getEntityId(), item.getItemStack().getAmount()));
+                        if (diff == 0) {
+                            item.remove();
+                        } else {
+                            item.getItemStack().setAmount(item.getItemStack().getAmount() - diff);
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    public void select(int slot) {
+        if (slot > 8 || slot < 0) {
+            throw new IndexOutOfBoundsException("Slot index must be between than 0-8 (was " + slot + ")");
+        }
+        selectedSlot = slot;
+    }
+
+    public void drop() {
+        drop(selectedSlot);
+    }
+
+    // TODO: make also work for not-hotbar slots
+    public void drop(int slot) {
+        // drop item and remove from inventory
+        ItemStack itemStack = hotbar[slot];
+        if (itemStack != null) {
+            Item item = npc.getBukkitEntity().getWorld().dropItem(npc.getBukkitEntity().getEyeLocation(), itemStack);
+            item.setPickupDelay(40);
+            Vector vel = npc.getLocation().getDirection().normalize().multiply(0.3).add(new Vector(0F, 0.1F, 0F));
+            item.setVelocity(vel);
+            removeItem(itemStack);
         }
     }
 
@@ -61,38 +96,61 @@ public class NPCInventory extends NPCTickingComponent {
         ItemStack clone = itemStack.clone();
         removeItem(itemStack);
         armorContents[SlotIndex.HELMET.index] = clone;
+        npc.getBukkitEntity().getInventory().setHelmet(itemStack);
     }
 
     public void setChestplate(ItemStack itemStack){
         removeItem(itemStack);
         armorContents[SlotIndex.CHESTPLATE.index] = itemStack.clone();
+        npc.getBukkitEntity().getInventory().setChestplate(itemStack);
     }
 
     public void setLeggings(ItemStack itemStack){
         removeItem(itemStack);
         armorContents[SlotIndex.LEGGINGS.index] = itemStack.clone();
+        npc.getBukkitEntity().getInventory().setLeggings(itemStack);
     }
 
     public void setBoots(ItemStack itemStack){
         removeItem(itemStack);
         armorContents[SlotIndex.BOOTS.index] = itemStack.clone();
+        npc.getBukkitEntity().getInventory().setBoots(itemStack);
+    }
+
+    public void setOffhand(ItemStack itemStack) {
+        removeItem(itemStack);
+        offhand = itemStack.clone();
+        npc.getBukkitEntity().getInventory().setItemInOffHand(itemStack);
     }
 
     // contents
 
-    public void addItem(ItemStack itemStack) {
-        for (int i = 0; i < hotbar.length; i++) {
-            if (hotbar[i] == null) {
-                hotbar[i] = itemStack;
-                return;
-            }
-        }
+    public int addItem(ItemStack itemStack) {
+        int diff = addItem(hotbar, itemStack, new HashSet<>());
+        return diff == itemStack.getAmount() ? addItem(contents, itemStack, new HashSet<>()) : diff;
+    }
+
+    private int addItem(ItemStack[] contents, ItemStack itemStack, Set<Integer> excludedSlots) {
+        // FIXME: keeps on picking up items when full
         for (int i = 0; i < contents.length; i++) {
-            if (contents[i] == null) {
-                contents[i] = itemStack;
-                return;
+            if (excludedSlots.contains(i)) continue;
+            if (contents[i] != null && contents[i].getType() == itemStack.getType()) {
+                int diff = (contents[i].getAmount() + itemStack.getAmount()) - contents[i].getMaxStackSize();
+                contents[i].setAmount(Math.min(contents[i].getAmount() + itemStack.getAmount(), itemStack.getMaxStackSize()));
+                if (diff == 0 || i == contents.length - 1) {
+                    return diff;
+                } else if (diff > 0) {
+                    excludedSlots.add(i);
+                    return addItem(contents, new ItemStack(itemStack.getType(), diff), excludedSlots);
+                }
+            } else if (contents[i] == null) {
+                ItemStack stack = itemStack.clone();
+                stack.setAmount(Math.min(itemStack.getAmount(), itemStack.getMaxStackSize()));
+                contents[i] = stack;
+                return 0;
             }
         }
+        return itemStack.getAmount();
     }
 
     public void removeItem(ItemStack itemStack) {
