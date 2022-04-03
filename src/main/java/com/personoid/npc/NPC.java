@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.personoid.activites.misc.DanceActivity;
 import com.personoid.activites.gathering.MineTreeActivity;
 import com.personoid.enums.LogType;
+import com.personoid.events.NPCChatEvent;
 import com.personoid.npc.ai.NPCBrain;
 import com.personoid.npc.ai.controller.LookController;
 import com.personoid.npc.ai.controller.MoveController;
@@ -214,6 +215,9 @@ public class NPC extends ServerPlayer {
     }
 
     public void sendMessage(String message) {
+        NPCChatEvent event = new NPCChatEvent(this, message);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) return;
         Bukkit.broadcastMessage("<" + getName().getString() + "> " + message);
     }
 

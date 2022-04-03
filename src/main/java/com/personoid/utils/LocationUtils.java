@@ -25,6 +25,16 @@ public class LocationUtils {
         relativeBlockFaces.add(BlockFace.WEST);
     }
 
+    public static NPC getClosestNPC(Location location, List<NPC> excluding) {
+        NPC closestNPC = null;
+        for (NPC npc : NPCHandler.getNPCs()) {
+            if (closestNPC == null || npc.getLocation().distance(location) < closestNPC.getLocation().distance(location) && !excluding.contains(npc)) {
+                closestNPC = npc;
+            }
+        }
+        return closestNPC;
+    }
+
     public static NPC getClosestNPC(Location location) {
         NPC closestNPC = null;
         for (NPC npc : NPCHandler.getNPCs()) {
