@@ -19,7 +19,7 @@ import java.util.List;
 
 public class Navigation extends NPCTickingComponent {
     private final Pathfinder pathfinder = new Pathfinder();
-    private final double SPEED = 0.15D;
+    private final double SPEED = 0.25;//0.125D;
     private Path path;
     private double progress;
     private Vec3 currentPoint;
@@ -38,13 +38,13 @@ public class Navigation extends NPCTickingComponent {
             // let the GoToLocationActivity handle this
             npc.getLookController().face(target);
             if (path != null) {
-                for (PathNode node : path.nodes()) {
+                for (PathNode node : path.getNodes()) {
                     npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, node.getLocation().add(0.5F, 0, 0.5F), 5,
                             new Particle.DustTransition(Color.YELLOW, Color.RED, 1));
                 }
-                if (!updateLocation()) {
+/*                if (!updateLocation()) {
                     //this.path = null;
-                }
+                }*/
             }
         }
     }
@@ -58,7 +58,6 @@ public class Navigation extends NPCTickingComponent {
     }
 
     public void updatePath() {
-        // FIXME: goal location null
         if (target.distance(npc.getLocation()) > 1) {
             new Task(() -> {
                 if (target == null) return;
@@ -73,10 +72,10 @@ public class Navigation extends NPCTickingComponent {
         path = tempPath;
         if (path != null) {
            // Bukkit.getPlayer(npc.spawner).sendMessage("Path: " + path.path);
-            Node node = path.path.getNextNode();
+*//*            Node node = path.path.getNextNode();
             Location loc = new Location(npc.getLocation().getWorld(), node.asBlockPos().getX(), node.asBlockPos().getY(), node.asBlockPos().getZ());
             npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, loc.add(0.5F, 0, 0.5F), 5,
-                    new Particle.DustTransition(Color.YELLOW, Color.RED, 1));
+                    new Particle.DustTransition(Color.YELLOW, Color.RED, 1));*//*
             if (!updateLocation()) {
                 this.path = null;
             }
@@ -94,7 +93,6 @@ public class Navigation extends NPCTickingComponent {
         if (d + SPEED < 1) {
             double dx = (currentPoint.x - npc.getX()) * SPEED;
             double dz = (currentPoint.z - npc.getZ()) * SPEED;
-
             npc.getMoveController().move(new Vector(dx, 0, dz));
             npc.checkMovementStatistics(dx, 0, dz);
             progress += SPEED;
@@ -102,19 +100,19 @@ public class Navigation extends NPCTickingComponent {
             //First complete old point.
             double bx = (currentPoint.x - npc.getX()) * d1;
             double bz = (currentPoint.z - npc.getZ()) * d1;
-
             //Check if new point exists
             path.advance();
             if (!path.notStarted()) {
                 //Append new movement
                 currentPoint = path.getNextNPCPos(npc);
                 double d2 = SPEED - d1;
-
                 double dx = bx + ((currentPoint.x - npc.getX()) * d2);
                 double dy = currentPoint.y - npc.getY(); //Jump if needed to reach next block.
                 double dz = bz + ((currentPoint.z - npc.getZ()) * d2);
-
-                npc.getMoveController().move(new Vector(dx, dy, dz), true);
+                if (dy > 0) {
+                    npc.getMoveController().jump();
+                }
+                npc.getMoveController().move(new Vector(dx, 0, dz));
                 npc.checkMovementStatistics(dx, dy, dz);
                 progress += SPEED;
             } else {

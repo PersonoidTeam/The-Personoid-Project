@@ -45,7 +45,7 @@ public class MessageManager extends NPCComponent {
         return getResponse(List.of(playerName + ":")).trim();
     }
 
-    public String substring(String string, int beginIndex, int endIndex) {
+/*    public String substring(String string, int beginIndex, int endIndex) {
         if (beginIndex < 0) {
             throw new StringIndexOutOfBoundsException(beginIndex);
         }
@@ -57,7 +57,7 @@ public class MessageManager extends NPCComponent {
             throw new StringIndexOutOfBoundsException(subLen);
         }
         return ((beginIndex == 0) && (endIndex == string.length())) ? string : string.substring(beginIndex, subLen);
-    }
+    }*/
 
     public String getResponse(String input) {
         prompts.add("\n" + input);

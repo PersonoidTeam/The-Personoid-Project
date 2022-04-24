@@ -33,7 +33,6 @@ public class NPCInventory extends NPCTickingComponent {
     public void tick() {
         handleItemPickup();
         npc.getBukkitEntity().setItemInHand(hotbar[selectedSlot]);
-        drop();
     }
 
     private void handleItemPickup() {

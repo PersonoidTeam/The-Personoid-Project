@@ -65,8 +65,19 @@ public abstract class Activity implements Comparable<Activity> {
         if (currentlyRunning != null) {
             currentlyRunning.internalUpdate();
             currentlyRunning.onUpdate();
+/*            if (shouldBeBored()){
+                lastBoredTime = System.currentTimeMillis();
+            }*/
         }
         currentDuration++;
+    }
+
+    public long getBoredTime(){
+        return 0;
+    }
+
+    public boolean shouldBeBored() {
+        return false;
     }
 
     public abstract void onStart(StartType startType);

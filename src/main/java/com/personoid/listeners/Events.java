@@ -1,6 +1,5 @@
 package com.personoid.listeners;
 
-import com.personoid.events.NPCChatEvent;
 import com.personoid.events.NPCPickupItemEvent;
 import com.personoid.handlers.NPCHandler;
 import com.personoid.npc.NPC;
@@ -10,12 +9,12 @@ import com.personoid.utils.bukkit.Task;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Events implements Listener {
@@ -32,26 +31,29 @@ public class Events implements Listener {
     }
 
     @EventHandler
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
+    public void onPlayerChat(PlayerChatEvent event) {
         Player player = event.getPlayer();
         NPC npc = LocationUtils.getClosestNPC(player.getLocation());
         MessageManager messageManager = npc.getNPCBrain().getMessageManager();
-        AtomicReference<String> response = new AtomicReference<>("");
-        new Task(() -> response.set(messageManager.getResponseFrom(event.getMessage(), event.getPlayer().getName()))).async().run(20);
         // TODO: message delay based on message length
-        npc.sendMessage(response.get());
+        new Task(() -> {
+            String response = messageManager.getResponseFrom(event.getMessage(), event.getPlayer().getName());
+            npc.sendMessage(response);
+        }).async().run(20);
     }
 
-    @EventHandler
+/*    @EventHandler
     public void onNPCChat(NPCChatEvent event) {
         NPC npc = event.getNPC();
         NPC closest = LocationUtils.getClosestNPC(npc.getLocation(), List.of(npc));
         MessageManager messageManager = closest.getNPCBrain().getMessageManager();
         AtomicReference<String> response = new AtomicReference<>("");
-        new Task(() -> response.set(messageManager.getResponseFrom(event.getMessage(), event.getNPC().getName().getString()))).async().run(20);
+        String name = npc.getName().getString().trim();
+        if (name.equalsIgnoreCase(closest.getName().getString().trim())) name += 1;
+        new Task(() -> response.set(messageManager.getResponseFrom(event.getMessage(), name))).async().run(20);
         // TODO: message delay based on message length
         closest.sendMessage(response.get());
-    }
+    }*/
 
     @EventHandler
     public void onNPCPickupItem(NPCPickupItemEvent event) {
@@ -67,6 +69,13 @@ public class Events implements Listener {
             }).async();
             new Task(() -> event.getNPC().getBukkitEntity().performCommand("msg " + player.getDisplayName() + " " + response)).run(20);
             // TODO: message delay based on message length
+        }
+    }
+
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            //Bukkit.broadcastMessage(player.getDisplayName() + " took " + event.getDamage() + " damage");
         }
     }
 }

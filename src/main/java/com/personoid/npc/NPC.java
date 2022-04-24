@@ -1,13 +1,14 @@
 package com.personoid.npc;
 
 import com.mojang.authlib.GameProfile;
-import com.personoid.activites.misc.DanceActivity;
 import com.personoid.activites.gathering.MineTreeActivity;
+import com.personoid.activites.location.FollowEntityActivity;
+import com.personoid.activites.misc.DanceActivity;
 import com.personoid.enums.LogType;
-import com.personoid.events.NPCChatEvent;
 import com.personoid.npc.ai.NPCBrain;
 import com.personoid.npc.ai.controller.LookController;
 import com.personoid.npc.ai.controller.MoveController;
+import com.personoid.npc.ai.pathfinding.NPCNavigation;
 import com.personoid.npc.ai.pathfinding.Navigation;
 import com.personoid.utils.BlockBreaker;
 import com.personoid.utils.LocationUtils;
@@ -27,14 +28,13 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.pathfinder.PathFinder;
-import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.AABB;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -45,19 +45,18 @@ public class NPC extends ServerPlayer {
     public UUID spawner;
 
     private final Navigation navigation = new Navigation(this);
-    private final PathFinder pathFinder;
+    public final NPCNavigation npcNavigation = new NPCNavigation(this);
 
     private final MoveController moveController = new MoveController(this);
     private final LookController lookController = new LookController(this);
+
     private final NPCBrain brain = new NPCBrain(this);
     private final BlockBreaker blockBreaker = new BlockBreaker(this);
     private final NPCInventory inventory = new NPCInventory(this);
 
     private int aliveTicks;
-    private int knockbackTicks;
     private int groundTicks;
-    private int jumpTicks;
-    private Pose pose = Pose.STANDING;
+
     private boolean sneaking;
 
     public NPC(MinecraftServer minecraftserver, ServerLevel worldserver, GameProfile gameprofile, @NotNull Player spawner) {
@@ -66,13 +65,12 @@ public class NPC extends ServerPlayer {
         entityData.set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0xFF);
         cp = getBukkitEntity();
         this.spawner = spawner.getUniqueId();
-        WalkNodeEvaluator walkNodeEvaluator = new WalkNodeEvaluator();
-        pathFinder = new PathFinder(walkNodeEvaluator, 1);
     }
 
     public void registerActivities() {
         brain.getActivityManager().register(
                 new MineTreeActivity(LogType.OAK),
+                new FollowEntityActivity(Bukkit.getEntity(spawner)),
                 new DanceActivity()
         );
     }
@@ -98,10 +96,8 @@ public class NPC extends ServerPlayer {
         aliveTicks++;
 
         if (hurtTime > 0) --hurtTime;
-        if (knockbackTicks > 0) --knockbackTicks;
-        if (jumpTicks > 0) --jumpTicks;
 
-        if (isOnGround()) {
+        if (checkGround()) {
             if (groundTicks < 5) {
                 groundTicks++;
             }
@@ -117,9 +113,7 @@ public class NPC extends ServerPlayer {
             outOfWorld();
         }
 
-/*        Player player = Bukkit.getPlayer(spawner);
-        Location targetLoc = player.getLocation();
-        faceLocation(targetLoc);*/
+        fallDamageCheck();
 
         // FIXME: swimming not working
 
@@ -130,36 +124,17 @@ public class NPC extends ServerPlayer {
         }*/
 
         tickComponents();
-        fallDamageCheck();
-
-        if (aliveTicks == 1) {
-            //blockBreaker.start(getLocation().getBlock().getRelative(BlockFace.DOWN));
-        }
         updatePose();
-/*        Location loc = getLocation().add(getLocation().getDirection().multiply(50));
-        Block hit = LocationUtils.rayTraceBlocks(getLocation().add(0, 2, 0), loc, 30, false);
-        Bukkit.getOnlinePlayers().forEach(player -> {
-            if (hit != null) {
-                player.sendBlockChange(hit.getLocation(), Bukkit.createBlockData(Material.GOLD_BLOCK));
-            }
-        });*/
-
-        if (aliveTicks == 40) {
-            sendMessage(brain.getMessageManager().getResponse(getName().getString() + " greets everyone."));
-        }
     }
 
     private void tickComponents() {
-        navigation.tick();
+        //navigation.tick();
+        npcNavigation.tick();
         moveController.tick();
         lookController.tick();
         brain.tick();
         blockBreaker.tick();
         inventory.tick();
-    }
-
-    public PathFinder getPathFinder() {
-        return pathFinder;
     }
 
     public Navigation getNavigation() {
@@ -186,10 +161,6 @@ public class NPC extends ServerPlayer {
         return brain;
     }
 
-    public Player toPlayer() {
-        return cp;
-    }
-
     private void loadChunks() {
         World world = cp.getWorld();
         ChunkPos chunkPos = chunkPosition();
@@ -208,16 +179,18 @@ public class NPC extends ServerPlayer {
     }
 
     private void fallDamageCheck() {
-        // FIXME: doesn't work :(
-/*        if (groundTicks != 0 && !moveController.isFalling() && moveController.getOldVelocity().getY() < -0.1F) {
-            hurt(DamageSource.FALL, (float) Math.pow(3.6, moveController.getOldVelocity().getY()));
-        }*/
+        // TODO: make more accurate
+        if (isOnGround() && moveController.wasFalling()) {
+            float damage = Math.round(Math.pow(0.25, moveController.getOldVelocity().getY()));
+            hurt(DamageSource.FALL, damage);
+        }
     }
 
     public void sendMessage(String message) {
-        NPCChatEvent event = new NPCChatEvent(this, message);
+        // TODO: get working with async
+/*        NPCChatEvent event = new NPCChatEvent(this, message);
         Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()) return;
+        if (event.isCancelled()) return;*/
         Bukkit.broadcastMessage("<" + getName().getString() + "> " + message);
     }
 
@@ -246,9 +219,9 @@ public class NPC extends ServerPlayer {
 
     @Override
     public void push(Entity entity) {
-        // what the heck is this
+        // FIXME: direction is always the same
         if (!this.isPassengerOfSameVehicle(entity) && !entity.noPhysics && !this.noPhysics) {
-            double d0 = entity.getX() - this.getZ();
+            double d0 = entity.getX() - this.getX();
             double d1 = entity.getX() - this.getZ();
             double d2 = Mth.absMax(d0, d1);
             if (d2 >= 0.009999999776482582D) {
@@ -256,21 +229,18 @@ public class NPC extends ServerPlayer {
                 d0 /= d2;
                 d1 /= d2;
                 double d3 = 1.0D / d2;
-                if (d3 > 1.0D) {
-                    d3 = 1.0D;
+                if (d3 > 1D) {
+                    d3 = 1D;
                 }
-
                 d0 *= d3;
                 d1 *= d3;
                 d0 *= 0.05000000074505806D;
                 d1 *= 0.05000000074505806D;
-
                 if (!this.isVehicle()) {
-                    //moveController.addVelocity(new Vector(-d0, 0.0D, -d1));
+                    moveController.addVelocity(new Vector(-d0, 0D, -d1));
                 }
-
                 if (!entity.isVehicle()) {
-                    entity.push(d0, 0.0D, d1);
+                    entity.push(d0, 0D, d1);
                 }
             }
         }
@@ -286,6 +256,10 @@ public class NPC extends ServerPlayer {
 
     @Override
     public boolean isOnGround() {
+        return groundTicks > 0;
+    }
+
+    private boolean checkGround() {
         // not mine, some smart person figured this out
         double vy = moveController.getVelocity().getY();
         if (vy > 0) {
@@ -311,9 +285,7 @@ public class NPC extends ServerPlayer {
     public boolean damageEntity0(DamageSource damagesource, float f) {
         boolean damaged = super.damageEntity0(damagesource, f);
         Entity attacker = damagesource.getEntity();
-
         // TODO: if not damaged, and blocked using shield, play block sound
-
         if (damaged && attacker != null) {
             // TODO: check if still alive -> if not, call npc event
             moveController.applyKnockback(attacker.getBukkitEntity().getLocation());
@@ -333,7 +305,7 @@ public class NPC extends ServerPlayer {
 
     public void setSwimming(boolean swimming) {
         getBukkitEntity().setSwimming(swimming);
-        pose = swimming ? Pose.SWIMMING : Pose.STANDING;
+        setPose(swimming ? Pose.SWIMMING : Pose.STANDING);
     }
 
     public void setSneaking() {
@@ -342,7 +314,7 @@ public class NPC extends ServerPlayer {
 
     public void setSneaking(boolean sneaking) {
         this.sneaking = sneaking;
-        pose = sneaking ? Pose.CROUCHING : Pose.STANDING;
+        setPose(sneaking ? Pose.CROUCHING : Pose.STANDING);
     }
 
     public boolean isSneaking() {
@@ -350,32 +322,8 @@ public class NPC extends ServerPlayer {
     }
 
     private void updatePose() {
-        super.updatePlayerPose();
-/*        this.setPose(pose);
-        //((Player) cp).setSneaking(true);
-        cp.getHandle().setPose(pose);
-        int id = switch (pose) {
-            case STANDING -> 0;
-            case FALL_FLYING -> 1;
-            case SLEEPING -> 2;
-            case SWIMMING -> 3;
-            case SPIN_ATTACK -> 4;
-            case CROUCHING -> 5;
-            case LONG_JUMPING -> 6;
-            case DYING -> 7;
-        };
-        entityData.set(new EntityDataAccessor<>(getId(), EntityDataSerializers.POSE), pose);
-        PacketUtils.send(new ClientboundSetEntityDataPacket(getId(), entityData, false));*/
-
         cp.setSneaking(sneaking);
         ((Player) cp).setSneaking(sneaking);
-
-        cp.getHandle().setPose(pose);
-        //entityData.set(new EntityDataAccessor<>(6, EntityDataSerializers.POSE), pose);
         PacketUtils.send(new ClientboundSetEntityDataPacket(getId(), entityData, false));
-/*        Bukkit.broadcastMessage("pose: " + pose);
-        Bukkit.broadcastMessage("sneaking: " + sneaking);
-        Bukkit.broadcastMessage("cpSneaking: " + cp.isSneaking());
-        Bukkit.broadcastMessage("playerSneaking" + ((Player) cp).isSneaking());*/
     }
 }

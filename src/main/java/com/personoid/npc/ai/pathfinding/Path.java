@@ -1,6 +1,7 @@
 package com.personoid.npc.ai.pathfinding;
 
 import com.personoid.npc.NPC;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class Path {
         this.nodes = new ArrayList<>(Arrays.stream(nodes).toList());
     }
 
-    public List<PathNode> nodes() {
+    public List<PathNode> getNodes() {
         return nodes;
     }
 
@@ -58,29 +59,38 @@ public class Path {
         return nodes.size();
     }
 
-    public Vec3 getNPCPosAtNode(NPC npc, int index) {
-        // FIXME: hacky workaround while I figure out what's going on :)
+/*    public Vec3 getNPCPosAtNode(NPC npc, int index) {
+        // FIXME: hacky workaround while I figure out what's going on :(
         if (index >= this.nodes.size()) return new Vec3(npc.getLocation().getX(), npc.getLocation().getY(), npc.getLocation().getZ());
 
         PathNode node = this.nodes.get(index);
         double x = (double)node.x + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
         double y = (double)node.z + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
         return new Vec3(x, node.y, y);
-    }
+    }*/
 
-/*    public Vec3 getNPCPosAtNode(NPC npc, int index) {
+    public Vec3 getNPCPosAtNode(NPC npc, int index) {
         try {
-            Node node = path.getNode(index);
+            PathNode node = nodes.get(index);
             double x = (double)node.x + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
             double y = (double)node.z + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
             return new Vec3(x, node.y, y);
         } catch (IndexOutOfBoundsException e) {
             return new Vec3(npc.getLocation().getX(), npc.getLocation().getY(), npc.getLocation().getZ());
         }
-    }*/
+    }
 
     public Vec3 getNextNPCPos(NPC npc) {
         return this.getNPCPosAtNode(npc, this.nextNodeIndex);
+    }
+
+    public BlockPos getNextNodePos() {
+        return getNodePos(nextNodeIndex);
+    }
+
+    public BlockPos getNodePos(int index) {
+        PathNode node = nodes.get(index);
+        return new BlockPos(node.x, node.y, node.z);
     }
 
     public void advance() {
@@ -93,5 +103,9 @@ public class Path {
 
     public boolean isDone() {
         return this.nextNodeIndex >= this.nodes.size();
+    }
+
+    public void replaceNode(int index, PathNode node) {
+        this.nodes.set(index, node);
     }
 }

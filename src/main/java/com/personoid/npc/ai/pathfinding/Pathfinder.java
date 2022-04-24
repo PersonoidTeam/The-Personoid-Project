@@ -20,7 +20,7 @@ public class Pathfinder {
         return requirements;
     }
 
-    public Path findPath(Location from, Location to, List<PathRequirement> requirements, int maxNodes, int maxNodesUntilRetry) {
+    public Path findPath(Location from, Location to, List<PathRequirement> requirements, int maxNodes, int maxTicksUntilRetry) {
         Profiler.push(Profiler.Type.A_STAR, "Calculating path...");
         world = from.getWorld();
         this.requirements = requirements;
@@ -62,22 +62,25 @@ public class Pathfinder {
                     }
                 }
             }
-            if (maxNodesUntilRetry != -1 && retryTimer.get() > maxNodesUntilRetry && requirements.size() > 0) {
+            //if (retryTimer.get() % 10 == 0) Bukkit.broadcastMessage(retryTimer.get() + "ms");
+            if (maxTicksUntilRetry != -1 && retryTimer.get() > maxTicksUntilRetry && requirements.size() > 0) {
                 Profiler.push(Profiler.Type.A_STAR, "Took too long to calculate, retrying with no requirements...");
-                return findPath(from, to, new ArrayList<>(), maxNodes, maxNodesUntilRetry);
+                return findPath(from, to, new ArrayList<>(), maxNodes, maxTicksUntilRetry);
             }
         }
-        Profiler.push(Profiler.Type.A_STAR, "Total time spent (null): " + retryTimer.get() + "ms");
-        return null;
+        navigated.add(end);
+        Path path = reconstruct(navigated, navigated.size() - 1);
+        Profiler.push(Profiler.Type.A_STAR, "Total time spent (path): " + retryTimer.get() + "ms");
+        return path;
     }
 
     private Path reconstruct(List<PathNode> navigated, int index) {
         final PathNode current = navigated.get(index);
         Path path = new Path(current);
         if (index > 0 && navigated.contains(current)) {
-            return reconstruct(navigated, index - 1).append(path.nodes());
+            return reconstruct(navigated, index - 1).append(path.getNodes());
         }
-        path.nodes().remove(0);
+        path.getNodes().remove(0);
         return path;
     }
 }

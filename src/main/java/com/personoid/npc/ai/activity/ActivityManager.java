@@ -48,7 +48,7 @@ public class ActivityManager extends NPCTickingComponent {
     }
 
     public void startNextActivity() {
-        Bukkit.broadcastMessage("Starting next activity");
+        //Bukkit.broadcastMessage("Starting next activity");
         if (!paused.isEmpty()) {
             for (Activity activity : paused) {
                 boolean higherThanNext = queue.isEmpty() || activity.getPriority().isHigherThan(queue.peek().getPriority());

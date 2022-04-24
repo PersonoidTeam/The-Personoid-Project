@@ -1,6 +1,6 @@
-package com.personoid.npc.ai.relationship;
+package com.personoid.npc.ai.mood;
 
-public enum SelfMood {
+public enum SelfMoodType {
     NEUTRAL,
     ANGRY,
     ANXIOUS,
@@ -23,4 +23,5 @@ public enum SelfMood {
     TIRED,
     UNHAPPY,
     WORRIED,
+    BORED,
 }

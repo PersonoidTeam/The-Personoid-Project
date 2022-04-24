@@ -3,29 +3,29 @@ package com.personoid.npc.ai;
 import com.personoid.npc.NPC;
 import com.personoid.npc.ai.activity.ActivityManager;
 import com.personoid.npc.ai.messaging.MessageManager;
-import com.personoid.npc.ai.relationship.RelationshipManager;
+import com.personoid.npc.ai.mood.MoodManager;
 import com.personoid.npc.components.NPCTickingComponent;
 
 public class NPCBrain extends NPCTickingComponent {
-    private final RelationshipManager relationshipManager;
+    private final MoodManager moodManager;
     private final ActivityManager activityManager;
     private final MessageManager messageManager;
 
     public NPCBrain(NPC npc) {
         super(npc);
-        relationshipManager = new RelationshipManager(npc);
+        moodManager = new MoodManager(npc);
         activityManager = new ActivityManager(npc);
         messageManager = new MessageManager(npc);
     }
 
     @Override
     public void tick() {
-        relationshipManager.tick();
+        moodManager.tick();
         activityManager.tick();
     }
 
-    public RelationshipManager getRelationshipManager() {
-        return relationshipManager;
+    public MoodManager getMoodManager() {
+        return moodManager;
     }
 
     public ActivityManager getActivityManager() {

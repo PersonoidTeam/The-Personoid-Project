@@ -1,4 +1,4 @@
-package com.personoid.npc.ai.relationship;
+package com.personoid.npc.ai.mood;
 
 public enum TargetMood {
     ANGRY,

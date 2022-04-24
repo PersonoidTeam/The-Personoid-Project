@@ -28,7 +28,7 @@ public class LocationUtils {
     public static NPC getClosestNPC(Location location, List<NPC> excluding) {
         NPC closestNPC = null;
         for (NPC npc : NPCHandler.getNPCs()) {
-            if (closestNPC == null || npc.getLocation().distance(location) < closestNPC.getLocation().distance(location) && !excluding.contains(npc)) {
+            if ((closestNPC == null || npc.getLocation().distance(location) < closestNPC.getLocation().distance(location)) && !excluding.contains(npc)) {
                 closestNPC = npc;
             }
         }
@@ -47,10 +47,10 @@ public class LocationUtils {
 
     public static Block getBlockInDir(Location location, BlockFace direction) {
         while (true) {
-            location = location.getBlock().getRelative(direction).getLocation();
             if (location.getBlock().getType().isSolid()) {
                 return location.getBlock();
             }
+            location = location.getBlock().getRelative(direction).getLocation();
         }
     }
 

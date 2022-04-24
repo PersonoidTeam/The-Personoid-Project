@@ -6,11 +6,10 @@ import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class PathNode implements Comparable<PathNode> {
     private final Pathfinder pathfinder;
-    final int x, y, z;
+    int x, y, z;
     double g, f, h;
 
     public PathNode(Pathfinder pathfinder, Location location) {
@@ -31,23 +30,24 @@ public class PathNode implements Comparable<PathNode> {
         return new Location(pathfinder.getWorld(), x, y, z);
     }
 
-    public List<PathNode> getNeighbours() {
-        List<PathNode> nodes = new ArrayList<>();
-        for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
-                for (int z = -1; z <= 1; z++) {
-                    Block block = getLocation().clone().add(x, y, z).getBlock();
-                    PathNode neighbor = new PathNode(pathfinder, this.x + x, this.y + y, this.z + z);
-                    if (pathfinder.getRequirements().size() > 0) {
-                        for (PathRequirement requirement : pathfinder.getRequirements()) {
-                            if (!requirement.canPathTo(getLocation().getBlock(), block)) continue;
-                            nodes.add(neighbor);
-                        }
-                    } else nodes.add(neighbor);
+    public ArrayList<PathNode> getNeighbours() {
+        return new ArrayList<>() {{
+            for (int x = -1; x <= 1; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    for (int z = -1; z <= 1; z++) {
+                        if (x == 0 && y == 0 && z == 0) continue;
+                        Block block = getLocation().clone().add(x, y, z).getBlock();
+                        PathNode neighbor = new PathNode(pathfinder, PathNode.this.x + x, PathNode.this.y + y, PathNode.this.z + z);
+                        if (pathfinder.getRequirements().size() > 0) {
+                            for (PathRequirement requirement : pathfinder.getRequirements()) {
+                                if (!requirement.canPathTo(getLocation().getBlock(), block)) continue;
+                                add(neighbor);
+                            }
+                        } else add(neighbor);
+                    }
                 }
             }
-        }
-        return nodes;
+        }};
     }
 
     public double distanceTo(PathNode node) {
@@ -65,5 +65,13 @@ public class PathNode implements Comparable<PathNode> {
             return node.x == x && node.y == y && node.z == z;
         }
         return false;
+    }
+
+    public PathNode cloneAndMove(int x, int y, int z) {
+        PathNode var3 = new PathNode(pathfinder, x, y, z);
+        var3.g = (float) this.g;
+        var3.h = (float) this.h;
+        var3.f = (float) this.f;
+        return var3;
     }
 }
