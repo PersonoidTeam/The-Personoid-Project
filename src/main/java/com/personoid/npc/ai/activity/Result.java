@@ -28,6 +28,7 @@ public class Result<T> {
 
     public enum Type {
         SUCCESS,
-        FAILURE
+        FAILURE,
+        BORED
     }
 }

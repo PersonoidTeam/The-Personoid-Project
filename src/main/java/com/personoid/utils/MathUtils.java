@@ -69,4 +69,12 @@ public class MathUtils {
         return !NumberConversions.isFinite(vector.getX()) || !NumberConversions.isFinite(vector.getY()) ||
                 !NumberConversions.isFinite(vector.getZ());
     }
+
+    public static boolean random() {
+        return ThreadLocalRandom.current().nextBoolean();
+    }
+
+    public static Vector lerpVector(Vector v1, Vector v2, double t) {
+        return v1.clone().add(v2.clone().subtract(v1).multiply(t));
+    }
 }

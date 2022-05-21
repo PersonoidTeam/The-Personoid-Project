@@ -14,7 +14,7 @@ public class DanceActivity extends Activity {
     private int nextLookTick;
 
     public DanceActivity() {
-        super(ActivityType.IDLING, Priority.LOWEST);
+        super(ActivityType.IDLING, Priority.LOWEST, new BoredomSettings(MathUtils.random(200, 1200), MathUtils.random(2400, 12000)));
     }
 
     @Override

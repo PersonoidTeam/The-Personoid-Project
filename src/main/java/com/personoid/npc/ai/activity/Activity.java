@@ -2,6 +2,7 @@ package com.personoid.npc.ai.activity;
 
 import com.personoid.npc.NPC;
 import com.personoid.npc.ai.Priority;
+import com.personoid.utils.debug.Profiler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -16,6 +17,7 @@ public abstract class Activity implements Comparable<Activity> {
     private boolean finished;
     private Result<?> result;
     private boolean paused;
+    private BoredomSettings boredomSettings;
 
     private final Set<Consumer<Result<?>>> callbacks = new HashSet<>();
     private Activity currentlyRunning;
@@ -25,9 +27,21 @@ public abstract class Activity implements Comparable<Activity> {
         this.priority = Priority.NORMAL;
     }
 
+    public Activity(ActivityType type, BoredomSettings boredomSettings) {
+        this.type = type;
+        this.priority = Priority.NORMAL;
+        this.boredomSettings = boredomSettings;
+    }
+
     public Activity(ActivityType type, Priority priority) {
         this.type = type;
         this.priority = priority;
+    }
+
+    public Activity(ActivityType type, Priority priority, BoredomSettings boredomSettings) {
+        this.type = type;
+        this.priority = priority;
+        this.boredomSettings = boredomSettings;
     }
 
     public NPC getActiveNPC(){
@@ -65,19 +79,13 @@ public abstract class Activity implements Comparable<Activity> {
         if (currentlyRunning != null) {
             currentlyRunning.internalUpdate();
             currentlyRunning.onUpdate();
-/*            if (shouldBeBored()){
-                lastBoredTime = System.currentTimeMillis();
-            }*/
         }
         currentDuration++;
-    }
-
-    public long getBoredTime(){
-        return 0;
-    }
-
-    public boolean shouldBeBored() {
-        return false;
+        if (boredomSettings != null){
+            if (currentDuration >= boredomSettings.getBoredTime()){
+                markAsFinished(new Result<>(Result.Type.BORED));
+            }
+        }
     }
 
     public abstract void onStart(StartType startType);
@@ -114,6 +122,14 @@ public abstract class Activity implements Comparable<Activity> {
         callbacks.forEach(callback -> callback.accept(result));
         onStop(result.getType() == Result.Type.SUCCESS ? StopType.SUCCESS : StopType.FAILURE);
         internalStop(StopType.SUCCESS);
+        if (result.getType() == Result.Type.BORED) {
+            manager.boredTasks.put(this, boredomSettings.getBoredCooldown());
+            Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "Added bored cooldown for: " + this.getClass().getSimpleName());
+        }
+    }
+
+    public BoredomSettings getBoredomSettings() {
+        return boredomSettings;
     }
 
     public Result<?> getResult() {
@@ -164,5 +180,33 @@ public abstract class Activity implements Comparable<Activity> {
         PAUSE,
         SUCCESS,
         FAILURE,
+    }
+
+    public static class BoredomSettings {
+        private int boredTime;
+        private int boredCooldown;
+
+        public BoredomSettings(int boredTime, int boredCooldown) {
+            this.boredTime = boredTime;
+            this.boredCooldown = boredCooldown;
+        }
+
+        public int getBoredTime() {
+            return boredTime;
+        }
+
+        public int getBoredCooldown() {
+            return boredCooldown;
+        }
+
+        public BoredomSettings setBoredTime(int boredTime) {
+            this.boredTime = boredTime;
+            return this;
+        }
+
+        public BoredomSettings setBoredCooldown(int boredCooldown) {
+            this.boredCooldown = boredCooldown;
+            return this;
+        }
     }
 }

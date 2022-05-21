@@ -23,14 +23,16 @@ public class GoToLocationActivity extends Activity {
 
     @Override
     public void onStart(StartType startType) {
-        //getActiveNPC().getNavigation().setTarget(location);
-        getActiveNPC().npcNavigation.moveTo(location);
-        getActiveNPC().getLookController().face(location);
         //Bukkit.broadcastMessage("Target: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
+        getActiveNPC().getNavigation().moveTo(location);
+        getActiveNPC().getLookController().face(location);
     }
 
     @Override
     public void onUpdate() {
+/*        if (getCurrentDuration() % 20 == 0) {
+            getActiveNPC().getLookController().face(location);
+        }*/
         if (location.distance(getActiveNPC().getLocation()) <= stoppingDistance) {
             markAsFinished(new Result<>(Result.Type.SUCCESS));
         }

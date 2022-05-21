@@ -1,86 +1,217 @@
 package com.personoid.npc.ai.pathfinding;
 
-import com.personoid.npc.ai.pathfinding.requirements.PathRequirement;
-import com.personoid.utils.debug.Profiler;
-import com.personoid.utils.debug.Timer;
 import org.bukkit.Location;
-import org.bukkit.World;
 
-import java.util.*;
+import java.util.ArrayList;
 
 public class Pathfinder {
-    private World world;
-    private List<PathRequirement> requirements;
+    final Options options;
+    final int maxNodeTests;
+    final ArrayList<Node> checkedNodes = new ArrayList<>();
+    final ArrayList<Node> uncheckedNodes = new ArrayList<>();
+    Node startNode;
+    Location endLocation;
 
-    public World getWorld() {
-        return world;
+    public Pathfinder(int maxNodeTests, Options options) {
+        this.maxNodeTests = maxNodeTests;
+        this.options = options;
     }
 
-    public List<PathRequirement> getRequirements() {
-        return requirements;
-    }
+    public Path getPath(Location start, Location end) {
+        checkedNodes.clear();
+        uncheckedNodes.clear();
+        endLocation = end;
+        boolean pathFound = false;
 
-    public Path findPath(Location from, Location to, List<PathRequirement> requirements, int maxNodes, int maxTicksUntilRetry) {
-        Profiler.push(Profiler.Type.A_STAR, "Calculating path...");
-        world = from.getWorld();
-        this.requirements = requirements;
+        startNode = new Node(this, start, 0, null);
+        Node endNode = new Node(this, end, 0, null);
 
-        PathNode start = new PathNode(this, from);
-        //Location goalTargetLoc = npc.getDataContainer().retrieve("goalTargetLoc");
-        //PathNode end = new PathNode(this, LocationUtils.getBlockInDir(goalTargetLoc, BlockFace.DOWN).getLocation());
-        PathNode end = new PathNode(this, to);
+        // check if player could stand at start and endpoint, if not return empty path
+        //if (!(canStandAt(start) && canStandAt(end))) return null;
 
-        Queue<PathNode> open = new PriorityQueue<>(List.of(start));
-        Set<PathNode> closed = new HashSet<>();
-        ArrayList<PathNode> navigated = new ArrayList<>();
-        start.f = start.distanceTo(end);
+        // time for benchmark
+        long nsStart = System.nanoTime();
+        uncheckedNodes.add(startNode);
 
-        Timer retryTimer = new Timer().start();
-
-        while (!open.isEmpty()) {
-            PathNode current = open.poll();
-            if (current.distanceTo(end) < 1 || (navigated.size() >= maxNodes && maxNodes != -1)) {
-                navigated.add(navigated.size() < maxNodes ? end : current);
-                Path path = reconstruct(navigated, navigated.size() - 1);
-                Profiler.push(Profiler.Type.A_STAR, "Total time spent (path): " + retryTimer.get() + "ms");
-                return path;
-            }
-            open.remove(current);
-            closed.add(current);
-            for (PathNode neighbour : current.getNeighbours()) {
-                if (closed.contains(neighbour)) continue;
-                double tentG = current.g + current.distanceTo(neighbour);
-                if (!open.contains(neighbour) || tentG < neighbour.g) {
-                    if (!navigated.contains(current)) {
-                        navigated.add(current);
-                    }
-                    neighbour.g = tentG;
-                    neighbour.h = neighbour.distanceTo(end);
-                    neighbour.f = tentG + neighbour.h;
-                    if (!open.contains(neighbour)) {
-                        open.add(neighbour);
-                    }
+        // cycle through untested nodes until an exit condition is fulfilled
+        while (checkedNodes.size() < maxNodeTests && uncheckedNodes.size() > 0) {
+            Node best = uncheckedNodes.get(0);
+            for (Node node : uncheckedNodes) {
+                if (node.getEstimatedFinalExpense() < best.getEstimatedFinalExpense()) {
+                    best = node;
                 }
             }
-            //if (retryTimer.get() % 10 == 0) Bukkit.broadcastMessage(retryTimer.get() + "ms");
-            if (maxTicksUntilRetry != -1 && retryTimer.get() > maxTicksUntilRetry && requirements.size() > 0) {
-                Profiler.push(Profiler.Type.A_STAR, "Took too long to calculate, retrying with no requirements...");
-                return findPath(from, to, new ArrayList<>(), maxNodes, maxTicksUntilRetry);
+
+            if (best.estimatedExpenseLeft < 1) {
+                pathFound = true;
+                endNode = best;
+                // print information about last node
+/*                Bukkit.broadcastMessage(uncheckedNodes.size() + "uc " + checkedNodes.size() + "c " + round(best.expense) + "cne " +
+                        round(best.getEstimatedFinalExpense()) + "cnee ");*/
+                break;
             }
+
+            best.getReachableLocations();
+            uncheckedNodes.remove(best);
+            checkedNodes.add(best);
         }
-        navigated.add(end);
-        Path path = reconstruct(navigated, navigated.size() - 1);
-        Profiler.push(Profiler.Type.A_STAR, "Total time spent (path): " + retryTimer.get() + "ms");
-        return path;
+
+        // returning if no path has been found
+        if (!pathFound) {
+            float duration = (System.nanoTime() - nsStart) / 1000000f;
+/*            Bukkit.broadcastMessage("A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) +
+                    duration + "ms" + ChatColor.WHITE + " to not find a path.");*/
+            return null;
+        }
+
+        // get length of path to create array, 1 because of start
+        int length = 1;
+        Node node = endNode;
+        while (node.origin != null) {
+            node = node.origin;
+            length++;
+        }
+
+        Node[] nodes = new Node[length];
+
+        //fill Array
+        node = endNode;
+        for (int i = length - 1; i > 0; i--) {
+            nodes[i] = node;
+            node = node.origin;
+        }
+        nodes[0] = startNode;
+
+        // outputting benchmark result
+        float duration = (System.nanoTime() - nsStart) / 1000000f;
+        //Bukkit.broadcastMessage("A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) + duration + "ms" + ChatColor.WHITE + " to find a path.");
+        return new Path(nodes);
     }
 
-    private Path reconstruct(List<PathNode> navigated, int index) {
-        final PathNode current = navigated.get(index);
-        Path path = new Path(current);
-        if (index > 0 && navigated.contains(current)) {
-            return reconstruct(navigated, index - 1).append(path.getNodes());
+    public Node getNode(Location loc) {
+        Node test = new Node(this, loc, 0, null);
+        for (Node n : checkedNodes) {
+            if (n.x == test.x && n.y == test.y && n.z == test.z) {
+                return n;
+            }
         }
-        path.getNodes().remove(0);
-        return path;
+        return test;
+    }
+
+    public double round(double d) {
+        return ((int) (d * 100)) / 100D;
+    }
+
+    public double distanceTo(Location loc1, Location loc2) {
+        if (loc1.getWorld() != loc2.getWorld()) return Double.MAX_VALUE;
+        double deltaX = Math.abs(loc1.getX() - loc2.getX());
+        double deltaY = Math.abs(loc1.getY() - loc2.getY());
+        double deltaZ = Math.abs(loc1.getZ() - loc2.getZ());
+
+        // euclidean distance
+        double distance2d = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+        return Math.sqrt(distance2d * distance2d + deltaY * deltaY);
+
+        // manhattan distance
+        //return deltaX + deltaY + deltaZ;
+    }
+
+    public static class Options {
+        private int maxFallDistance;
+        private boolean useClimbing;
+        private boolean useBlockPlacement;
+        private boolean useDiagonalMovement = true;
+
+        private double diagonalMovementCost = 1;
+        private double fallingCost = 0.7;
+        private double climbingCost = 1.65;
+        private double jumpingCost = 1.1;
+        private double stairsCost = 0.8;
+
+        public Options(int maxFallDistance, boolean allowClimbing, boolean allowBlockPlacement) {
+            this.maxFallDistance = maxFallDistance;
+            this.useClimbing = allowClimbing;
+            this.useBlockPlacement = allowBlockPlacement;
+        }
+
+        //region option getters and setters
+
+        public int getMaxFallDistance() {
+            return maxFallDistance;
+        }
+
+        public void setMaxFallDistance(int maxFallDistance) {
+            this.maxFallDistance = maxFallDistance;
+        }
+
+        public boolean canUseClimbing() {
+            return useClimbing;
+        }
+
+        public void useClimbing(boolean useClimbing) {
+            this.useClimbing = useClimbing;
+        }
+
+        public boolean canUseBlockPlacement() {
+            return useBlockPlacement;
+        }
+
+        public void useBlockPlacement(boolean useBlockPlacement) {
+            this.useBlockPlacement = useBlockPlacement;
+        }
+
+        public boolean canUseDiagonalMovement() {
+            return useDiagonalMovement;
+        }
+
+        public void useDiagonalMovement(boolean useDiagonalMovement) {
+            this.useDiagonalMovement = useDiagonalMovement;
+        }
+
+        //endregion
+
+        //region cost getters and setters
+
+        public double getDiagonalMovementCost() {
+            return diagonalMovementCost;
+        }
+
+        public void setDiagonalMovementCost(double diagonalMovementCost) {
+            this.diagonalMovementCost = diagonalMovementCost;
+        }
+
+        public double getFallingCost() {
+            return fallingCost;
+        }
+
+        public void setFallingCost(double fallingCost) {
+            this.fallingCost = fallingCost;
+        }
+
+        public double getClimbingCost() {
+            return climbingCost;
+        }
+
+        public void setClimbingCost(double climbingCost) {
+            this.climbingCost = climbingCost;
+        }
+
+        public double getJumpingCost() {
+            return jumpingCost;
+        }
+
+        public void setJumpingCost(double jumpingCost) {
+            this.jumpingCost = jumpingCost;
+        }
+
+        public double getStairsCost() {
+            return stairsCost;
+        }
+
+        public void setStairsCost(double stairsCost) {
+            this.stairsCost = stairsCost;
+        }
+
+        //endregion
     }
 }

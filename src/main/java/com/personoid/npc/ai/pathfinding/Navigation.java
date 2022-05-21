@@ -1,141 +1,154 @@
 package com.personoid.npc.ai.pathfinding;
 
 import com.personoid.npc.NPC;
-import com.personoid.npc.ai.pathfinding.requirements.WalkablePathRequirement;
 import com.personoid.npc.components.NPCTickingComponent;
 import com.personoid.utils.LocationUtils;
+import com.personoid.utils.MathUtils;
 import com.personoid.utils.bukkit.Task;
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Particle;
+import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
 
-import java.util.List;
-
 public class Navigation extends NPCTickingComponent {
-    private final Pathfinder pathfinder = new Pathfinder();
-    private final double SPEED = 0.25;//0.125D;
+    private Options options;
+    private final Pathfinder pathfinder = new Pathfinder(10000, new Pathfinder.Options(3, true, true));
     private Path path;
-    private double progress;
-    private Vec3 currentPoint;
-    private final Villager villager;
-    private Location target;
 
-    public Navigation(NPC npc) {
+    public Navigation(NPC npc, Options options) {
         super(npc);
-        villager = new Villager(EntityType.VILLAGER, npc.getLevel());
+        this.options = options;
     }
-    
+
     @Override
     public void tick() {
-        if (target != null) {
-            updatePath();
-            // let the GoToLocationActivity handle this
-            npc.getLookController().face(target);
-            if (path != null) {
-                for (PathNode node : path.getNodes()) {
-                    npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, node.getLocation().add(0.5F, 0, 0.5F), 5,
-                            new Particle.DustTransition(Color.YELLOW, Color.RED, 1));
-                }
-/*                if (!updateLocation()) {
-                    //this.path = null;
-                }*/
+        super.tick();
+        if (isDone()) return;
+        if (canUpdatePath()) {
+            followPath();
+        } else if (path != null && !path.isDone()) {
+            Vec3 tempNPCPos = getTempNPCPos();
+            Vec3 nextNPCPos = path.getNextNPCPos(npc);
+            if (tempNPCPos.y > nextNPCPos.y && !npc.isOnGround() && Mth.floor(tempNPCPos.x) == Mth.floor(nextNPCPos.x) &&
+                    Mth.floor(tempNPCPos.z) == Mth.floor(nextNPCPos.z)) {
+                path.advance();
             }
         }
-    }
+        if (isDone()) return;
+        // movement
+        Vec3 nextNPCPos = path.getNextNPCPos(npc);
+        Location nextLoc = new Location(npc.getLocation().getWorld(), nextNPCPos.x, nextNPCPos.y, nextNPCPos.z);
+        Vector velocity = new Vector(nextLoc.getX() - npc.getX(), nextLoc.getY() - npc.getY(), nextLoc.getZ() - npc.getZ());
+        Vector lerpedVelocity = MathUtils.lerpVector(npc.getMoveController().getVelocity(), velocity, 0.2);
+        lerpedVelocity.setY(velocity.getY());
+        npc.getMoveController().move(lerpedVelocity);
 
-    public void setTarget(Location location) {
-        target = location;
-    }
-
-    public Location getTarget() {
-        return target;
-    }
-
-    public void updatePath() {
-        if (target.distance(npc.getLocation()) > 1) {
-            new Task(() -> {
-                if (target == null) return;
-                Location endLoc = LocationUtils.getBlockInDir(target, BlockFace.DOWN).getLocation();
-                Path path = pathfinder.findPath(npc.getLocation(), endLoc, List.of(new WalkablePathRequirement()), -1, 500);
-                if (this.path == null && path != null) currentPoint = path.getNextNPCPos(npc);
-                this.path = path;
-            }).async().run();
-        }
-/*        Path tempPath = findPath(target, 50);
-        if (path == null && tempPath != null) currentPoint = tempPath.getNextNPCPos(npc);
-        path = tempPath;
-        if (path != null) {
-           // Bukkit.getPlayer(npc.spawner).sendMessage("Path: " + path.path);
-*//*            Node node = path.path.getNextNode();
-            Location loc = new Location(npc.getLocation().getWorld(), node.asBlockPos().getX(), node.asBlockPos().getY(), node.asBlockPos().getZ());
-            npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, loc.add(0.5F, 0, 0.5F), 5,
-                    new Particle.DustTransition(Color.YELLOW, Color.RED, 1));*//*
-            if (!updateLocation()) {
-                this.path = null;
-            }
-        }*/
-    }
-
-    public Path getPath() {
-        return path;
-    }
-
-    public boolean updateLocation() {
-        int current = Mth.floor(progress);
-        double d = progress - current;
-        double d1 = 1 - d;
-        if (d + SPEED < 1) {
-            double dx = (currentPoint.x - npc.getX()) * SPEED;
-            double dz = (currentPoint.z - npc.getZ()) * SPEED;
-            npc.getMoveController().move(new Vector(dx, 0, dz));
-            npc.checkMovementStatistics(dx, 0, dz);
-            progress += SPEED;
-        } else {
-            //First complete old point.
-            double bx = (currentPoint.x - npc.getX()) * d1;
-            double bz = (currentPoint.z - npc.getZ()) * d1;
-            //Check if new point exists
-            path.advance();
-            if (!path.notStarted()) {
-                //Append new movement
-                currentPoint = path.getNextNPCPos(npc);
-                double d2 = SPEED - d1;
-                double dx = bx + ((currentPoint.x - npc.getX()) * d2);
-                double dy = currentPoint.y - npc.getY(); //Jump if needed to reach next block.
-                double dz = bz + ((currentPoint.z - npc.getZ()) * d2);
-                if (dy > 0) {
+        // movement
+        if (nextNPCPos.y >= npc.getY() + options.getMaxStepHeight()) {
+            if (npc.isOnGround()) {
+                if (nextLoc.getBlock().getType().name().contains("STAIRS")) {
+                    npc.getMoveController().addVelocity(new Vector(0, (nextNPCPos.y - npc.getY()) / 2, 0)); // move up to half stair height
+                } else {
                     npc.getMoveController().jump();
                 }
-                npc.getMoveController().move(new Vector(dx, 0, dz));
-                npc.checkMovementStatistics(dx, dy, dz);
-                progress += SPEED;
-            } else {
-                //Complete final movement
-                npc.getMoveController().move(new Vector(bx, 0, bz));
-                npc.checkMovementStatistics(bx, 0, bz);
-                return false;
+            }
+        } else {
+            double diff = nextNPCPos.y - npc.getY();
+            if (diff > 0 && diff < options.getMaxStepHeight()) {
+                npc.getMoveController().addVelocity(new Vector(0, nextNPCPos.y - npc.getY(), 0));
             }
         }
-        return true;
+        if (path != null) {
+            for (Node node : path.getNodes()) {
+                npc.getBukkitEntity().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, node.getLocation().clone().add(0.5F, 0, 0.5F), 5,
+                        new Particle.DustTransition(Color.YELLOW, Color.RED, 1));
+            }
+        }
+        //trimPath();
     }
 
-/*    public Path findPath(Location to, double range) {
-        try {
-            double y = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getY();
-            villager.setPos(npc.getX(), y, npc.getZ());
-            BlockPos fromPos = new BlockPos(npc.getX(), npc.getY(), npc.getZ());
-            BlockPos toPos = new BlockPos(to.getX(), to.getY(), to.getZ());
-            int k = (int) (range + 8);
-            PathNavigationRegion region = new PathNavigationRegion(npc.getLevel(), fromPos.offset(-k, -k, -k), fromPos.offset(k, k, k));
-            return new Path(npc.getPathFinder().findPath(region, villager, ImmutableSet.of(toPos), (float) range, 1, 15));
-        } catch (Exception e) {
-            return null;
+    public void moveTo(Location location) {
+        // async leads to errors (concurrent modification exception) -> should be fast enough or synchronous running anyway
+        Location groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
+        Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
+        new Task(() -> path = pathfinder.getPath(npcGroundLoc, groundLoc)).async().run();
+    }
+
+    private void followPath() {
+        Vec3 tempNPCPos = getTempNPCPos();
+        float maxDistToWaypoint = (npc.getBbWidth() > 0.75F) ? (npc.getBbWidth() / 2F) : (0.75F - npc.getBbWidth() / 2F);
+        BlockPos blockPos = path.getNextNodePos();
+        Block block = new Location(npc.getLocation().getWorld(), blockPos.getX(), blockPos.getY(), blockPos.getZ()).getBlock();
+        double x = Math.abs(npc.getX() - blockPos.getX() + 0.5);
+        double y = Math.abs(npc.getY() - blockPos.getY());
+        double z = Math.abs(npc.getZ() - blockPos.getZ() + 0.5);
+        boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < 1D);
+        if (withinMaxDist || (canCutCorner(block.getType()) && shouldTargetNextNode(tempNPCPos))) {
+            this.path.advance();
         }
-    }*/
+        //doStuckDetection(tempNPCPos);
+    }
+
+    private boolean canCutCorner(Material material) {
+        return !material.name().contains("FIRE") && !material.name().contains("CACTUS") && !material.name().contains("DOOR") &&
+                !material.name().contains("LAVA") && !material.name().contains("COBWEB");
+    }
+
+    private boolean shouldTargetNextNode(Vec3 tempNPCPos) {
+        if (path.getNextNodeIndex() + 1 >= path.size()) return false;
+        Vec3 center = Vec3.atBottomCenterOf(path.getNextNodePos());
+        if (!tempNPCPos.closerThan(center, 2)) return false;
+        Vec3 nextCenter = Vec3.atBottomCenterOf(path.getNodePos(path.getNextNodeIndex() + 1));
+        Vec3 nextNodeDiff = nextCenter.subtract(center);
+        Vec3 tempPosDiff = tempNPCPos.subtract(center);
+        return nextNodeDiff.dot(tempPosDiff) > 0;
+    }
+
+    private Vec3 getTempNPCPos() {
+        return new Vec3(npc.getX(), npc.getY(), npc.getZ());
+    }
+
+    private boolean canUpdatePath() {
+        return (npc.isOnGround()); // TODO: or if in liquid
+    }
+
+    private boolean isDone() {
+        return (path == null || path.isDone());
+    }
+
+    public void stop() {
+        path = null;
+    }
+
+    private void trimPath() {
+        if (path == null) return;
+        for (int i = 0; i < path.size(); i++) {
+            Node node = path.getNode(i);
+            Node nextNode = (i + 1 < path.size()) ? path.getNode(i + 1) : null;
+            BlockState blockState = npc.level.getBlockState(new BlockPos(node.getX(), node.getY(), node.getZ()));
+            if (blockState.is(BlockTags.CAULDRONS)) {
+                path.replaceNode(i, node.cloneAndMove(node.getX(), node.getY() + 1, node.getZ()));
+                if (nextNode != null && node.getLocation().getY() >= nextNode.getLocation().getY()) {
+                    path.replaceNode(i + 1, node.cloneAndMove(nextNode.getX(), node.getY() + 1, nextNode.getZ()));
+                }
+            }
+        }
+    }
+
+    public static class Options {
+        private float maxStepHeight = 0.3F;
+
+        public float getMaxStepHeight() {
+            return maxStepHeight;
+        }
+
+        public void setMaxStepHeight(float maxStepHeight) {
+            this.maxStepHeight = maxStepHeight;
+        }
+    }
 }

@@ -3,12 +3,10 @@ package com.personoid.npc;
 import com.mojang.authlib.GameProfile;
 import com.personoid.activites.gathering.MineTreeActivity;
 import com.personoid.activites.location.FollowEntityActivity;
-import com.personoid.activites.misc.DanceActivity;
 import com.personoid.enums.LogType;
 import com.personoid.npc.ai.NPCBrain;
 import com.personoid.npc.ai.controller.LookController;
 import com.personoid.npc.ai.controller.MoveController;
-import com.personoid.npc.ai.pathfinding.NPCNavigation;
 import com.personoid.npc.ai.pathfinding.Navigation;
 import com.personoid.utils.BlockBreaker;
 import com.personoid.utils.LocationUtils;
@@ -44,8 +42,7 @@ public class NPC extends ServerPlayer {
     private final CraftPlayer cp;
     public UUID spawner;
 
-    private final Navigation navigation = new Navigation(this);
-    public final NPCNavigation npcNavigation = new NPCNavigation(this);
+    private final Navigation navigation = new Navigation(this, new Navigation.Options());
 
     private final MoveController moveController = new MoveController(this);
     private final LookController lookController = new LookController(this);
@@ -70,8 +67,9 @@ public class NPC extends ServerPlayer {
     public void registerActivities() {
         brain.getActivityManager().register(
                 new MineTreeActivity(LogType.OAK),
-                new FollowEntityActivity(Bukkit.getEntity(spawner)),
-                new DanceActivity()
+                new FollowEntityActivity(Bukkit.getEntity(spawner))
+                //new DanceActivity(),
+                //new WanderActivity(new Range(10, 15))
         );
     }
 
@@ -128,8 +126,7 @@ public class NPC extends ServerPlayer {
     }
 
     private void tickComponents() {
-        //navigation.tick();
-        npcNavigation.tick();
+        navigation.tick();
         moveController.tick();
         lookController.tick();
         brain.tick();

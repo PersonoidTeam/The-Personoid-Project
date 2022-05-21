@@ -7,17 +7,20 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class MoodManager extends NPCTickingComponent {
-    private final Set<Mood> moods = initMoods();
+    private final Set<OpinionObject> opinions = new HashSet<>();
 
     public MoodManager(NPC npc) {
         super(npc);
     }
 
-    private Set<Mood> initMoods() {
-        Set<Mood> moods = new HashSet<>();
-        for (SelfMoodType mood : SelfMoodType.values()) {
-            moods.add(new Mood(mood, 1)); // TODO: make this configurable via personality traits
+    public OpinionObject getOpinion(String identifier) {
+        for (OpinionObject opinion : opinions) {
+            if (opinion.getIdentifier().equals(identifier)) {
+                return opinion;
+            }
         }
-        return moods;
+        OpinionObject opinion = new OpinionObject(identifier);
+        opinions.add(opinion);
+        return opinion;
     }
 }

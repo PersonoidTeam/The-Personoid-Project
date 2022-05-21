@@ -1,83 +1,46 @@
 package com.personoid.npc.ai.pathfinding;
 
 import com.personoid.npc.NPC;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.bukkit.Bukkit;
 
 public class Path {
-    public net.minecraft.world.level.pathfinder.Path path;
-    private List<PathNode> nodes;
-    private int nextNodeIndex = 0;
+    private final Node[] nodes;
+    private int nextNodeIndex;
 
-    public Path(net.minecraft.world.level.pathfinder.Path path) {
-        this.path = path;
-    }
-
-    public Path(List<PathNode> nodes) {
+    public Path(Node[] nodes) {
         this.nodes = nodes;
     }
 
-    public Path(PathNode... nodes) {
-        this.nodes = new ArrayList<>(Arrays.stream(nodes).toList());
+    public Node getNode(int index) {
+        return nodes[index];
     }
 
-    public List<PathNode> getNodes() {
+    public Node[] getNodes() {
         return nodes;
     }
 
-    public Path append(PathNode... nodes) {
-        this.nodes.addAll(Arrays.asList(nodes));
-        return this;
+    public int size() {
+        return nodes.length;
     }
 
-    public Path append(List<PathNode> nodes) {
-        this.nodes.addAll(nodes);
-        return this;
+    public Vec3 getNPCPosAtNode(NPC npc, int index) {
+        try {
+            Node node = getNode(index);
+            double x = node.getX() + (double)((int)(npc.getBbWidth() + 1F)) * 0.5D;
+            double y = node.getZ() + (double)((int)(npc.getBbWidth() + 1F)) * 0.5D;
+            return new Vec3(x, node.getY(), y);
+        } catch (IndexOutOfBoundsException e) {
+            Bukkit.getPlayer("DefineDoddy").spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("ioobe"));
+            return new Vec3(npc.getX(), npc.getY(), npc.getZ());
+        }
     }
 
     public int getNextNodeIndex() {
         return nextNodeIndex;
-    }
-
-    public PathNode getStart() {
-        return nodes.get(0);
-    }
-
-    public PathNode getEnd() {
-        return nodes.get(nodes.size() - 1);
-    }
-
-    public PathNode getNode(int index) {
-        return nodes.get(index);
-    }
-
-    public int size() {
-        return nodes.size();
-    }
-
-/*    public Vec3 getNPCPosAtNode(NPC npc, int index) {
-        // FIXME: hacky workaround while I figure out what's going on :(
-        if (index >= this.nodes.size()) return new Vec3(npc.getLocation().getX(), npc.getLocation().getY(), npc.getLocation().getZ());
-
-        PathNode node = this.nodes.get(index);
-        double x = (double)node.x + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
-        double y = (double)node.z + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
-        return new Vec3(x, node.y, y);
-    }*/
-
-    public Vec3 getNPCPosAtNode(NPC npc, int index) {
-        try {
-            PathNode node = nodes.get(index);
-            double x = (double)node.x + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
-            double y = (double)node.z + (double)((int)(npc.getBbWidth() + 1.0F)) * 0.5D;
-            return new Vec3(x, node.y, y);
-        } catch (IndexOutOfBoundsException e) {
-            return new Vec3(npc.getLocation().getX(), npc.getLocation().getY(), npc.getLocation().getZ());
-        }
     }
 
     public Vec3 getNextNPCPos(NPC npc) {
@@ -89,8 +52,8 @@ public class Path {
     }
 
     public BlockPos getNodePos(int index) {
-        PathNode node = nodes.get(index);
-        return new BlockPos(node.x, node.y, node.z);
+        Node node = getNode(index);
+        return new BlockPos(node.getX(), node.getY(), node.getZ());
     }
 
     public void advance() {
@@ -102,10 +65,10 @@ public class Path {
     }
 
     public boolean isDone() {
-        return this.nextNodeIndex >= this.nodes.size();
+        return this.nextNodeIndex >= this.nodes.length;
     }
 
-    public void replaceNode(int index, PathNode node) {
-        this.nodes.set(index, node);
+    public void replaceNode(int index, Node node) {
+        this.nodes[index] = node;
     }
 }

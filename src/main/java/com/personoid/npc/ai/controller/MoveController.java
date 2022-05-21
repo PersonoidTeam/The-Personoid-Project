@@ -49,7 +49,7 @@ public class MoveController extends NPCTickingComponent {
 
     public void move(Vector velocity) {
         if (timeoutTicks > 0) return;
-        double max = 0.4;
+        double max = 0.325;
         Vector sum = this.velocity.clone().add(velocity.clone().setY(0));
         if (sum.length() > max) {
             sum.normalize().multiply(max);
@@ -74,7 +74,7 @@ public class MoveController extends NPCTickingComponent {
 
     public void jump() {
         if (npc.isOnGround()) {
-            velocity.setY(0.6); // jump factor (was 0.5)
+            velocity.setY(0.5); // jump factor (was 0.5)
             npc.setGroundTicks(0);
             jumpTicks = 4;
         }
@@ -83,7 +83,7 @@ public class MoveController extends NPCTickingComponent {
     public void applyKnockback(Location source) {
         Vector vel = npc.getLocation().toVector().subtract(source.toVector()).setY(0).normalize().multiply(0.3);
         if (npc.isOnGround()) vel.multiply(1.7).setY(0.35);
-        timeoutTicks = 8;
+        timeoutTicks = 10;
         velocity = vel;
     }
 

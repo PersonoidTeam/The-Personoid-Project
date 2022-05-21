@@ -13,6 +13,8 @@ public class ActivityManager extends NPCTickingComponent {
     private final Set<Activity> paused = new HashSet<>();
     public Activity current;
 
+    public HashMap<Activity, Integer> boredTasks = new HashMap<>();
+
     public ActivityManager(NPC npc) {
         super(npc);
     }
@@ -31,6 +33,13 @@ public class ActivityManager extends NPCTickingComponent {
 
     @Override
     public void tick() {
+        for (Activity activity : boredTasks.keySet()){
+            boredTasks.put(activity, boredTasks.get(activity)-1);
+            if (boredTasks.get(activity) <= 0){
+                boredTasks.remove(activity);
+                Profiler.push(Profiler.Type.ACTIVITY_MANAGER, "Removed bored cooldown for: " + activity.getClass().getSimpleName());
+            }
+        }
         if (current != null) {
             //Bukkit.broadcastMessage(current.getClass().getSimpleName() + " is ticking");
             if (current.isFinished()) {
@@ -93,10 +102,11 @@ public class ActivityManager extends NPCTickingComponent {
     }
 
     public Activity chooseViaPriority() {
-        List<Activity> canStart = new ArrayList<>();
+        Set<Activity> canStart = new HashSet<>();
 
         // Get all goals that can activate.
         for (Activity activity : registered){
+            if (boredTasks.containsKey(activity)) continue;
             if (current != null){
                 if (!activity.getPriority().isHigherThan(current.getPriority()) || activity.getPriority() != current.getPriority()){
                     continue;

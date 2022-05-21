@@ -161,14 +161,11 @@ public class LocationUtils {
     public static Block rayTraceBlocks(Location from, Location to, int maxDistance, boolean stopOnLiquid){
         Block block = null;
         Vector vector = to.toVector().subtract(from.toVector()).normalize();
-
         vector = vector.normalize();
-
         for (int i = 1; i <= maxDistance; i++){
             Location loc = from.clone().add(vector.clone().multiply(i));
             Block b1 = loc.getBlock();
-            loc.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, loc
-                    , 5, new Particle.DustTransition(Color.BLUE, Color.AQUA, 1));
+            loc.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, loc, 5, new Particle.DustTransition(Color.BLUE, Color.AQUA, 1));
             if (LocationUtils.isSolid(b1)){
                 block = b1;
                 break;
@@ -193,5 +190,22 @@ public class LocationUtils {
             }
         }
         return null;
+    }
+
+    public static Location validRandom(Location from, Range range) {
+        Location loc = from.clone();
+        int x = MathUtils.random(range.getMin(), range.getMax());
+        int y = MathUtils.random(range.getMin(), range.getMax());
+        int z = MathUtils.random(range.getMin(), range.getMax());
+        loc.add(x, y, z).setY(320);
+        return getBlockInDir(loc, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
+    }
+
+    public static boolean isSolid(Location location) {
+        return location.getBlock().getType().isSolid();
+    }
+
+    public static boolean canStandAt(Location location) {
+        return !isSolid(location) && !isSolid(location.clone().add(0, 1, 0)) && isSolid(location.clone().add(0, -1, 0));
     }
 }
