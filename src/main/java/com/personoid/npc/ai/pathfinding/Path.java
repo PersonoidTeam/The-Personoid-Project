@@ -1,11 +1,8 @@
 package com.personoid.npc.ai.pathfinding;
 
 import com.personoid.npc.NPC;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Bukkit;
 
 public class Path {
     private final Node[] nodes;
@@ -34,7 +31,6 @@ public class Path {
             double y = node.getZ() + (double)((int)(npc.getBbWidth() + 1F)) * 0.5D;
             return new Vec3(x, node.getY(), y);
         } catch (IndexOutOfBoundsException e) {
-            Bukkit.getPlayer("DefineDoddy").spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("ioobe"));
             return new Vec3(npc.getX(), npc.getY(), npc.getZ());
         }
     }

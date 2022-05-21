@@ -1,5 +1,7 @@
 package com.personoid.npc.ai.pathfinding;
 
+import com.personoid.utils.debug.Profiler;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 
 import java.util.ArrayList;
@@ -59,8 +61,8 @@ public class Pathfinder {
         // returning if no path has been found
         if (!pathFound) {
             float duration = (System.nanoTime() - nsStart) / 1000000f;
-/*            Bukkit.broadcastMessage("A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) +
-                    duration + "ms" + ChatColor.WHITE + " to not find a path.");*/
+            Profiler.push(Profiler.Type.A_STAR, "A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) + duration + "ms" +
+                    ChatColor.WHITE + " to not find a path.");
             return null;
         }
 
@@ -84,7 +86,8 @@ public class Pathfinder {
 
         // outputting benchmark result
         float duration = (System.nanoTime() - nsStart) / 1000000f;
-        //Bukkit.broadcastMessage("A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) + duration + "ms" + ChatColor.WHITE + " to find a path.");
+        Profiler.push(Profiler.Type.A_STAR, "A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) + duration + "ms" +
+                ChatColor.WHITE + " to find a path.");
         return new Path(nodes);
     }
 
@@ -124,8 +127,8 @@ public class Pathfinder {
 
         private double diagonalMovementCost = 1;
         private double fallingCost = 0.7;
-        private double climbingCost = 1.65;
-        private double jumpingCost = 1.1;
+        private double climbingCost = 1.4;
+        private double jumpingCost = 1.05;
         private double stairsCost = 0.8;
 
         public Options(int maxFallDistance, boolean allowClimbing, boolean allowBlockPlacement) {

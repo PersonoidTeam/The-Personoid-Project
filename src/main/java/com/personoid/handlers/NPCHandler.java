@@ -71,7 +71,7 @@ public class NPCHandler {
 
     public static NPC getNPC(String name) {
         for (NPC npc : npcs) {
-            if (npc.getName().getString().equalsIgnoreCase(name)) {
+            if (npc.getName().getString().equalsIgnoreCase(name.trim())) {
                 return npc;
             }
         }

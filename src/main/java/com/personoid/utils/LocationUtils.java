@@ -2,6 +2,7 @@ package com.personoid.utils;
 
 import com.personoid.handlers.NPCHandler;
 import com.personoid.npc.NPC;
+import com.personoid.utils.values.BlockTypes;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -48,6 +49,8 @@ public class LocationUtils {
     public static Block getBlockInDir(Location location, BlockFace direction) {
         while (true) {
             if (location.getBlock().getType().isSolid()) {
+                return location.getBlock();
+            } else if (BlockTypes.isClimbable(location.getBlock().getType())) {
                 return location.getBlock();
             }
             location = location.getBlock().getRelative(direction).getLocation();
@@ -192,12 +195,13 @@ public class LocationUtils {
         return null;
     }
 
-    public static Location validRandom(Location from, Range range) {
+    public static Location validRandom(Location from, Range range, float directionBias) {
         Location loc = from.clone();
         int x = MathUtils.random(range.getMin(), range.getMax());
-        int y = MathUtils.random(range.getMin(), range.getMax());
         int z = MathUtils.random(range.getMin(), range.getMax());
-        loc.add(x, y, z).setY(320);
+        x *= Math.random() < directionBias ? 1 : -1;
+        z *= Math.random() < directionBias ? 1 : -1;
+        loc.add(x, 0, z).setY(320);
         return getBlockInDir(loc, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
     }
 

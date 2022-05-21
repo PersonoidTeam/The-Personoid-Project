@@ -27,7 +27,7 @@ public class WanderActivity extends Activity {
     }
 
     private void goToNewLocation() {
-        Location loc = LocationUtils.validRandom(getActiveNPC().getLocation(), range);
+        Location loc = LocationUtils.validRandom(getActiveNPC().getLocation(), range, 0.85F);
         Bukkit.broadcastMessage("Going to " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ());
         run(new GoToLocationActivity(loc).onFinished(result -> goToNewLocation()));
     }

@@ -3,6 +3,7 @@ package com.personoid.npc.ai.controller;
 import com.personoid.npc.NPC;
 import com.personoid.npc.components.NPCTickingComponent;
 import com.personoid.utils.MathUtils;
+import com.personoid.utils.values.BlockTypes;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
@@ -14,6 +15,7 @@ public class MoveController extends NPCTickingComponent {
 
     private int timeoutTicks;
     private int jumpTicks;
+    private boolean climbing;
 
     public MoveController(NPC npc) {
         super(npc);
@@ -22,7 +24,7 @@ public class MoveController extends NPCTickingComponent {
     @Override
     public void tick() {
         if (--timeoutTicks > 0) timeoutTicks--;
-        tickGravity();
+        if (!climbing) tickGravity();
         tickMovement();
         oldVel = velocity.clone();
     }
@@ -31,6 +33,7 @@ public class MoveController extends NPCTickingComponent {
         MathUtils.clean(velocity);
         npc.move(MoverType.SELF, new Vec3(velocity.getX(), velocity.getY(), velocity.getZ()));
         addFriction(npc.isInWater() ? 0.8 : 0.5);
+        climbing = BlockTypes.isClimbable(npc.getLocation().getBlock().getType());
     }
 
     private void tickGravity() {
@@ -87,6 +90,14 @@ public class MoveController extends NPCTickingComponent {
         velocity = vel;
     }
 
+    public void jump(double force) {
+        if (npc.isOnGround()) {
+            velocity.setY(force);
+            npc.setGroundTicks(0);
+            jumpTicks = 4;
+        }
+    }
+
     public void addVelocity(Vector velocity) {
         this.velocity.add(velocity);
     }
@@ -105,5 +116,9 @@ public class MoveController extends NPCTickingComponent {
 
     public Vector getOldVelocity() {
         return oldVel;
+    }
+
+    public boolean isClimbing() {
+        return climbing;
     }
 }

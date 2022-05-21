@@ -1,8 +1,8 @@
 package com.personoid.npc.ai.pathfinding;
 
 import com.personoid.utils.LocationUtils;
+import com.personoid.utils.values.BlockTypes;
 import org.bukkit.Location;
-import org.bukkit.Material;
 
 public class Node {
     final Pathfinder pathfinder;
@@ -77,10 +77,10 @@ public class Node {
 
                 // climbing
                 if (pathfinder.options.canUseClimbing()) {
-                    if (loc.clone().add(-x, 0, -z).getBlock().getType() == Material.LADDER) {
+                    if (BlockTypes.isClimbable(loc.clone().add(-x, 0, -z).getBlock().getType())) {
                         Location nLoc = loc.clone().add(-x, 0, -z);
                         int up = 1;
-                        while (nLoc.clone().add(0, up, 0).getBlock().getType() == Material.LADDER) up++;
+                        while (BlockTypes.isClimbable(nLoc.clone().add(0, up, 0).getBlock().getType())) up++;
                         reachNode(nLoc.clone().add(0, up, 0), expense + (up * pathfinder.options.getClimbingCost()));
                     }
                 }

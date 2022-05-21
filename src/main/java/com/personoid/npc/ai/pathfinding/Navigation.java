@@ -5,6 +5,7 @@ import com.personoid.npc.components.NPCTickingComponent;
 import com.personoid.utils.LocationUtils;
 import com.personoid.utils.MathUtils;
 import com.personoid.utils.bukkit.Task;
+import com.personoid.utils.values.BlockTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
@@ -17,7 +18,7 @@ import org.bukkit.util.Vector;
 
 public class Navigation extends NPCTickingComponent {
     private Options options;
-    private final Pathfinder pathfinder = new Pathfinder(10000, new Pathfinder.Options(3, true, true));
+    private final Pathfinder pathfinder = new Pathfinder(5000, new Pathfinder.Options(2, true, true));
     private Path path;
 
     public Navigation(NPC npc, Options options) {
@@ -40,6 +41,7 @@ public class Navigation extends NPCTickingComponent {
             }
         }
         if (isDone()) return;
+
         // movement
         Vec3 nextNPCPos = path.getNextNPCPos(npc);
         Location nextLoc = new Location(npc.getLocation().getWorld(), nextNPCPos.x, nextNPCPos.y, nextNPCPos.z);
@@ -48,11 +50,14 @@ public class Navigation extends NPCTickingComponent {
         lerpedVelocity.setY(velocity.getY());
         npc.getMoveController().move(lerpedVelocity);
 
-        // movement
+        // movement specifics
         if (nextNPCPos.y >= npc.getY() + options.getMaxStepHeight()) {
+            Block blockDown = nextLoc.getBlock().getRelative(BlockFace.DOWN);
             if (npc.isOnGround()) {
-                if (nextLoc.getBlock().getType().name().contains("STAIRS")) {
-                    npc.getMoveController().addVelocity(new Vector(0, (nextNPCPos.y - npc.getY()) / 2, 0)); // move up to half stair height
+                if (blockDown.getType().name().contains("STAIRS")) {
+                    npc.getMoveController().jump(((nextNPCPos.y - npc.getY()) / 2) * 1.2F); // move up to half stair height
+                } else if (BlockTypes.isClimbable(blockDown.getType())) {
+                    npc.getMoveController().jump(0.2F);
                 } else {
                     npc.getMoveController().jump();
                 }
@@ -60,7 +65,7 @@ public class Navigation extends NPCTickingComponent {
         } else {
             double diff = nextNPCPos.y - npc.getY();
             if (diff > 0 && diff < options.getMaxStepHeight()) {
-                npc.getMoveController().addVelocity(new Vector(0, nextNPCPos.y - npc.getY(), 0));
+                npc.getMoveController().jump((nextNPCPos.y - npc.getY()) * 1.1F);
             }
         }
         if (path != null) {
@@ -87,7 +92,7 @@ public class Navigation extends NPCTickingComponent {
         double x = Math.abs(npc.getX() - blockPos.getX() + 0.5);
         double y = Math.abs(npc.getY() - blockPos.getY());
         double z = Math.abs(npc.getZ() - blockPos.getZ() + 0.5);
-        boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < 1D);
+        boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < maxDistToWaypoint); //y < 1D
         if (withinMaxDist || (canCutCorner(block.getType()) && shouldTargetNextNode(tempNPCPos))) {
             this.path.advance();
         }

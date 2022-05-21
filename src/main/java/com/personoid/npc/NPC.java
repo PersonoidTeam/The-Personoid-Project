@@ -3,15 +3,13 @@ package com.personoid.npc;
 import com.mojang.authlib.GameProfile;
 import com.personoid.activites.gathering.MineTreeActivity;
 import com.personoid.activites.location.FollowEntityActivity;
+import com.personoid.activites.location.WanderActivity;
 import com.personoid.enums.LogType;
 import com.personoid.npc.ai.NPCBrain;
 import com.personoid.npc.ai.controller.LookController;
 import com.personoid.npc.ai.controller.MoveController;
 import com.personoid.npc.ai.pathfinding.Navigation;
-import com.personoid.utils.BlockBreaker;
-import com.personoid.utils.LocationUtils;
-import com.personoid.utils.PacketUtils;
-import com.personoid.utils.SkinUtils;
+import com.personoid.utils.*;
 import net.minecraft.network.protocol.game.ClientboundAddPlayerPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
@@ -67,9 +65,9 @@ public class NPC extends ServerPlayer {
     public void registerActivities() {
         brain.getActivityManager().register(
                 new MineTreeActivity(LogType.OAK),
-                new FollowEntityActivity(Bukkit.getEntity(spawner))
+                new FollowEntityActivity(Bukkit.getEntity(spawner)),
                 //new DanceActivity(),
-                //new WanderActivity(new Range(10, 15))
+                new WanderActivity(new Range(10, 15))
         );
     }
 

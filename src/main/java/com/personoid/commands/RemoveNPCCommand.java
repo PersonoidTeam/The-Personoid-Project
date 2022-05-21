@@ -18,6 +18,10 @@ public class RemoveNPCCommand extends CommandHandler.Command {
         NPC npc;
         if (args.length == 0) {
             npc = LocationUtils.getClosestNPC(sender.getLocation());
+            if (npc == null) {
+                new Message("&cNo NPC found").send(sender);
+                return true;
+            }
         } else if (args.length == 1) {
             npc = NPCHandler.getNPC(args[0]);
             if (npc == null) {
@@ -25,8 +29,8 @@ public class RemoveNPCCommand extends CommandHandler.Command {
                 return true;
             }
         } else return false;
-        NPCHandler.unregisterNPC(npc);
         NPCHandler.despawnNPC(npc);
+        NPCHandler.unregisterNPC(npc);
         new Message("&aRemoved NPC: &e" + npc.getName().getString()).send(sender);
         return true;
     }

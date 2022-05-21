@@ -8,31 +8,50 @@ import org.bukkit.Location;
 public class GoToLocationActivity extends Activity {
     private final Location location;
     private final double stoppingDistance;
+    private final boolean faceLocation;
 
     public GoToLocationActivity(Location location) {
         super(ActivityType.LOCATION);
         this.location = location;
         this.stoppingDistance = 1.5D;
+        this.faceLocation = true;
+    }
+
+    public GoToLocationActivity(Location location, boolean faceLocation) {
+        super(ActivityType.LOCATION);
+        this.location = location;
+        this.stoppingDistance = 1.5D;
+        this.faceLocation = faceLocation;
     }
 
     public GoToLocationActivity(Location location, double stoppingDistance) {
         super(ActivityType.LOCATION);
         this.location = location;
         this.stoppingDistance = stoppingDistance;
+        this.faceLocation = true;
+    }
+
+    public GoToLocationActivity(Location location, double stoppingDistance, boolean faceLocation) {
+        super(ActivityType.LOCATION);
+        this.location = location;
+        this.stoppingDistance = stoppingDistance;
+        this.faceLocation = faceLocation;
     }
 
     @Override
     public void onStart(StartType startType) {
         //Bukkit.broadcastMessage("Target: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
         getActiveNPC().getNavigation().moveTo(location);
-        getActiveNPC().getLookController().face(location);
+        if (faceLocation) {
+            getActiveNPC().getLookController().face(location);
+        }
     }
 
     @Override
     public void onUpdate() {
-/*        if (getCurrentDuration() % 20 == 0) {
+        if (faceLocation && getCurrentDuration() % 10 == 0) {
             getActiveNPC().getLookController().face(location);
-        }*/
+        }
         if (location.distance(getActiveNPC().getLocation()) <= stoppingDistance) {
             markAsFinished(new Result<>(Result.Type.SUCCESS));
         }
