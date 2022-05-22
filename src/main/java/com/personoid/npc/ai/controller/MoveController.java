@@ -1,6 +1,7 @@
 package com.personoid.npc.ai.controller;
 
 import com.personoid.npc.NPC;
+import com.personoid.npc.ai.pathfinding.MovementType;
 import com.personoid.npc.components.NPCTickingComponent;
 import com.personoid.utils.MathUtils;
 import com.personoid.utils.values.BlockTypes;
@@ -50,9 +51,9 @@ public class MoveController extends NPCTickingComponent {
         velocity.setZ(Math.abs(z) < min ? 0 : z * factor);
     }
 
-    public void move(Vector velocity) {
+    public void move(Vector velocity, MovementType type) {
         if (timeoutTicks > 0) return;
-        double max = 0.325;
+        double max = type.name().contains("SPRINT") ? 0.425 : 0.325;
         Vector sum = this.velocity.clone().add(velocity.clone().setY(0));
         if (sum.length() > max) {
             sum.normalize().multiply(max);
@@ -61,23 +62,9 @@ public class MoveController extends NPCTickingComponent {
         this.velocity.setZ(sum.getZ());
     }
 
-    public void move(Vector velocity, boolean includeY) {
-        if (timeoutTicks > 0) return;
-        double max = 0.4;
-        Vector vel = velocity.clone();
-        if (!includeY) vel.setY(0);
-        Vector sum = this.velocity.clone().add(vel);
-        if (sum.length() > max) {
-            sum.normalize().multiply(max);
-        }
-        this.velocity.setX(sum.getX());
-        if (includeY) this.velocity.setY(sum.getY());
-        this.velocity.setZ(sum.getZ());
-    }
-
     public void jump() {
         if (npc.isOnGround()) {
-            velocity.setY(0.5); // jump factor (was 0.5)
+            velocity.setY(0.55);
             npc.setGroundTicks(0);
             jumpTicks = 4;
         }
@@ -90,7 +77,7 @@ public class MoveController extends NPCTickingComponent {
         velocity = vel;
     }
 
-    public void jump(double force) {
+    public void step(double force) {
         if (npc.isOnGround()) {
             velocity.setY(force);
             npc.setGroundTicks(0);

@@ -2,14 +2,14 @@ package com.personoid.npc.ai.controller;
 
 import com.personoid.npc.NPC;
 import com.personoid.npc.components.NPCTickingComponent;
-import com.personoid.utils.PacketUtils;
-import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
+import com.personoid.utils.MathUtils;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
 
 public class LookController extends NPCTickingComponent {
     private Location facing;
+    private boolean smoothing;
 
     public LookController(NPC npc) {
         super(npc);
@@ -27,7 +27,8 @@ public class LookController extends NPCTickingComponent {
             Vector dir = facing.toVector().subtract(npc.getLocation().toVector()).normalize();
             Location facing = npc.getLocation().setDirection(dir);
             npc.getBukkitEntity().teleport(facing);
-            PacketUtils.send(new ClientboundRotateHeadPacket(npc.getBukkitEntity().getHandle(), (byte) (facing.getYaw() * 256 / 360)));
+            //PacketUtils.send(new ClientboundRotateHeadPacket(npc.getBukkitEntity().getHandle(), (byte) (facing.getYaw() * 256 / 360)));
+            npc.setYRot(smoothing ? MathUtils.lerpRotation(npc.getYRot(), facing.getYaw(), 10F) : facing.getYaw());
         } catch (Exception ignored) { }
     }
 
@@ -47,5 +48,13 @@ public class LookController extends NPCTickingComponent {
 
     public void forget() {
         facing = null;
+    }
+
+    public boolean isSmoothing() {
+        return smoothing;
+    }
+
+    public void setSmoothing(boolean smoothing) {
+        this.smoothing = smoothing;
     }
 }

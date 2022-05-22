@@ -23,7 +23,7 @@ public class Pathfinder {
         checkedNodes.clear();
         uncheckedNodes.clear();
         endLocation = end;
-        boolean pathFound = false;
+        boolean pathFound = true;
 
         startNode = new Node(this, start, 0, null);
         Node endNode = new Node(this, end, 0, null);
@@ -34,6 +34,7 @@ public class Pathfinder {
         // time for benchmark
         long nsStart = System.nanoTime();
         uncheckedNodes.add(startNode);
+        double bestExpense = Double.MAX_VALUE;
 
         // cycle through untested nodes until an exit condition is fulfilled
         while (checkedNodes.size() < maxNodeTests && uncheckedNodes.size() > 0) {
@@ -44,14 +45,19 @@ public class Pathfinder {
                 }
             }
 
-            if (best.estimatedExpenseLeft < 1) {
+            if (best.estimatedExpenseLeft < bestExpense) {
+                endNode = best;
+                bestExpense = best.estimatedExpenseLeft;
+            }
+
+/*            if (best.estimatedExpenseLeft < 1) {
                 pathFound = true;
                 endNode = best;
                 // print information about last node
-/*                Bukkit.broadcastMessage(uncheckedNodes.size() + "uc " + checkedNodes.size() + "c " + round(best.expense) + "cne " +
-                        round(best.getEstimatedFinalExpense()) + "cnee ");*/
+*//*                Bukkit.broadcastMessage(uncheckedNodes.size() + "uc " + checkedNodes.size() + "c " + round(best.expense) + "cne " +
+                        round(best.getEstimatedFinalExpense()) + "cnee ");*//*
                 break;
-            }
+            }*/
 
             best.getReachableLocations();
             uncheckedNodes.remove(best);
@@ -124,12 +130,14 @@ public class Pathfinder {
         private boolean useClimbing;
         private boolean useBlockPlacement;
         private boolean useDiagonalMovement = true;
+        private boolean useChunking = true;
 
         private double diagonalMovementCost = 1;
         private double fallingCost = 0.7;
         private double climbingCost = 1.4;
         private double jumpingCost = 1.05;
         private double stairsCost = 0.8;
+        private int chunkingRadius = 12;
 
         public Options(int maxFallDistance, boolean allowClimbing, boolean allowBlockPlacement) {
             this.maxFallDistance = maxFallDistance;
@@ -137,7 +145,7 @@ public class Pathfinder {
             this.useBlockPlacement = allowBlockPlacement;
         }
 
-        //region option getters and setters
+        //region toggle getters and setters
 
         public int getMaxFallDistance() {
             return maxFallDistance;
@@ -171,9 +179,17 @@ public class Pathfinder {
             this.useDiagonalMovement = useDiagonalMovement;
         }
 
+        public boolean canUseChunking() {
+            return useChunking;
+        }
+
+        public void setUseChunking(boolean useChunking) {
+            this.useChunking = useChunking;
+        }
+
         //endregion
 
-        //region cost getters and setters
+        //region value getters and setters
 
         public double getDiagonalMovementCost() {
             return diagonalMovementCost;
@@ -213,6 +229,14 @@ public class Pathfinder {
 
         public void setStairsCost(double stairsCost) {
             this.stairsCost = stairsCost;
+        }
+
+        public int getChunkSize() {
+            return chunkingRadius;
+        }
+
+        public void setChunkSize(int chunkingRadius) {
+            this.chunkingRadius = chunkingRadius;
         }
 
         //endregion

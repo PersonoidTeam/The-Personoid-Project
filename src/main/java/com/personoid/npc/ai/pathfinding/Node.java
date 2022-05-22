@@ -34,8 +34,13 @@ public class Node {
     public void getReachableLocations() {
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
-                if (x == 0 && z == 0 || (!pathfinder.options.canUseDiagonalMovement() && x * z != 0)) continue; // check is current node location or diagonal
+                // check is current node location or diagonal
+                if (x == 0 && z == 0 || (!pathfinder.options.canUseDiagonalMovement() && x * z != 0)) continue;
+
                 Location loc = new Location(location.getWorld(), location.getBlockX() + x, location.getBlockY(), location.getBlockZ() + z);
+
+                // check if outside of pathfinder chunk
+                if (pathfinder.options.canUseChunking() && pathfinder.startNode.getLocation().distance(loc) > pathfinder.options.getChunkSize()) continue;
 
                 // movement
                 if (LocationUtils.canStandAt(loc)) {

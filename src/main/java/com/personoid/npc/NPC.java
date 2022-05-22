@@ -49,6 +49,7 @@ public class NPC extends ServerPlayer {
     private final BlockBreaker blockBreaker = new BlockBreaker(this);
     private final NPCInventory inventory = new NPCInventory(this);
 
+    private int deadTicks;
     private int aliveTicks;
     private int groundTicks;
 
@@ -101,7 +102,7 @@ public class NPC extends ServerPlayer {
 
         float health = getHealth();
         float maxHealth = getMaxHealth();
-        float amount = health < maxHealth - 0.05F ? health + 0.05F : maxHealth;
+        float amount = health < maxHealth - 0.005F ? health + 0.005F : maxHealth;
 
         setHealth(amount);
 

@@ -52,7 +52,7 @@ public class MineTreeActivity extends Activity {
 
     private void mineTree(Block block) {
         Location pathableLoc = LocationUtils.getPathableLocation(block.getLocation(), getActiveNPC().getLocation());
-        run(new GoToLocationActivity(pathableLoc, 3).onFinished((result) -> {
+        run(new GoToLocationActivity(pathableLoc, new GoToLocationActivity.Options(3, true)).onFinished((result) -> {
             Bukkit.broadcastMessage("Mining tree at: " + block.getX() + ", " + block.getY() + ", " + block.getZ());
             if (result.getType() == Result.Type.SUCCESS) {
                 run(new BreakBlockActivity(block).onFinished((result1) -> {

@@ -13,7 +13,7 @@ public class FollowEntityActivity extends Activity {
     public FollowEntityActivity(Entity entity) {
         super(ActivityType.FOLLOWING, Priority.LOW, new BoredomSettings(MathUtils.random(600, 2400), MathUtils.random(2400, 12000)));
         this.entity = entity;
-        this.stoppingDistance = 1.5D;
+        this.stoppingDistance = 3;
     }
 
     public FollowEntityActivity(Entity entity, double stoppingDistance) {
@@ -30,7 +30,9 @@ public class FollowEntityActivity extends Activity {
     @Override
     public void onUpdate() {
         if (getCurrentDuration() % 5 == 0) { //5
-            run(new GoToLocationActivity(entity.getLocation(), stoppingDistance));
+            GoToLocationActivity.Options options = new GoToLocationActivity.Options(stoppingDistance, true);
+            options.setFaceSmoothing(true);
+            run(new GoToLocationActivity(entity.getLocation(), options));
         }
     }
 

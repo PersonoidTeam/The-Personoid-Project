@@ -4,21 +4,24 @@ import com.personoid.npc.NPC;
 import com.personoid.npc.components.NPCTickingComponent;
 import com.personoid.utils.LocationUtils;
 import com.personoid.utils.MathUtils;
-import com.personoid.utils.bukkit.Task;
 import com.personoid.utils.values.BlockTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.*;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
 
 public class Navigation extends NPCTickingComponent {
-    private Options options;
     private final Pathfinder pathfinder = new Pathfinder(5000, new Pathfinder.Options(2, true, true));
+    private Options options;
+    private MovementType movementType;
     private Path path;
 
     public Navigation(NPC npc, Options options) {
@@ -46,26 +49,40 @@ public class Navigation extends NPCTickingComponent {
         Vec3 nextNPCPos = path.getNextNPCPos(npc);
         Location nextLoc = new Location(npc.getLocation().getWorld(), nextNPCPos.x, nextNPCPos.y, nextNPCPos.z);
         Vector velocity = new Vector(nextLoc.getX() - npc.getX(), nextLoc.getY() - npc.getY(), nextLoc.getZ() - npc.getZ());
-        Vector lerpedVelocity = MathUtils.lerpVector(npc.getMoveController().getVelocity(), velocity, 0.2);
+        Vector lerpedVelocity = MathUtils.lerpVector(npc.getMoveController().getVelocity(), velocity, options.smoothing);
         lerpedVelocity.setY(velocity.getY());
-        npc.getMoveController().move(lerpedVelocity);
+        npc.getMoveController().move(lerpedVelocity, movementType);
+
+        // check if next next npc pos is one block up from current
+        if (movementType == MovementType.SPRINT_JUMPING) {
+            int count = 0;
+            for (int i = 0; i < 3; i++) {
+                Vec3 nextIndexNPCPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);
+                if (nextIndexNPCPos.y > npc.getY()) {
+                    count++;
+                }
+            }
+            if (count == 0) {
+                npc.getMoveController().jump();
+            }
+        }
 
         // movement specifics
         if (nextNPCPos.y >= npc.getY() + options.getMaxStepHeight()) {
             Block blockDown = nextLoc.getBlock().getRelative(BlockFace.DOWN);
             if (npc.isOnGround()) {
                 if (blockDown.getType().name().contains("STAIRS")) {
-                    npc.getMoveController().jump(((nextNPCPos.y - npc.getY()) / 2) * 1.2F); // move up to half stair height
+                    npc.getMoveController().step(((nextNPCPos.y - npc.getY()) / 2) * 1.2F); // move up to half stair height
                 } else if (BlockTypes.isClimbable(blockDown.getType())) {
-                    npc.getMoveController().jump(0.2F);
-                } else {
-                    npc.getMoveController().jump();
+                    npc.getMoveController().step(0.2F);
+                } else if (path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 1).y > npc.getY() + options.getMaxStepHeight()) {
+                    if (npc.getGroundTicks() >= 4) npc.getMoveController().jump();
                 }
             }
         } else {
             double diff = nextNPCPos.y - npc.getY();
             if (diff > 0 && diff < options.getMaxStepHeight()) {
-                npc.getMoveController().jump((nextNPCPos.y - npc.getY()) * 1.1F);
+                npc.getMoveController().step((nextNPCPos.y - npc.getY()) * 1.2F);
             }
         }
         if (path != null) {
@@ -77,11 +94,12 @@ public class Navigation extends NPCTickingComponent {
         //trimPath();
     }
 
-    public void moveTo(Location location) {
-        // async leads to errors (concurrent modification exception) -> should be fast enough or synchronous running anyway
+    public void moveTo(Location location, MovementType movementType) {
+        this.movementType = movementType;
         Location groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
-        new Task(() -> path = pathfinder.getPath(npcGroundLoc, groundLoc)).async().run();
+        // async leads to errors (concurrent modification exception) -> should be fast enough or synchronous running anyway
+        path = pathfinder.getPath(npcGroundLoc, groundLoc);
     }
 
     private void followPath() {
@@ -147,6 +165,7 @@ public class Navigation extends NPCTickingComponent {
 
     public static class Options {
         private float maxStepHeight = 0.3F;
+        private float smoothing = 0.075F;
 
         public float getMaxStepHeight() {
             return maxStepHeight;
@@ -154,6 +173,14 @@ public class Navigation extends NPCTickingComponent {
 
         public void setMaxStepHeight(float maxStepHeight) {
             this.maxStepHeight = maxStepHeight;
+        }
+
+        public float getSmoothing() {
+            return smoothing;
+        }
+
+        public void setSmoothing(float smoothing) {
+            this.smoothing = smoothing;
         }
     }
 }

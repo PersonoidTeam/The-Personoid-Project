@@ -88,4 +88,22 @@ public class NPCHandler {
         }
         npcs.clear();
     }
+
+    public static boolean isNPC(org.bukkit.entity.Entity entity) {
+        for (NPC npc : npcs) {
+            if (npc.getBukkitEntity().getUniqueId().equals(entity.getUniqueId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static NPC getNPC(org.bukkit.entity.Entity entity) {
+        for (NPC npc : npcs) {
+            if (npc.getBukkitEntity().getUniqueId().equals(entity.getUniqueId())) {
+                return npc;
+            }
+        }
+        return null;
+    }
 }

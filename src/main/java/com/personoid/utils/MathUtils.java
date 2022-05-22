@@ -1,5 +1,7 @@
 package com.personoid.utils;
 
+import net.minecraft.util.Mth;
+import org.bukkit.Location;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
@@ -76,5 +78,21 @@ public class MathUtils {
 
     public static Vector lerpVector(Vector v1, Vector v2, double t) {
         return v1.clone().add(v2.clone().subtract(v1).multiply(t));
+    }
+
+    public static float lerpRotation(float f1, float f2, float t) {
+        float f3 = Mth.wrapDegrees(f2 - f1);
+        if (f3 > t) f3 = t;
+        if (f3 < -t) f3 = -t;
+
+        float f4 = f1 + f3;
+        if (f4 < 0F) f4 += 360.0F;
+        else if (f4 > 360F) f4 -= 360.0F;
+
+        return f4;
+    }
+
+    public static Vector getDirection(Location loc1, Location loc2) {
+        return loc2.clone().subtract(loc1).toVector();
     }
 }

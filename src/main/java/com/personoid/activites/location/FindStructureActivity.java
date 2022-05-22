@@ -55,7 +55,7 @@ public class FindStructureActivity extends Activity {
                             loc.subtract(0, 1, 0), BlockFace.UP).getLocation().getY(), loc.getZ());
                     Bukkit.broadcastMessage("Trying new location: " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ());
                     attempted.add(loc);
-                    run(new GoToLocationActivity(loc, 4).onFinished((result) -> checkLocation()));
+                    run(new GoToLocationActivity(loc, new GoToLocationActivity.Options(4, true)).onFinished((result) -> checkLocation()));
                 }
             }
             default -> throw new NullPointerException("No method set for structure: " + structure.name());

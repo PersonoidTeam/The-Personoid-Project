@@ -1,19 +1,25 @@
 package com.personoid.listeners;
 
+import com.personoid.PersonoidAPI;
+import com.personoid.events.NPCDeathEvent;
 import com.personoid.events.NPCPickupItemEvent;
 import com.personoid.handlers.NPCHandler;
 import com.personoid.npc.NPC;
 import com.personoid.npc.ai.messaging.MessageManager;
 import com.personoid.utils.LocationUtils;
 import com.personoid.utils.bukkit.Task;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -77,5 +83,36 @@ public class Events implements Listener {
         if (event.getEntity() instanceof Player player) {
             //Bukkit.broadcastMessage(player.getDisplayName() + " took " + event.getDamage() + " damage");
         }
+    }
+
+    @EventHandler
+    public void onEntityDeath(EntityDeathEvent event) {
+        if (NPCHandler.isNPC(event.getEntity())) {
+            NPC npc = NPCHandler.getNPC(event.getEntity());
+            Bukkit.getPluginManager().callEvent(new NPCDeathEvent(npc));
+        }
+    }
+
+    @EventHandler
+    public void onNPCDeath(NPCDeathEvent event) {
+        NPC oldNPC = event.getNPC();
+        new BukkitRunnable() {
+            @Override
+            public void run(){
+                NPC npc = NPCHandler.createNPCInstance(oldNPC.level.getWorld(), oldNPC.displayName, oldNPC.getBukkitEntity().getPlayer());
+                npc.spawner = oldNPC.spawner;
+                Location spawnLocation = npc.getBukkitEntity().getBedSpawnLocation();
+                if (spawnLocation == null){
+                    spawnLocation = Bukkit.getServer().getWorlds().get(0).getSpawnLocation();
+                }
+                NPCHandler.spawnNPC(npc, spawnLocation);
+                NPCHandler.registerNPC(npc);
+
+                NPCHandler.despawnNPC(oldNPC);
+                NPCHandler.unregisterNPC(oldNPC);
+            }
+        }.runTaskLater(PersonoidAPI.getPlugin(), 2*20);
+
+
     }
 }
