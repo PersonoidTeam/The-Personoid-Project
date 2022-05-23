@@ -19,7 +19,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
 
 public class Navigation extends NPCTickingComponent {
-    private final Pathfinder pathfinder = new Pathfinder(5000, new Pathfinder.Options(2, true, true));
+    private final Pathfinder pathfinder = new Pathfinder(500, new Pathfinder.Options(2, true, true));
     private Options options;
     private MovementType movementType;
     private Path path;
