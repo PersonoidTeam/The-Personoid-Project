@@ -1,7 +1,7 @@
 package com.personoid.api.pathfinding;
 
-import com.personoid.api.utils.types.BlockTags;
 import com.personoid.api.utils.LocationUtils;
+import com.personoid.api.utils.types.BlockTags;
 import org.bukkit.Location;
 
 public class Node {
@@ -51,7 +51,7 @@ public class Node {
                 }
 
                 // jumping
-                if (BlockTags.SOLID.is(loc.clone().add(-x, 2, -z))) {
+                if (!BlockTags.SOLID.is(loc.clone().add(-x, 2, -z))) {
                     Location upLoc = loc.clone().add(0, 1, 0);
                     if (LocationUtils.canStandAt(upLoc)) {
                         if (upLoc.getBlock().getType().name().contains("STAIRS")) {
@@ -63,12 +63,12 @@ public class Node {
                 }
 
                 // falling
-                if (BlockTags.SOLID.is(loc.clone().add(0, 1, 0))) { // block above possible new tile
+                if (!BlockTags.SOLID.is(loc.clone().add(0, 1, 0))) { // block above possible new tile
                     Location nLoc = loc.clone().add(0, -1, 0);
                     if (LocationUtils.canStandAt(nLoc)) reachNode(nLoc, expense + context.getOptions().getFallingCost()); // one block down
-                    else if (BlockTags.SOLID.is(nLoc) && BlockTags.SOLID.is(nLoc.clone().add(0, 1, 0))) { // fall
+                    else if (!BlockTags.SOLID.is(nLoc) && !BlockTags.SOLID.is(nLoc.clone().add(0, 1, 0))) { // fall
                         int drop = 1;
-                        while (drop <= context.getOptions().getMaxFallDistance() && BlockTags.SOLID.is(loc.clone().add(0, -drop, 0))) {
+                        while (drop <= context.getOptions().getMaxFallDistance() && !BlockTags.SOLID.is(loc.clone().add(0, -drop, 0))) {
                             Location dropLoc = loc.clone().add(0, -drop, 0);
                             if (LocationUtils.canStandAt(dropLoc)) {
                                 Node fallNode = createNode(loc, expense + 1);

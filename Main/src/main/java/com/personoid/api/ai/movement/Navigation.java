@@ -20,7 +20,6 @@ public class Navigation {
     private final NPC npc;
     private final Pathfinder pathfinder = new AstarPathfinder();
     private final Options options = new Options();
-    private MovementType movementType;
     private Path path;
 
     public Navigation(NPC npc) {
@@ -47,10 +46,10 @@ public class Navigation {
         Vector velocity = new Vector(nextLoc.getX() - npc.getXPos(), nextLoc.getY() - npc.getYPos(), nextLoc.getZ() - npc.getZPos());
         Vector lerpedVelocity = MathUtils.lerpVector(npc.getMoveController().getVelocity(), velocity, options.getMovementSmoothing());
         lerpedVelocity.setY(velocity.getY());
-        npc.getMoveController().move(lerpedVelocity, movementType);
+        npc.getMoveController().move(lerpedVelocity, options.movementType);
 
-        // check if next next npc pos is one block up from current
-        if (movementType == MovementType.SPRINT_JUMPING) {
+        // check if next npc pos is one block up from current
+        if (options.movementType == MovementType.SPRINT_JUMPING) {
             int count = 0;
             for (int i = 0; i < 3; i++) {
                 Vector nextIndexNPCPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);
@@ -95,7 +94,7 @@ public class Navigation {
     }
 
     public void moveTo(Location location, MovementType movementType) {
-        this.movementType = movementType;
+        options.movementType = movementType;
         Location groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         // FIXME: async leads to errors (concurrent modification exception) -> should be fast enough or synchronous running anyway
@@ -170,6 +169,7 @@ public class Navigation {
     public static class Options {
         private float maxStepHeight = 0.3F;
         private float movementSmoothing = 0.1F;
+        private MovementType movementType;
 
         public float getMaxStepHeight() {
             return maxStepHeight;
@@ -185,6 +185,14 @@ public class Navigation {
 
         public void setMovementSmoothing(float movementSmoothing) {
             this.movementSmoothing = movementSmoothing;
+        }
+
+        public MovementType getMovementType() {
+            return movementType;
+        }
+
+        public void setMovementType(MovementType movementType) {
+            this.movementType = movementType;
         }
     }
 }

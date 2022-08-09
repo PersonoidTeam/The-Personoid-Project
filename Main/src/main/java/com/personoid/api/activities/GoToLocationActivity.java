@@ -8,19 +8,28 @@ import org.bukkit.Location;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
+    private final MovementType movementType;
     private final Options options;
     private boolean wasFaceSmoothing;
 
-    public GoToLocationActivity(Location location, Options options) {
+    public GoToLocationActivity(Location location, MovementType movementType) {
         super(ActivityType.LOCATION);
         this.location = location;
+        this.movementType = movementType;
+        options = new Options();
+    }
+
+    public GoToLocationActivity(Location location, MovementType movementType, Options options) {
+        super(ActivityType.LOCATION);
+        this.location = location;
+        this.movementType = movementType;
         this.options = options;
     }
 
     @Override
     public void onStart(StartType startType) {
         //Bukkit.broadcastMessage("Target: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
-        getNPC().getNavigation().moveTo(location, MovementType.WALKING);
+        getNPC().getNavigation().moveTo(location, movementType);
         if (options.canFaceLocation()) getNPC().getLookController().face(location);
         wasFaceSmoothing = getNPC().getLookController().isSmoothing();
         getNPC().getLookController().setSmoothing(options.isFaceSmoothing());
@@ -53,12 +62,11 @@ public class GoToLocationActivity extends Activity {
 
     public static class Options {
         public double stoppingDistance;
-        public boolean faceLocation;
-        public boolean faceSmoothing;
+        public boolean faceLocation = true;
+        public boolean faceSmoothing = true;
 
-        public Options(double stoppingDistance, boolean faceLocation) {
-            this.stoppingDistance = stoppingDistance;
-            this.faceLocation = faceLocation;
+        public Options() {
+
         }
 
         public double getStoppingDistance() {

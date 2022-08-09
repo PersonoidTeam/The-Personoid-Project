@@ -21,6 +21,19 @@ public class ActivityManager {
         registered.addAll(Arrays.asList(activities));
     }
 
+    public void unregister(Activity... activities) {
+        Arrays.asList(activities).forEach(registered::remove);
+    }
+
+    public void unregister(boolean stop, Activity... activities) {
+        Arrays.asList(activities).forEach(activity -> {
+            if (stop && current == activity) {
+                current.internalStop(Activity.StopType.STOP);
+                current.onStop(Activity.StopType.STOP);
+            }
+        });
+    }
+
     public void tick() {
         for (Activity activity : boredTasks.keySet()){
             boredTasks.put(activity, boredTasks.get(activity)-1);
