@@ -18,18 +18,14 @@ public class AstarPathfinder extends Pathfinder {
         //if (!(canStandAt(start) && canStandAt(end))) return null;
 
         long nsStart = System.nanoTime();
-        double bestExpense = Double.MAX_VALUE;
+        Node best = null;
 
         while (context.getCheckedNodes().size() < options.getMaxNodeTests() && context.getUncheckedNodes().size() > 0) {
-            Node best =  context.getUncheckedNodes().get(0);
+            best = context.getUncheckedNodes().get(0);
             for (Node node : context.getUncheckedNodes()) {
                 if (node.getEstimatedFinalExpense() < best.getEstimatedFinalExpense()) {
                     best = node;
                 }
-            }
-            if (options.canUseChunking() && best.getEstimatedExpenseLeft() < bestExpense) {
-                context.setEndNode(best);
-                bestExpense = best.getEstimatedExpenseLeft();
             }
             if (best.getEstimatedExpenseLeft() < 1) {
                 pathFound = true;
@@ -43,6 +39,8 @@ public class AstarPathfinder extends Pathfinder {
             context.getUncheckedNodes().remove(best);
             context.getCheckedNodes().add(best);
         }
+
+        if (options.canUseChunking() && best != null) context.setEndNode(best);
 
         // returning if no path has been found
         if (!pathFound) {

@@ -36,7 +36,7 @@ public class Node {
             for (int z = -1; z <= 1; z++) {
                 // check is current node location or diagonal
                 if (x == 0 && z == 0 || (!context.getOptions().canUseDiagonalMovement() && x * z != 0)) continue;
-                Location loc = new Location(location.getWorld(), location.getBlockX() + x, location.getBlockY(), location.getBlockZ() + z);
+                Location loc = new Location(location.getWorld(), this.x + x, this.y, this.z + z);
 
                 // check if outside of pathfinder chunk
                 if (context.getOptions().canUseChunking() && context.getStartLocation().distance(loc) > context.getOptions().getChunkSize()) continue;
