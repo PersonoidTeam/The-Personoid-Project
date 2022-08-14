@@ -4,13 +4,14 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.personoid.api.npc.BlockBreaker;
 import com.personoid.api.npc.NPC;
-import com.personoid.api.npc.NewInventory;
+import com.personoid.api.npc.NPCInventory;
 import com.personoid.api.npc.Skin;
 import com.personoid.api.ai.NPCBrain;
 import com.personoid.api.ai.looking.LookController;
 import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
 import com.personoid.api.utils.LocationUtils;
+import com.personoid.api.utils.packet.PacketHandler;
 import com.personoid.api.utils.types.HandEnum;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -43,7 +44,7 @@ public class NPC_1_18_R2 extends ServerPlayer implements NPC {
 
     private final NPCBrain brain = new NPCBrain(this);
     private final BlockBreaker blockBreaker = new BlockBreaker(this);
-    private final NewInventory inventory = new NewInventory(this);
+    private final NPCInventory inventory = new NPCInventory(this);
 
     private int deadTicks;
     private int aliveTicks;
@@ -59,11 +60,11 @@ public class NPC_1_18_R2 extends ServerPlayer implements NPC {
     }
 
     public void showToPlayers(Player... players) {
-        new Packets_1_18_R2.AddPlayer(cp).send(players);
+        new PacketHandler.AddPlayer(cp).send(players);
     }
 
     public void hideToPlayers(Player... players) {
-        new Packets_1_18_R2.RemovePlayer(cp).send(players);
+        new PacketHandler.RemovePlayer(cp).send(players);
     }
 
     @Override
@@ -148,7 +149,7 @@ public class NPC_1_18_R2 extends ServerPlayer implements NPC {
         return blockBreaker;
     }
 
-    public NewInventory getNPCInventory() {
+    public NPCInventory getNPCInventory() {
         return inventory;
     }
 

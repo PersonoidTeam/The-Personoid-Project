@@ -7,7 +7,6 @@ import com.personoid.api.ai.movement.Navigation;
 import com.personoid.api.utils.types.HandEnum;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.util.Vector;
 
 public interface NPC {
@@ -15,7 +14,7 @@ public interface NPC {
     MoveController getMoveController();
     LookController getLookController();
     BlockBreaker getBlockBreaker();
-    PlayerInventory getNPCInventory();
+    NPCInventory getNPCInventory();
     NPCBrain getNPCBrain();
 
     void tick();

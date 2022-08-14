@@ -4,11 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.personoid</groupId>
-    <artifactId>api</artifactId>
-    <version>1.0.0</version>
+    <groupId>com.personoid.api</groupId>
+    <artifactId>packets</artifactId>
+    <version>1.0.</version>
+    <packaging>jar</packaging>
 
-    <name>API</name>
+    <name>Packets</name>
 
     <properties>
         <java.version>17</java.version>
@@ -65,20 +66,21 @@
     <dependencies>
         <dependency>
             <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.19.2-R0.1-SNAPSHOT</version>
+            <artifactId>spigot</artifactId>
+            <version>1.19.1-R0.1-SNAPSHOT</version>
+            <classifier>remapped-mojang</classifier>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jetbrains</groupId>
-            <artifactId>annotations</artifactId>
-            <version>23.0.0</version>
+            <groupId>com.personoid</groupId>
+            <artifactId>v1_19_R1</artifactId>
+            <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.personoid.api</groupId>
-            <artifactId>packets</artifactId>
-            <version>1.0.</version>
+            <groupId>com.personoid</groupId>
+            <artifactId>v1_18_R2</artifactId>
+            <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

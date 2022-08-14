@@ -4,7 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.personoid.api.npc.BlockBreaker;
 import com.personoid.api.npc.NPC;
-import com.personoid.api.npc.NewInventory;
+import com.personoid.api.npc.NPCInventory;
 import com.personoid.api.npc.Skin;
 import com.personoid.api.ai.NPCBrain;
 import com.personoid.api.ai.looking.LookController;
@@ -43,7 +43,7 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
 
     private final NPCBrain brain = new NPCBrain(this);
     private final BlockBreaker blockBreaker = new BlockBreaker(this);
-    private final NewInventory inventory = new NewInventory(this);
+    private final NPCInventory inventory = new NPCInventory(this);
 
     private int deadTicks;
     private int aliveTicks;
@@ -148,7 +148,7 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
         return blockBreaker;
     }
 
-    public NewInventory getNPCInventory() {
+    public NPCInventory getNPCInventory() {
         return inventory;
     }
 

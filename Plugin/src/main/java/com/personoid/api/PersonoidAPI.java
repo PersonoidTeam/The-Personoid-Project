@@ -20,8 +20,8 @@ public class PersonoidAPI {
     static {
         Plugin userPlugin = JavaPlugin.getProvidingPlugin(PersonoidAPI.class);
         if (userPlugin.getClass() != PersonoidPlugin.class) {
-            PersonoidPlugin basePlugin = (PersonoidPlugin) Bukkit.getPluginManager().getPlugin("Personoid");
-            if (basePlugin != null) basePlugin.addUserPlugin(userPlugin.getName());
+/*            PersonoidPlugin basePlugin = (PersonoidPlugin) Bukkit.getPluginManager().getPlugin("Personoid");
+            if (basePlugin != null) basePlugin.addUserPlugin(userPlugin.getName());*/
         }
         if (PersonoidAPI.plugin == null) {
             logger.info("Registered " + userPlugin.getName() + ".");

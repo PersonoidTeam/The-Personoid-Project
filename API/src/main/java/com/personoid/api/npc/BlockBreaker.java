@@ -1,7 +1,7 @@
 package com.personoid.api.npc;
 
 import com.personoid.api.utils.math.MathUtils;
-import com.personoid.api.utils.packet.Packets;
+import com.personoid.api.utils.packet.PacketHandler;
 import com.personoid.api.utils.types.HandEnum;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -26,7 +26,7 @@ public class BlockBreaker {
         sendPacket(getProgress());
         npc.swingHand(HandEnum.RIGHT);
         if (hardnessOfBlock*currentProgress >= hardnessOfBlock) {
-            block.breakNaturally(npc.getNPCInventory().getItemInHand());
+            block.breakNaturally(npc.getEntity().getItemInHand());
             playBreakSound();
             stop();
         } else if (tick % 4 == 0) playHitSound();
@@ -46,7 +46,7 @@ public class BlockBreaker {
     }
 
     private void sendPacket(int stage) {
-        new Packets.BlockDestruction(npc.getEntity().getEntityId(), getLocation(), stage).send();
+        PacketHandler.blockDestruction(npc.getEntity().getEntityId(), getLocation(), stage).send();
     }
 
     private void playHitSound() {
