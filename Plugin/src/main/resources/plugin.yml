@@ -1,0 +1,5 @@
+name: Personoid
+version: '${project.version}'
+main: com.personoid.PersonoidPlugin
+authors: [ DefineDoddy, notnotnotswipez ]
+description: A plugin that allows easy access to creating and modifying NPCs

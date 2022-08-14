@@ -5,10 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.personoid</groupId>
-    <artifactId>api</artifactId>
+    <artifactId>plugin</artifactId>
     <version>1.0.0</version>
+    <packaging>jar</packaging>
 
-    <name>APIAccesser</name>
+    <name>Plugin</name>
 
     <properties>
         <java.version>17</java.version>
@@ -71,7 +72,7 @@
         </dependency>
         <dependency>
             <groupId>com.personoid</groupId>
-            <artifactId>main</artifactId>
+            <artifactId>api</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>
