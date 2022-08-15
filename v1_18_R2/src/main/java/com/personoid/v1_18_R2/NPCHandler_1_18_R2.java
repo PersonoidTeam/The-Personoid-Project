@@ -3,7 +3,7 @@ package com.personoid.v1_18_R2;
 import com.mojang.authlib.GameProfile;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.npc.NPCHandler;
-import com.personoid.api.utils.packet.PacketHandler;
+import com.personoid.packets.Packets;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import net.minecraft.network.Connection;
@@ -45,7 +45,7 @@ public class NPCHandler_1_18_R2 implements NPCHandler {
     public void spawnNPC(NPC npc, Location location) {
         NPC_1_18_R2 nmsNPC = (NPC_1_18_R2) npc;
         nmsNPC.setPos(location.getX(), location.getY(), location.getZ());
-        new PacketHandler.AddPlayer(nmsNPC.getEntity()).send();
+        Packets.addPlayer(nmsNPC.getEntity()).send();
         nmsNPC.getLevel().addNewPlayer(nmsNPC);
     }
 
@@ -57,7 +57,7 @@ public class NPCHandler_1_18_R2 implements NPCHandler {
 
     private void despawnNPC(NPC npc) {
         NPC_1_18_R2 nmsNPC = (NPC_1_18_R2) npc;
-        new PacketHandler.RemovePlayer(nmsNPC.getEntity()).send();
+        Packets.removePlayer(nmsNPC.getEntity()).send();
         npc.remove();
         nmsNPC.remove(Entity.RemovalReason.DISCARDED);
     }

@@ -12,6 +12,7 @@ import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.types.HandEnum;
+import com.personoid.packets.Packets;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.MinecraftServer;
@@ -59,11 +60,11 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
     }
 
     public void showToPlayers(Player... players) {
-        new Packets_1_19_R1.AddPlayer(cp).send(players);
+        Packets.addPlayer(cp).send(players);
     }
 
     public void hideToPlayers(Player... players) {
-        new Packets_1_19_R1.RemovePlayer(cp).send(players);
+        Packets.removePlayer(cp).send(players);
     }
 
     @Override

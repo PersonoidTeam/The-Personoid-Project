@@ -1,6 +1,7 @@
 package com.personoid.api.npc;
 
 import com.personoid.api.events.NPCPickupItemEvent;
+import com.personoid.packets.Packets;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
@@ -49,7 +50,7 @@ public class NPCInventory {
                     int diff = this.addItem(item.getItemStack());
                     //Bukkit.broadcastMessage("diff: " + diff);
                     if (diff != item.getItemStack().getAmount()) {
-                        new Packets.EntityTakeItem(item.getEntityId(), npc.getEntity().getEntityId(), item.getItemStack().getAmount()).send(npc);
+                        Packets.entityTakeItem(item.getEntityId(), npc.getEntity().getEntityId(), item.getItemStack().getAmount()).send();
                         if (diff == 0) {
                             item.remove();
                         } else {

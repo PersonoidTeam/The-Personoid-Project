@@ -72,12 +72,6 @@
         </dependency>
         <dependency>
             <groupId>com.personoid</groupId>
-            <artifactId>api</artifactId>
-            <version>1.0.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.personoid</groupId>
             <artifactId>v1_18_R2</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>

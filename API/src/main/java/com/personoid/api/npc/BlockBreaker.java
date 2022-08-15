@@ -1,8 +1,8 @@
 package com.personoid.api.npc;
 
 import com.personoid.api.utils.math.MathUtils;
-import com.personoid.api.utils.packet.PacketHandler;
 import com.personoid.api.utils.types.HandEnum;
+import com.personoid.packets.Packets;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -29,7 +29,7 @@ public class BlockBreaker {
             block.breakNaturally(npc.getEntity().getItemInHand());
             playBreakSound();
             stop();
-        } else if (tick % 4 == 0) playHitSound();
+        } else if (tick % 8 == 0) playHitSound();
 
         //Bukkit.broadcastMessage("Break speed: "+block.getBreakSpeed(npc.getBukkitEntity()));
         //Bukkit.broadcastMessage(hardnessOfBlock*currentProgress+"/"+hardnessOfBlock+"%");
@@ -46,7 +46,7 @@ public class BlockBreaker {
     }
 
     private void sendPacket(int stage) {
-        PacketHandler.blockDestruction(npc.getEntity().getEntityId(), getLocation(), stage).send();
+        Packets.blockDestruction(npc.getEntity().getEntityId(), getLocation(), stage).send();
     }
 
     private void playHitSound() {
