@@ -1,15 +1,15 @@
-package com.personoid.v1_19_R1;
+package com.personoid.personoid;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import com.personoid.api.npc.BlockBreaker;
-import com.personoid.api.npc.NPC;
-import com.personoid.api.npc.NPCInventory;
-import com.personoid.api.npc.Skin;
 import com.personoid.api.ai.NPCBrain;
 import com.personoid.api.ai.looking.LookController;
 import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
+import com.personoid.api.npc.BlockBreaker;
+import com.personoid.api.npc.NPC;
+import com.personoid.api.npc.NPCInventory;
+import com.personoid.api.npc.Skin;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.packets.Packets;
@@ -34,7 +34,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
-public class NPC_1_19_R1 extends ServerPlayer implements NPC {
+public class NPC_1_19_R2 extends ServerPlayer implements NPC {
     private final CraftPlayer cp;
 
     private final Navigation navigation = new Navigation(this);
@@ -52,7 +52,7 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
 
     private boolean sneaking;
 
-    public NPC_1_19_R1(MinecraftServer minecraftserver, ServerLevel worldserver, GameProfile gameprofile) {
+    public NPC_1_19_R2(MinecraftServer minecraftserver, ServerLevel worldserver, GameProfile gameprofile) {
         super(minecraftserver, worldserver, gameprofile, null); // needs signing now?!?!?
         setSkin(Skin.get("cvjk"));
         entityData.set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0xFF);

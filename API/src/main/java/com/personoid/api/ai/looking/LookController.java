@@ -56,4 +56,8 @@ public class LookController {
     public void setSmoothing(boolean smoothing) {
         this.smoothing = smoothing;
     }
+
+    public Location getFacing() {
+        return facing;
+    }
 }

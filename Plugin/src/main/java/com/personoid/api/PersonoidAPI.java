@@ -33,6 +33,7 @@ public class PersonoidAPI {
         return npcHandler = switch (Objects.requireNonNull(getVersion())) {
             case "v1_18_R2" -> new NPCHandler_1_18_R2();
             case "v1_19_R1" -> new NPCHandler_1_19_R1();
+            //case "v1_19_R2" -> new NPCHandler_1_19_R2();
             default -> null;
         };
     }

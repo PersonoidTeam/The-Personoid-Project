@@ -17,6 +17,7 @@ public class Packets {
         return switch (Objects.requireNonNull(getVersion())) {
             case "v1_18_R2" -> ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer) player).getHandle();
             case "v1_19_R1" -> ((org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer) player).getHandle();
+            //case "v1_19_R2" -> ((org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer) player).getHandle();
             default -> null;
         };
     }

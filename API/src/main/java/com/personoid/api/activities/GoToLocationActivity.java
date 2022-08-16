@@ -52,7 +52,8 @@ public class GoToLocationActivity extends Activity {
 
     @Override
     public boolean canStart(StartType startType) {
-        return !(location.distance(getNPC().getLocation()) <= options.getStoppingDistance());
+        //return location.distance(getNPC().getLocation()) > options.getStoppingDistance();
+        return true;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.personoid.v1_19_R1;
+package com.personoid.personoid;
 
 import com.mojang.authlib.GameProfile;
 import com.personoid.api.npc.NPC;
@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class NPCHandler_1_19_R1 implements NPCHandler {
+public class NPCHandler_1_19_R2 implements NPCHandler {
     private static final List<NPC> npcs = new ArrayList<>();
 
     @Override
@@ -31,7 +31,7 @@ public class NPCHandler_1_19_R1 implements NPCHandler {
         MinecraftServer server = ((CraftServer)Bukkit.getServer()).getServer();
         ServerLevel level = ((CraftWorld)world).getHandle();
         GameProfile profile = new GameProfile(UUID.randomUUID(), name);
-        NPC_1_19_R1 npc = new NPC_1_19_R1(server, level, profile);
+        NPC_1_19_R2 npc = new NPC_1_19_R2(server, level, profile);
         npc.connection = new ServerGamePacketListenerImpl(server, new Connection(PacketFlow.CLIENTBOUND), npc) {
             @Override
             public void send(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) { }
@@ -42,7 +42,7 @@ public class NPCHandler_1_19_R1 implements NPCHandler {
 
     @Override
     public void spawnNPC(NPC npc, Location location) {
-        NPC_1_19_R1 nmsNPC = (NPC_1_19_R1) npc;
+        NPC_1_19_R2 nmsNPC = (NPC_1_19_R2) npc;
         nmsNPC.setPos(location.getX(), location.getY(), location.getZ());
         Packets.addPlayer(nmsNPC.getEntity()).send();
         nmsNPC.getLevel().addNewPlayer(nmsNPC);
@@ -55,7 +55,7 @@ public class NPCHandler_1_19_R1 implements NPCHandler {
     }
 
     private void despawnNPC(NPC npc) {
-        NPC_1_19_R1 nmsNPC = (NPC_1_19_R1) npc;
+        NPC_1_19_R2 nmsNPC = (NPC_1_19_R2) npc;
         Packets.removePlayer(nmsNPC.getEntity()).send();
         npc.remove();
         nmsNPC.remove(Entity.RemovalReason.DISCARDED);
@@ -63,7 +63,7 @@ public class NPCHandler_1_19_R1 implements NPCHandler {
 
     public NPC getNPC(String name) {
         for (NPC npc : npcs) {
-            NPC_1_19_R1 nmsNPC = (NPC_1_19_R1) npc;
+            NPC_1_19_R2 nmsNPC = (NPC_1_19_R2) npc;
             if (nmsNPC.getName().getString().equalsIgnoreCase(name.trim())) {
                 return npc;
             }
