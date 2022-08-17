@@ -19,7 +19,7 @@ public class BreakBlockActivity extends Activity {
     }
 
     @Override
-    public void onStart(StartType startType) {
+    public void onStart(Activity.StartType startType) {
         getNPC().getLookController().face(block.getLocation());
         getNPC().getBlockBreaker().start(block);
     }

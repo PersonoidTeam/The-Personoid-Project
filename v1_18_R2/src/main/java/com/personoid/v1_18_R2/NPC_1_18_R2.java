@@ -11,8 +11,8 @@ import com.personoid.api.npc.NPC;
 import com.personoid.api.npc.NPCInventory;
 import com.personoid.api.npc.Skin;
 import com.personoid.api.utils.LocationUtils;
+import com.personoid.api.utils.packet.Packets;
 import com.personoid.api.utils.types.HandEnum;
-import com.personoid.packets.Packets;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.MinecraftServer;
@@ -60,11 +60,11 @@ public class NPC_1_18_R2 extends ServerPlayer implements NPC {
     }
 
     public void showToPlayers(Player... players) {
-        Packets.addPlayer(cp).send(players);
+Packets.addPlayer(cp).send(players);
     }
 
     public void hideToPlayers(Player... players) {
-Packets.removePlayer(cp).send(players);
+        Packets.removePlayer(cp).send(players);
     }
 
     @Override

@@ -3,7 +3,7 @@ package com.personoid.v1_18_R2;
 import com.mojang.authlib.GameProfile;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.npc.NPCHandler;
-import com.personoid.packets.Packets;
+import com.personoid.api.utils.packet.Packets;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import net.minecraft.network.Connection;

@@ -1,4 +1,4 @@
-package com.personoid.packets;
+package com.personoid.api.utils.packet;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.*;
@@ -16,7 +16,7 @@ public class Packets {
     private static ServerPlayer getServerPlayer(Player player) {
         return switch (Objects.requireNonNull(getVersion()).split("_R")[0]) {
             case "v1_18" -> ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer) player).getHandle();
-            case "v1_19" -> ((org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer) player).getHandle();
+            case "v1_19" -> ((org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer) player).getHandle();
             default -> null;
         };
     }

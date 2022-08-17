@@ -3,7 +3,7 @@ package com.personoid.v1_19_R1;
 import com.mojang.authlib.GameProfile;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.npc.NPCHandler;
-import com.personoid.packets.Packets;
+import com.personoid.api.utils.packet.Packets;
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.protocol.Packet;
