@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 import java.util.Objects;
@@ -17,6 +18,14 @@ public class Packets {
         return switch (Objects.requireNonNull(getVersion()).split("_R")[0]) {
             case "v1_18" -> ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer) player).getHandle();
             case "v1_19" -> ((org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer) player).getHandle();
+            default -> null;
+        };
+    }
+
+    private static net.minecraft.world.entity.Entity getEntity(Entity entity) {
+        return switch (Objects.requireNonNull(getVersion()).split("_R")[0]) {
+            case "v1_18" -> ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftEntity) entity).getHandle();
+            case "v1_19" -> ((org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity) entity).getHandle();
             default -> null;
         };
     }
@@ -79,6 +88,21 @@ public class Packets {
             public void send(Player to) {
                 ServerGamePacketListenerImpl conn = getServerPlayer(to).connection;
                 conn.send(packet);
+            }
+        };
+    }
+
+    public static Packet rotateEntity(Entity entity, float yaw, float pitch) {
+        byte yawByte = (byte) ((yaw % 360) * 256 / 360);
+        byte pitchByte = (byte) ((pitch % 360) * 256 / 360);
+        ClientboundRotateHeadPacket rotateHead = new ClientboundRotateHeadPacket(getEntity(entity), yawByte);
+        ClientboundMoveEntityPacket.Rot rotateEntity = new ClientboundMoveEntityPacket.Rot(entity.getEntityId(), yawByte, pitchByte, false);
+        return new Packet() {
+            @Override
+            public void send(Player to) {
+                ServerGamePacketListenerImpl conn = getServerPlayer(to).connection;
+                conn.send(rotateHead);
+                //conn.send(rotateEntity);
             }
         };
     }

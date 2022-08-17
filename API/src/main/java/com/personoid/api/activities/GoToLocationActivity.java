@@ -4,6 +4,7 @@ import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.Result;
+import com.personoid.api.utils.debug.Profiler;
 import org.bukkit.Location;
 
 public class GoToLocationActivity extends Activity {
@@ -28,7 +29,7 @@ public class GoToLocationActivity extends Activity {
 
     @Override
     public void onStart(StartType startType) {
-        //Bukkit.broadcastMessage("Target: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
+        Profiler.ACTIVITIES.push("going to location: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
         getNPC().getNavigation().moveTo(location, movementType);
         if (options.canFaceLocation()) getNPC().getLookController().face(location);
         wasFaceSmoothing = getNPC().getLookController().isSmoothing();
@@ -46,7 +47,7 @@ public class GoToLocationActivity extends Activity {
     @Override
     public void onStop(StopType stopType) {
         //getActiveNPC().getNavigation().setTarget(null);
-        getNPC().getLookController().forget();
+        if (options.canFaceLocation()) getNPC().getLookController().forget();
         getNPC().getLookController().setSmoothing(wasFaceSmoothing);
     }
 

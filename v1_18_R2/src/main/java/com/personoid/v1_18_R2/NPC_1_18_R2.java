@@ -244,6 +244,21 @@ Packets.addPlayer(cp).send(players);
     }
 
     @Override
+    public float getXRotation() {
+        return super.getXRot();
+    }
+
+    @Override
+    public void setXRotation(float yRot) {
+        super.setYRot(yRot);
+    }
+
+    @Override
+    public void setRotation(float yaw, float pitch) {
+        super.setRot(yaw, pitch);
+    }
+
+    @Override
     public void push(Entity entity) {
         // FIXME: direction is always the same
         if (!this.isPassengerOfSameVehicle(entity) && !entity.noPhysics && !this.noPhysics) {

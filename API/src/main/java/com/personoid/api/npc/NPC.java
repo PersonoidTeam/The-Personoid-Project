@@ -38,6 +38,9 @@ public interface NPC {
 
     void setYRotation(float yRot);
     float getYRotation();
+    void setXRotation(float xRot);
+    float getXRotation();
+    void setRotation(float xRot, float yRot);
     void swingHand(HandEnum hand);
     void setSkin(Skin skin);
 }

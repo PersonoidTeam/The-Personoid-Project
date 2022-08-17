@@ -1,7 +1,7 @@
 package com.personoid.api.ai.looking;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.utils.math.MathUtils;
+import com.personoid.api.utils.packet.Packets;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
@@ -10,6 +10,7 @@ public class LookController {
     private final NPC npc;
     private Location facing;
     private boolean smoothing;
+
 
     public LookController(NPC npc) {
         this.npc = npc;
@@ -22,13 +23,12 @@ public class LookController {
     }
 
     private void tickFacing() {
-        try {
-            Vector dir = facing.toVector().subtract(npc.getLocation().toVector()).normalize();
-            Location facing = npc.getLocation().setDirection(dir);
-            npc.getEntity().teleport(facing);
-            //PacketUtils.send(new ClientboundRotateHeadPacket(npc.getBukkitEntity().getHandle(), (byte) (facing.getYaw() * 256 / 360)));
-            npc.setYRotation(smoothing ? MathUtils.lerpRotation(npc.getYRotation(), facing.getYaw(), 10F) : facing.getYaw());
-        } catch (Exception ignored) { }
+        Vector dir = facing.clone().subtract(npc.getLocation().clone()).toVector();
+        Location facing = npc.getLocation().clone().setDirection(dir);
+        //facing.setYaw(smoothing ? MathUtils.lerpRotation(npc.getLocation().getYaw(), facing.getYaw(), 10F) : facing.getYaw());
+        //facing.setPitch(smoothing ? MathUtils.lerpRotation(npc.getLocation().getPitch(), facing.getPitch(), 10F) : facing.getPitch());
+        Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
+        npc.setRotation(facing.getYaw(), facing.getPitch());
     }
 
     public void face(Entity entity) {

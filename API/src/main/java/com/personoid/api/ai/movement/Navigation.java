@@ -5,6 +5,7 @@ import com.personoid.api.pathfinding.Node;
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.Pathfinder;
 import com.personoid.api.pathfinding.astar.AstarPathfinder;
+import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.BlockTags;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.math.MathUtils;
@@ -35,6 +36,7 @@ public class Navigation {
             Vector nextNPCPos = path.getNextNPCPos(npc);
             if (tempNPCPos.getY() > nextNPCPos.getY() && !npc.onGround() && Math.floor(tempNPCPos.getX()) == Math.floor(nextNPCPos.getX()) &&
                     Math.floor(tempNPCPos.getZ()) == Math.floor(nextNPCPos.getZ())) {
+                Profiler.NAVIGATION.push("advancing to next node 1");
                 path.advance();
             }
         }
@@ -59,6 +61,7 @@ public class Navigation {
             }
             if (count == 0) {
                 npc.getMoveController().jump();
+                Profiler.NAVIGATION.push("jumped (sprint jumping)");
             }
         }
 
@@ -68,10 +71,15 @@ public class Navigation {
             if (npc.onGround()) {
                 if (blockDown.getType().name().contains("STAIRS")) {
                     npc.getMoveController().step(((nextNPCPos.getY() - npc.getYPos()) / 2) * 1.2F); // move up to half stair height
+                    Profiler.NAVIGATION.push("stepping on stairs");
                 } else if (BlockTags.CLIMBABLE.is(blockDown.getType())) {
                     npc.getMoveController().step(0.2F);
+                    Profiler.NAVIGATION.push("climbing");
                 } else if (path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 1).getY() > npc.getYPos() + options.getMaxStepHeight()) {
-                    if (npc.getGroundTicks() >= 4) npc.getMoveController().jump();
+                    if (npc.getGroundTicks() >= 4) {
+                        npc.getMoveController().jump();
+                        Profiler.NAVIGATION.push("jumped");
+                    }
                 }
             }
         } else {
@@ -99,6 +107,7 @@ public class Navigation {
         Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         // FIXME: async leads to errors (concurrent modification exception) -> should be fast enough or synchronous running anyway
         path = pathfinder.getPath(npcGroundLoc, groundLoc);
+        Profiler.NAVIGATION.push("found path, length: " + path.size());
     }
 
     private void followPath() {
@@ -109,8 +118,9 @@ public class Navigation {
         double x = Math.abs(npc.getXPos() - blockPos.getX() + 0.5);
         double y = Math.abs(npc.getYPos() - blockPos.getY());
         double z = Math.abs(npc.getZPos() - blockPos.getZ() + 0.5);
-        boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < maxDistToWaypoint); //y < 1D
+        boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < 1D); //y < 1D
         if (withinMaxDist || (canCutCorner(block.getType()) && shouldTargetNextNode(tempNPCPos))) {
+            Profiler.NAVIGATION.push("advancing to next node 2");
             this.path.advance();
         }
         //doStuckDetection(tempNPCPos);
@@ -128,6 +138,7 @@ public class Navigation {
         Vector nextCenter = LocationUtils.atBottomCenterOf(path.getNodePos(path.getNextNodeIndex() + 1));
         Vector nextNodeDiff = nextCenter.subtract(center);
         Vector tempPosDiff = tempNPCPos.subtract(center);
+        Profiler.NAVIGATION.push("shouldTargetNextNode: " + (nextNodeDiff.clone().dot(tempPosDiff) > 0));
         return nextNodeDiff.dot(tempPosDiff) > 0;
     }
 
@@ -136,6 +147,7 @@ public class Navigation {
     }
 
     private boolean canUpdatePath() {
+        Profiler.NAVIGATION.push("can update path: " + npc.onGround());
         return (npc.onGround()); // TODO: or if in liquid
     }
 
