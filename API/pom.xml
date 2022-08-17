@@ -76,11 +76,5 @@
             <version>23.0.0</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.personoid</groupId>
-            <artifactId>packets</artifactId>
-            <version>1.0.0</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 </project>

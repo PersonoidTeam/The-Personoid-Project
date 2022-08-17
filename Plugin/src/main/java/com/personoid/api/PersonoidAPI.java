@@ -30,10 +30,9 @@ public class PersonoidAPI {
 
     public static NPCHandler getRegistry() {
         if (npcHandler != null) return npcHandler;
-        return npcHandler = switch (Objects.requireNonNull(getVersion())) {
-            case "v1_18_R2" -> new NPCHandler_1_18_R2();
-            case "v1_19_R1" -> new NPCHandler_1_19_R1();
-            //case "v1_19_R2" -> new NPCHandler_1_19_R2();
+        return npcHandler = switch (Objects.requireNonNull(getVersion()).split("_R")[0]) {
+            case "v1_18" -> new NPCHandler_1_18_R2();
+            case "v1_19" -> new NPCHandler_1_19_R1();
             default -> null;
         };
     }

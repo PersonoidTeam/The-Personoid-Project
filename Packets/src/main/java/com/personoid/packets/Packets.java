@@ -14,10 +14,9 @@ public class Packets {
     private static String version;
 
     private static ServerPlayer getServerPlayer(Player player) {
-        return switch (Objects.requireNonNull(getVersion())) {
-            case "v1_18_R2" -> ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer) player).getHandle();
-            case "v1_19_R1" -> ((org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer) player).getHandle();
-            //case "v1_19_R2" -> ((org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer) player).getHandle();
+        return switch (Objects.requireNonNull(getVersion()).split("_R")[0]) {
+            case "v1_18" -> ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer) player).getHandle();
+            case "v1_19" -> ((org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer) player).getHandle();
             default -> null;
         };
     }

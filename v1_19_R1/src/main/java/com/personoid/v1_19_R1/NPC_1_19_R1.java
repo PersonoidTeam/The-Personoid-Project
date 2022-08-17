@@ -2,14 +2,14 @@ package com.personoid.v1_19_R1;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import com.personoid.api.npc.BlockBreaker;
-import com.personoid.api.npc.NPC;
-import com.personoid.api.npc.NPCInventory;
-import com.personoid.api.npc.Skin;
 import com.personoid.api.ai.NPCBrain;
 import com.personoid.api.ai.looking.LookController;
 import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
+import com.personoid.api.npc.BlockBreaker;
+import com.personoid.api.npc.NPC;
+import com.personoid.api.npc.NPCInventory;
+import com.personoid.api.npc.Skin;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.packets.Packets;
