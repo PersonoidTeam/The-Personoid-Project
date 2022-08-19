@@ -3,3 +3,8 @@ version: '${project.version}'
 main: com.personoid.PersonoidPlugin
 authors: [ DefineDoddy, notnotnotswipez ]
 description: A plugin that allows easy access to creating and modifying NPCs
+commands:
+  personoid:
+    description: Accesses Personoid's configurations
+    usage: /personoid <sub-command>
+    permission: personoid.*
