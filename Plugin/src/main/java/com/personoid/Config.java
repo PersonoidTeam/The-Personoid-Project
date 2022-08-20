@@ -8,12 +8,8 @@ public class Config {
     private static final JavaPlugin plugin = PersonoidPlugin.getPlugin(PersonoidPlugin.class);
     private static boolean autoReload;
 
-    static {
-        reload();
-    }
-
     public static void reset() {
-        autoReload = true;
+        autoReload = false;
     }
 
     public static boolean doesConfigExist() {

@@ -4,6 +4,7 @@ import com.personoid.api.PersonoidAPI;
 import com.personoid.api.npc.NPCHandler;
 import com.personoid.api.utils.bukkit.Logger;
 import com.personoid.api.utils.bukkit.Task;
+import com.personoid.commands.CommandManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,6 +20,9 @@ public class PersonoidPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         LOGGER.info("Successfully loaded Personoid plugin.");
+        getCommand("personoid").setExecutor(new CommandManager());
+        CommandManager.registerCommands();
+        Config.reload();
         initReloader();
     }
 
@@ -35,10 +39,10 @@ public class PersonoidPlugin extends JavaPlugin {
         File file = new File("plugins/Personoid-1.0.0.jar");
         long lastModified = file.lastModified();
         new Task(() -> {
-            if (file.lastModified() != lastModified) {
+            if (file.lastModified() != lastModified && Config.isAutoReload()) {
                 Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "[Personoid] " + ChatColor.GREEN + "Plugin modified, reloading...");
                 Bukkit.reload();
             }
-        }, this).async().repeat(0, 20);
+        }, this).repeat(0, 20);
     }
 }
