@@ -94,7 +94,7 @@ public class MoveController {
     }
 
     public Vector getVelocity() {
-        return velocity;
+        return velocity.clone();
     }
 
     public Vector getOldVelocity() {

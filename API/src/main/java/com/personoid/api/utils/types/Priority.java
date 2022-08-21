@@ -19,7 +19,7 @@ public enum Priority {
     }
 
     public boolean isHigherThan(Priority priority){
-        return priority.getValue() < getValue();
+        return getValue() > priority.getValue();
     }
 
     public Priority value(float value) {

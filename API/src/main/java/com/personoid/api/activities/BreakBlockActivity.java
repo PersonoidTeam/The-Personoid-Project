@@ -20,7 +20,6 @@ public class BreakBlockActivity extends Activity {
 
     @Override
     public void onStart(Activity.StartType startType) {
-        getNPC().getLookController().face(block.getLocation());
         getNPC().getBlockBreaker().start(block);
     }
 
@@ -39,7 +38,6 @@ public class BreakBlockActivity extends Activity {
 
     @Override
     public void onStop(StopType stopType) {
-        getNPC().getLookController().forget();
         if (stopType == StopType.FAILURE) {
             getNPC().getBlockBreaker().stop();
         }

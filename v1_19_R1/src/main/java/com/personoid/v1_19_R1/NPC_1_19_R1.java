@@ -51,6 +51,7 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
     private int groundTicks;
 
     private boolean sneaking;
+    private double lastYIncrease;
 
     public NPC_1_19_R1(MinecraftServer minecraftserver, ServerLevel worldserver, GameProfile gameprofile) {
         super(minecraftserver, worldserver, gameprofile, null); // needs signing now?!?!?
@@ -91,6 +92,10 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
         super.tick();
         if (!isAlive()) return;
         aliveTicks++;
+
+        if (aliveTicks == 1) {
+            lastYIncrease = getY();
+        }
 
         if (hurtTime > 0) --hurtTime;
 
@@ -195,11 +200,11 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
     }
 
     private void fallDamageCheck() {
-        // TODO: make more accurate
-        if (onGround() && moveController.wasFalling()) {
-            float damage = Math.round(Math.pow(0.25, moveController.getOldVelocity().getY()));
-            hurt(DamageSource.FALL, damage);
+        if (onGround()) {
+            float damage = (float) (lastYIncrease - getY() - 3F);
+            if (damage > 0D) hurt(DamageSource.FALL, damage);
         }
+        if (getMoveController().getVelocity().getY() > 0D) lastYIncrease = getY();
     }
 
     public void sendMessage(String message) {

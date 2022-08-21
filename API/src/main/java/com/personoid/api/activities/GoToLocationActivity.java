@@ -2,16 +2,17 @@ package com.personoid.api.activities;
 
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
+import com.personoid.api.ai.looking.Target;
 import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
+import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
     private final MovementType movementType;
     private final Options options;
-    private boolean wasFaceSmoothing;
 
     public GoToLocationActivity(Location location, MovementType movementType) {
         super(ActivityType.LOCATION);
@@ -29,26 +30,28 @@ public class GoToLocationActivity extends Activity {
 
     @Override
     public void onStart(StartType startType) {
+        if (finishCheck()) return;
         Profiler.ACTIVITIES.push("going to location: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
         getNPC().getNavigation().moveTo(location, movementType);
-        if (options.canFaceLocation()) getNPC().getLookController().face(location);
-        wasFaceSmoothing = getNPC().getLookController().isSmoothing();
-        getNPC().getLookController().setSmoothing(options.isFaceSmoothing());
+        if (options.canFaceLocation()) getNPC().getLookController().addTarget("travel_location", new Target(location, Priority.NORMAL));
     }
 
     @Override
     public void onUpdate() {
-        getNPC().getLookController().face(location);
+        finishCheck();
+    }
+
+    private boolean finishCheck() {
         if (location.distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
             markAsFinished(new Result<>(Result.Type.SUCCESS));
+            return true;
         }
+        return false;
     }
 
     @Override
     public void onStop(StopType stopType) {
-        //getActiveNPC().getNavigation().setTarget(null);
-        if (options.canFaceLocation()) getNPC().getLookController().forget();
-        getNPC().getLookController().setSmoothing(wasFaceSmoothing);
+        if (options.canFaceLocation()) getNPC().getLookController().removeTarget("travel_location");
     }
 
     @Override
@@ -65,7 +68,6 @@ public class GoToLocationActivity extends Activity {
     public static class Options {
         public double stoppingDistance;
         public boolean faceLocation = true;
-        public boolean faceSmoothing = true;
 
         public Options() {
 
@@ -85,14 +87,6 @@ public class GoToLocationActivity extends Activity {
 
         public void setFaceLocation(boolean faceLocation) {
             this.faceLocation = faceLocation;
-        }
-
-        public boolean isFaceSmoothing() {
-            return faceSmoothing;
-        }
-
-        public void setFaceSmoothing(boolean faceSmoothing) {
-            this.faceSmoothing = faceSmoothing;
         }
     }
 }

@@ -1,8 +1,10 @@
 package com.personoid.api.npc;
 
+import com.personoid.api.ai.looking.Target;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.packet.Packets;
 import com.personoid.api.utils.types.HandEnum;
+import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
 import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
@@ -16,7 +18,6 @@ public class BlockBreaker {
     private float hardnessOfBlock;
     private boolean canTick;
     private int tick;
-    private Location lastLookLoc;
 
     public BlockBreaker(NPC npc) {
         this.npc = npc;
@@ -42,8 +43,7 @@ public class BlockBreaker {
         this.block = block;
         this.data = block.getBlockData();
         hardnessOfBlock = block.getType().getHardness();
-        lastLookLoc = npc.getLookController().getFacing();
-        npc.getLookController().face(block.getLocation().clone().add(0.5, 0.5, 0.5));
+        npc.getLookController().addTarget("block_breaker_block", new Target(block, Priority.HIGHEST));
         tick = 0;
         currentProgress = 0;
         canTick = true;
@@ -64,7 +64,6 @@ public class BlockBreaker {
 
     public void stop() {
         canTick = false;
-        npc.getLookController().face(lastLookLoc);
         if (block != null) sendPacket(10);
     }
 

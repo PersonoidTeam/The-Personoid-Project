@@ -2,62 +2,70 @@ package com.personoid.api.ai.looking;
 
 import com.personoid.api.npc.NPC;
 import com.personoid.api.utils.packet.Packets;
+import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
-import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class LookController {
     private final NPC npc;
-    private Location facing;
-    private boolean smoothing;
-
+    private final Map<String, Target> targets = new HashMap<>();
+    private boolean canLookInDefaultDirection = true;
 
     public LookController(NPC npc) {
         this.npc = npc;
     }
 
     public void tick() {
-        if (facing != null) {
-            tickFacing();
+        if (canLookInDefaultDirection && !targets.containsKey("default")) {
+            Vector vel = npc.getMoveController().getVelocity();
+            Location defaultTarget = npc.getLocation().clone().add(vel.multiply(5));
+            if (vel.getX() > 0.01 || vel.getZ() > 0.01) targets.put("default", new Target(defaultTarget, Priority.LOWEST));
         }
-    }
-
-    private void tickFacing() {
-        Vector dir = facing.clone().subtract(npc.getLocation().clone()).toVector();
+        if (targets.isEmpty()) return;
+        Vector dir = getHighestPriorityTarget().getLocation().clone().subtract(npc.getLocation().clone()).toVector();
         Location facing = npc.getLocation().clone().setDirection(dir);
-        //facing.setYaw(smoothing ? MathUtils.lerpRotation(npc.getLocation().getYaw(), facing.getYaw(), 10F) : facing.getYaw());
-        //facing.setPitch(smoothing ? MathUtils.lerpRotation(npc.getLocation().getPitch(), facing.getPitch(), 10F) : facing.getPitch());
         Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
         npc.setRotation(facing.getYaw(), facing.getPitch());
     }
 
-    public void face(Entity entity) {
-        facing = entity.getLocation();
+    public Target getHighestPriorityTarget() {
+        Target highest = null;
+        for (Target target : targets.values()) {
+            if (highest == null || target.getPriority().getValue() > highest.getPriority().getValue()) {
+                highest = target;
+            }
+        }
+        return highest;
     }
 
-    public void face(Location location) {
-        facing = location;
+    public boolean hasTarget(String identifier) {
+        return targets.containsKey(identifier);
     }
 
-    public void reset() {
-        facing = npc.getLocation().add(npc.getLocation().getDirection().multiply(2));
-        tickFacing();
-        forget();
+    public boolean addTarget(String identifier, Target target) {
+        if (targets.containsKey(identifier)) return false;
+        this.targets.put(identifier, target);
+        return true;
     }
 
-    public void forget() {
-        facing = null;
+    public boolean removeTarget(String identifier) {
+        if (!targets.containsKey(identifier)) return false;
+        this.targets.remove(identifier);
+        return true;
     }
 
-    public boolean isSmoothing() {
-        return smoothing;
+    public void purgeTargets() {
+        this.targets.clear();
     }
 
-    public void setSmoothing(boolean smoothing) {
-        this.smoothing = smoothing;
+    public void setCanLookInDefaultDirection(boolean value) {
+        this.canLookInDefaultDirection = value;
     }
 
-    public Location getFacing() {
-        return facing;
+    public Map<String, Target> getTargets() {
+        return targets;
     }
 }

@@ -51,6 +51,7 @@ public class ActivityManager {
                 current.setPaused(true);
                 paused.add(current);
             } else {
+                queueIfEmpty();
                 current.internalUpdate();
                 current.onUpdate();
             }
@@ -98,7 +99,10 @@ public class ActivityManager {
     private void queueIfEmpty() {
         if (queue.isEmpty()) {
             Activity chosen = chooseViaPriority();
-            if (chosen != null) queueActivity(chosen);
+            if (chosen != null) {
+                queueActivity(chosen);
+                Profiler.ACTIVITIES.push("Queued activity: " + chosen.getClass().getSimpleName());
+            }
         }
     }
 
@@ -112,7 +116,7 @@ public class ActivityManager {
 
     private Activity chooseViaPriority() {
         Set<Activity> canStart = new HashSet<>();
-        // Get all goals that can activate.
+        // get all activities that can start.
         for (Activity activity : registered){
             if (boredTasks.containsKey(activity)) continue;
             if (current != null){
