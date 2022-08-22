@@ -20,24 +20,18 @@ public class AstarPathfinder extends Pathfinder {
         long nsStart = System.nanoTime();
         Node best = null;
 
-        while (context.getCheckedNodes().size() < options.getMaxNodeTests() && context.getUncheckedNodes().size() > 0) {
-            best = context.getUncheckedNodes().get(0);
-            for (Node node : context.getUncheckedNodes()) {
-                if (node.getEstimatedFinalExpense() < best.getEstimatedFinalExpense()) {
-                    best = node;
-                }
-            }
-            if (best.getEstimatedExpenseLeft() < 1) {
+        while (context.getClosedSet().size() < options.getMaxNodeTests() && context.getOpenSet().size() > 0) {
+            best = context.getOpenSet().poll();
+            if (best.getExpenseLeft() < 1) {
                 pathFound = true;
                 context.setEndNode(best);
-                Profiler.PATHFINDING.push("Unchecked: " + context.getUncheckedNodes().size() + ", Checked: " +
-                        context.getCheckedNodes().size() + ", Expense: " + MathUtils.round(best.getExpense(), 2) +
-                        ", Final Expense: " + MathUtils.round(best.getEstimatedFinalExpense(), 2));
+                Profiler.PATHFINDING.push("Unchecked: " + context.getOpenSet().size() + ", Checked: " +
+                        context.getClosedSet().size() + ", Expense: " + MathUtils.round(best.getExpense(), 2) +
+                        ", Final Expense: " + MathUtils.round(best.getFinalExpense(), 2));
                 break;
             }
             best.getReachableLocations();
-            context.getUncheckedNodes().remove(best);
-            context.getCheckedNodes().add(best);
+            context.getClosedSet().add(best);
         }
 
         if (options.canUseChunking() && best != null) context.setEndNode(best);

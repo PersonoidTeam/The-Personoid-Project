@@ -3,14 +3,16 @@ package com.personoid.api.pathfinding;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.types.BlockTags;
 import org.bukkit.Location;
+import org.jetbrains.annotations.NotNull;
 
-public class Node {
+public class Node implements Comparable<Node> {
     final PathingContext context;
     final Location location;
     int x, y, z;
     Node origin;
     double expense;
-    double estimatedExpenseLeft = -1;
+    double expenseLeft = -1;
+    int heapIndex;
 
     public Node(Location loc, double expense, Node origin, PathingContext context) {
         location = loc;
@@ -26,9 +28,9 @@ public class Node {
         return location;
     }
 
-    public double getEstimatedFinalExpense() {
-        if (estimatedExpenseLeft == -1) estimatedExpenseLeft = LocationUtils.euclideanDistance(location, context.getEndLocation());
-        return expense + 1.1 * estimatedExpenseLeft;
+    public double getFinalExpense() {
+        if (expenseLeft == -1) expenseLeft = LocationUtils.euclideanDistance(location, context.getEndLocation());
+        return expense + 1.1 * expenseLeft;
     }
 
     public void getReachableLocations() {
@@ -97,7 +99,7 @@ public class Node {
         if (node.origin == null && node != context.getStartNode()) { // new node
             node.expense = expenseThere;
             node.origin = this;
-            context.getUncheckedNodes().add(node);
+            context.getOpenSet().add(node);
             return;
         }
         if (node.expense > expenseThere) {
@@ -134,7 +136,22 @@ public class Node {
         return expense;
     }
 
-    public double getEstimatedExpenseLeft() {
-        return estimatedExpenseLeft;
+    public double getExpenseLeft() {
+        return expenseLeft;
+    }
+
+    public int getHeapIndex() {
+        return heapIndex;
+    }
+
+    public void setHeapIndex(int heapIndex) {
+        this.heapIndex = heapIndex;
+    }
+
+    @Override
+    public int compareTo(@NotNull Node other) {
+        int compare = Double.compare(getFinalExpense(), other.getFinalExpense());
+        if (compare == 0) compare = Double.compare(getExpense(), other.getExpense());
+        return -compare;
     }
 }

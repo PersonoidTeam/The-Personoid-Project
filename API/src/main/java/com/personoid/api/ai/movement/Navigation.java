@@ -5,10 +5,10 @@ import com.personoid.api.pathfinding.Node;
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.Pathfinder;
 import com.personoid.api.pathfinding.astar.AstarPathfinder;
-import com.personoid.api.utils.debug.Profiler;
-import com.personoid.api.utils.types.BlockTags;
 import com.personoid.api.utils.LocationUtils;
+import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.math.MathUtils;
+import com.personoid.api.utils.types.BlockTags;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -107,7 +107,7 @@ public class Navigation {
         Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         // FIXME: async leads to errors (concurrent modification exception) -> should be fast enough or synchronous running anyway
         path = pathfinder.getPath(npcGroundLoc, groundLoc);
-        Profiler.NAVIGATION.push("found path, length: " + path.size());
+        if (path != null) Profiler.NAVIGATION.push("found path, length: " + path.size());
     }
 
     private void followPath() {

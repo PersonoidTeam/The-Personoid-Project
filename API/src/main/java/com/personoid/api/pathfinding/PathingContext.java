@@ -2,21 +2,21 @@ package com.personoid.api.pathfinding;
 
 import org.bukkit.Location;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PathingContext {
     private final Node startNode;
     private Node endNode;
-    private final List<Node> checkedNodes = new ArrayList<>();
-    private final List<Node> uncheckedNodes = new ArrayList<>();
+    private final Set<Node> closedSet = new HashSet<>();
+    private final OpenSetHeap openSet = new OpenSetHeap(1024);
     private final Pathfinder.Options options;
 
     public PathingContext(Location startLocation, Location endLocation, Pathfinder.Options options) {
         this.startNode = new Node(startLocation, 0, null, this);
         this.endNode = new Node(endLocation, 0, null, this);
         this.options = options;
-        uncheckedNodes.add(startNode);
+        openSet.add(startNode);
     }
 
     public Location getStartLocation() {
@@ -39,12 +39,12 @@ public class PathingContext {
         this.endNode = endNode;
     }
 
-    public List<Node> getCheckedNodes() {
-        return checkedNodes;
+    public Set<Node> getClosedSet() {
+        return closedSet;
     }
 
-    public List<Node> getUncheckedNodes() {
-        return uncheckedNodes;
+    public OpenSetHeap getOpenSet() {
+        return openSet;
     }
 
     public Pathfinder.Options getOptions() {
@@ -52,7 +52,7 @@ public class PathingContext {
     }
 
     public Node getNode(Location location) {
-        for (Node node : checkedNodes) {
+        for (Node node : closedSet) {
             if (node.getX() == location.getBlockX() && node.getY() == location.getBlockY() && node.getZ() == location.getBlockZ()) {
                 return node;
             }
