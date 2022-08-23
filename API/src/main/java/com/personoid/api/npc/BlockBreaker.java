@@ -64,6 +64,7 @@ public class BlockBreaker {
 
     public void stop() {
         canTick = false;
+        npc.getLookController().removeTarget("block_breaker_block");
         if (block != null) sendPacket(10);
     }
 

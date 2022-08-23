@@ -46,7 +46,7 @@ public class Target {
         return switch (type) {
             case LOCATION -> location;
             case ENTITY -> entity.getLocation();
-            case BLOCK -> block.getLocation().clone().add(0.5, 0.5, 0.5);
+            case BLOCK -> block.getLocation().clone().add(0.5, -0.5, 0.5);
         };
     }
 

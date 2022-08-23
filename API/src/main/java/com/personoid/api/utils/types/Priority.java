@@ -22,9 +22,13 @@ public enum Priority {
         return getValue() > priority.getValue();
     }
 
-    public Priority value(float value) {
+    public Priority setValue(float value) {
         this.value = value;
         if (this != CUSTOM) throw new RuntimeException("Cannot change priority value of a non-custom priority");
         return this;
+    }
+
+    public boolean equals(Priority priority) {
+        return getValue() == priority.getValue();
     }
 }

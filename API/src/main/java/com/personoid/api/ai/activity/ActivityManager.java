@@ -2,6 +2,8 @@ package com.personoid.api.ai.activity;
 
 import com.personoid.api.npc.NPC;
 import com.personoid.api.utils.debug.Profiler;
+import com.personoid.api.utils.math.MathUtils;
+import com.personoid.api.utils.types.Priority;
 
 import java.util.*;
 
@@ -46,10 +48,12 @@ public class ActivityManager {
             if (current.isFinished()) {
                 current = null;
             } else if (!queue.isEmpty() && queue.peek().getPriority().isHigherThan(current.getPriority()) && current.canStop(Activity.StopType.PAUSE)) {
+                Profiler.ACTIVITIES.push("Pausing " + current.getClass().getSimpleName() + " to start " + queue.peek().getClass().getSimpleName());
                 current.internalStop(Activity.StopType.PAUSE);
                 current.onStop(Activity.StopType.PAUSE);
                 current.setPaused(true);
                 paused.add(current);
+                current = null;
             } else {
                 queueIfEmpty();
                 current.internalUpdate();
@@ -66,7 +70,7 @@ public class ActivityManager {
                 activity.register(this);
                 if (higherThanNext && activity.canStart(Activity.StartType.RESUME)) {
                     startActivity(activity, Activity.StartType.RESUME);
-                    Profiler.ACTIVITIES.push("attempt start paused true");
+                    Profiler.ACTIVITIES.push("Restarted paused activity");
                     return;
                 }
             }
@@ -98,11 +102,21 @@ public class ActivityManager {
 
     private void queueIfEmpty() {
         if (queue.isEmpty()) {
+            Profiler.ACTIVITIES.push("Choosing new activity to queue");
             Activity chosen = chooseViaPriority();
             if (chosen != null) {
                 queueActivity(chosen);
                 Profiler.ACTIVITIES.push("Queued activity: " + chosen.getClass().getSimpleName());
             }
+        } else {
+            StringBuilder queueString = new StringBuilder();
+            for (int i = 0; i < queue.size(); i++) {
+                queueString.append(queue.peek().getClass().getSimpleName());
+                if (i < queue.size() - 1) {
+                    queueString.append(", ");
+                }
+            }
+            Profiler.ACTIVITIES.push("Activities already in queue: " + queueString);
         }
     }
 
@@ -117,37 +131,45 @@ public class ActivityManager {
     private Activity chooseViaPriority() {
         Set<Activity> canStart = new HashSet<>();
         // get all activities that can start.
-        for (Activity activity : registered){
+        for (Activity activity : registered) {
+            Profiler.ACTIVITIES.push("Looping through activity: " + activity.getClass().getSimpleName());
             if (boredTasks.containsKey(activity)) continue;
-            if (current != null){
-                if (!activity.getPriority().isHigherThan(current.getPriority()) || activity.getPriority() != current.getPriority()){
+            if (current != null) {
+                if (!activity.getPriority().isHigherThan(current.getPriority())) {
                     continue;
                 }
             }
             activity.register(this);
-            if (activity.canStart(Activity.StartType.START)){
-                Profiler.ACTIVITIES.push("can start " + activity.getClass().getSimpleName());
+            if (activity.canStart(Activity.StartType.START)) {
+                Profiler.ACTIVITIES.push("Can start " + activity.getClass().getSimpleName());
                 canStart.add(activity);
             }
         }
-        Activity highest = null;
-        for (Activity activity : canStart){
-            if (highest == null || activity.getPriority().isHigherThan(highest.getPriority())){
-                highest = activity;
+        Priority highestPriority = Priority.LOWEST;
+        List<Activity> highest = new ArrayList<>();
+        for (Activity activity : canStart) {
+            if (activity.getPriority().equals(highestPriority)) {
+                highest.add(activity);
+            }
+            if (activity.getPriority().isHigherThan(highestPriority)) {
+                highest.clear();
+                highestPriority = activity.getPriority();
+                highest.add(activity);
             }
         }
-        if (highest != null) {
-            Profiler.ACTIVITIES.push("highest priority activity " + highest.getClass().getSimpleName());
-            if (current != null) {
-                if (highest.getPriority() == current.getPriority()) {
-                    if (new Random().nextBoolean()){
-                        Profiler.ACTIVITIES.push("select activity random " + highest.getClass().getSimpleName());
-                        return highest;
-                    }
-                }
-            } else {
-                Profiler.ACTIVITIES.push("select activity " + highest.getClass().getSimpleName());
-                return highest;
+        if (!highest.isEmpty()) {
+            Profiler.ACTIVITIES.push("All possible activities count: "+highest.size());
+            for (Activity activity : highest){
+                Profiler.ACTIVITIES.push("Potential Activity: "+activity.getClass().getSimpleName());
+            }
+            if (highest.size() > 1) {
+                Activity chosen = highest.get(MathUtils.random(0, highest.size() - 1));
+                Profiler.ACTIVITIES.push("Selected random activity: " + chosen.getClass().getSimpleName());
+                return chosen;
+            }
+            else {
+                Profiler.ACTIVITIES.push("Selected activity: " + highest.get(0).getClass().getSimpleName());
+                return highest.get(0);
             }
         }
         return null;

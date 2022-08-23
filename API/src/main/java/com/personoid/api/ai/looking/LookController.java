@@ -12,7 +12,7 @@ import java.util.Map;
 public class LookController {
     private final NPC npc;
     private final Map<String, Target> targets = new HashMap<>();
-    private boolean canLookInDefaultDirection = true;
+    private boolean canLookInDefaultDirection = false;
 
     public LookController(NPC npc) {
         this.npc = npc;
@@ -46,9 +46,8 @@ public class LookController {
     }
 
     public boolean addTarget(String identifier, Target target) {
-        if (targets.containsKey(identifier)) return false;
         this.targets.put(identifier, target);
-        return true;
+        return !targets.containsKey(identifier);
     }
 
     public boolean removeTarget(String identifier) {
