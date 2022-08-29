@@ -45,7 +45,7 @@ public class BreakBlockActivity extends Activity {
 
     @Override
     public boolean canStart(StartType startType) {
-        return true;
+        return LocationUtils.canReach(block.getLocation(), getNPC().getLocation());
     }
 
     @Override
