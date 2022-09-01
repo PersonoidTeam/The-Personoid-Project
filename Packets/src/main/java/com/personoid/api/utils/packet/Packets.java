@@ -1,53 +1,31 @@
 package com.personoid.api.utils.packet;
 
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.*;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class Packets {
-    private static String version;
-
-    private static ServerPlayer getServerPlayer(Player player) {
-        return switch (Objects.requireNonNull(getVersion()).split("_R")[0]) {
-            case "v1_18" -> ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer) player).getHandle();
-            case "v1_19" -> ((org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer) player).getHandle();
-            default -> null;
-        };
-    }
-
-    private static net.minecraft.world.entity.Entity getEntity(Entity entity) {
-        return switch (Objects.requireNonNull(getVersion()).split("_R")[0]) {
-            case "v1_18" -> ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftEntity) entity).getHandle();
-            case "v1_19" -> ((org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity) entity).getHandle();
-            default -> null;
-        };
-    }
-
-    private static String getVersion() {
-        if (version != null) return version;
-        try {
-            return version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-        } catch (ArrayIndexOutOfBoundsException e) {
-            return null;
-        }
-    }
-
     public static Packet addPlayer(Player player) {
-        ServerPlayer serverPlayer = getServerPlayer(player);
+        ServerPlayer serverPlayer = NMSUtils.getServerPlayer(player);
         ClientboundPlayerInfoPacket info = new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, serverPlayer);
         ClientboundAddPlayerPacket add = new ClientboundAddPlayerPacket(serverPlayer);
         ClientboundSetEntityDataPacket data = new ClientboundSetEntityDataPacket(serverPlayer.getId(), serverPlayer.getEntityData(), true);
         return new Packet() {
             @Override
             public void send(Player to) {
-                ServerGamePacketListenerImpl conn = getServerPlayer(to).connection;
+                ServerGamePacketListenerImpl conn = NMSUtils.getServerPlayer(to).connection;
                 conn.send(info);
                 conn.send(add);
                 conn.send(data);
@@ -56,13 +34,13 @@ public class Packets {
     }
 
     public static Packet removePlayer(Player player) {
-        ServerPlayer serverPlayer = getServerPlayer(player);
+        ServerPlayer serverPlayer = NMSUtils.getServerPlayer(player);
         ClientboundPlayerInfoPacket info = new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, serverPlayer);
         ClientboundRemoveEntitiesPacket remove = new ClientboundRemoveEntitiesPacket(serverPlayer.getId());
         return new Packet() {
             @Override
             public void send(Player to) {
-                ServerGamePacketListenerImpl conn = getServerPlayer(to).connection;
+                ServerGamePacketListenerImpl conn = NMSUtils.getServerPlayer(to).connection;
                 conn.send(info);
                 conn.send(remove);
             }
@@ -74,7 +52,7 @@ public class Packets {
         return new Packet() {
             @Override
             public void send(Player to) {
-                ServerGamePacketListenerImpl conn = getServerPlayer(to).connection;
+                ServerGamePacketListenerImpl conn = NMSUtils.getServerPlayer(to).connection;
                 conn.send(packet);
             }
         };
@@ -86,7 +64,7 @@ public class Packets {
         return new Packet() {
             @Override
             public void send(Player to) {
-                ServerGamePacketListenerImpl conn = getServerPlayer(to).connection;
+                ServerGamePacketListenerImpl conn = NMSUtils.getServerPlayer(to).connection;
                 conn.send(packet);
             }
         };
@@ -95,14 +73,38 @@ public class Packets {
     public static Packet rotateEntity(Entity entity, float yaw, float pitch) {
         byte yawByte = (byte) ((yaw % 360) * 256 / 360);
         byte pitchByte = (byte) ((pitch % 360) * 256 / 360);
-        ClientboundRotateHeadPacket rotateHead = new ClientboundRotateHeadPacket(getEntity(entity), yawByte);
+        ClientboundRotateHeadPacket rotateHead = new ClientboundRotateHeadPacket(NMSUtils.getEntity(entity), yawByte);
         ClientboundMoveEntityPacket.Rot rotateEntity = new ClientboundMoveEntityPacket.Rot(entity.getEntityId(), yawByte, pitchByte, false);
         return new Packet() {
             @Override
             public void send(Player to) {
-                ServerGamePacketListenerImpl conn = getServerPlayer(to).connection;
+                ServerGamePacketListenerImpl conn = NMSUtils.getServerPlayer(to).connection;
                 conn.send(rotateHead);
                 //conn.send(rotateEntity);
+            }
+        };
+    }
+
+    public static Packet setEntityData(int entityId, SynchedEntityData data, boolean value) {
+        ClientboundSetEntityDataPacket packet = new ClientboundSetEntityDataPacket(entityId, data, value);
+        return new Packet() {
+            @Override
+            public void send(Player to) {
+                ServerGamePacketListenerImpl conn = NMSUtils.getServerPlayer(to).connection;
+                conn.send(packet);
+            }
+        };
+    }
+
+    public static Packet entityEquipment(int entityId, Map<EquipmentSlot, ItemStack> equipment) {
+        List<Pair<net.minecraft.world.entity.EquipmentSlot, net.minecraft.world.item.ItemStack>> list = new ArrayList<>();
+        equipment.forEach((slot, item) -> list.add(Pair.of(NMSUtils.getSlot(slot), NMSUtils.getItemStack(item))));
+        ClientboundSetEquipmentPacket packet = new ClientboundSetEquipmentPacket(entityId, list);
+        return new Packet() {
+            @Override
+            public void send(Player to) {
+                ServerGamePacketListenerImpl conn = NMSUtils.getServerPlayer(to).connection;
+                conn.send(packet);
             }
         };
     }

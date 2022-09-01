@@ -370,11 +370,17 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
     private void updatePose() {
         cp.setSneaking(sneaking);
         ((Player) cp).setSneaking(sneaking);
+        //Packets.setEntityData(getId(), entityData, false).send();
         //PacketUtils.send(new ClientboundSetEntityDataPacket(getId(), entityData, false));
     }
 
     @Override
     public boolean alwaysAccepts() {
         return super.alwaysAccepts();
+    }
+
+    @Override
+    public int getEntityId() {
+        return getId();
     }
 }

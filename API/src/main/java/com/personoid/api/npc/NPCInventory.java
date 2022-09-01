@@ -6,13 +6,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class NPCInventory {
     private static final int MAX_SIZE = 36;
@@ -30,7 +28,6 @@ public class NPCInventory {
 
     public void tick() {
         handleItemPickup();
-        npc.getEntity().setItemInHand(hotbar[selectedSlot]);
     }
 
     private void handleItemPickup() {
@@ -67,6 +64,8 @@ public class NPCInventory {
             throw new IndexOutOfBoundsException("Slot index must be between than 0-8 (was " + slot + ")");
         }
         selectedSlot = slot;
+        npc.getEntity().getInventory().setItemInMainHand(hotbar[selectedSlot]);
+        Packets.entityEquipment(npc.getEntityId(), Map.of(EquipmentSlot.HAND, hotbar[slot])).send();
     }
 
     public void drop() {
@@ -84,6 +83,8 @@ public class NPCInventory {
             item.setVelocity(vel);
             removeItem(itemStack);
         }
+        npc.getEntity().getInventory().setItemInMainHand(hotbar[selectedSlot]);
+        Packets.entityEquipment(npc.getEntityId(), Map.of(EquipmentSlot.HAND, hotbar[slot])).send();
     }
 
     // armour OR armor :)
@@ -93,37 +94,46 @@ public class NPCInventory {
         removeItem(itemStack);
         armorContents[SlotIndex.HELMET.index] = clone;
         npc.getEntity().getInventory().setHelmet(itemStack);
+        Packets.entityEquipment(npc.getEntityId(), Map.of(EquipmentSlot.HEAD, itemStack)).send();
     }
 
     public void setChestplate(ItemStack itemStack){
         removeItem(itemStack);
         armorContents[SlotIndex.CHESTPLATE.index] = itemStack.clone();
         npc.getEntity().getInventory().setChestplate(itemStack);
+        Packets.entityEquipment(npc.getEntityId(), Map.of(EquipmentSlot.CHEST, itemStack)).send();
     }
 
     public void setLeggings(ItemStack itemStack){
         removeItem(itemStack);
         armorContents[SlotIndex.LEGGINGS.index] = itemStack.clone();
         npc.getEntity().getInventory().setLeggings(itemStack);
+        Packets.entityEquipment(npc.getEntityId(), Map.of(EquipmentSlot.LEGS, itemStack)).send();
     }
 
     public void setBoots(ItemStack itemStack){
         removeItem(itemStack);
         armorContents[SlotIndex.BOOTS.index] = itemStack.clone();
         npc.getEntity().getInventory().setBoots(itemStack);
+        Packets.entityEquipment(npc.getEntityId(), Map.of(EquipmentSlot.FEET, itemStack)).send();
     }
 
     public void setOffhand(ItemStack itemStack) {
         removeItem(itemStack);
         offhand = itemStack.clone();
         npc.getEntity().getInventory().setItemInOffHand(itemStack);
+        Packets.entityEquipment(npc.getEntityId(), Map.of(EquipmentSlot.OFF_HAND, itemStack)).send();
     }
 
     // contents
 
     public int addItem(ItemStack itemStack) {
         int diff = addItem(hotbar, itemStack, new HashSet<>());
-        return diff == itemStack.getAmount() ? addItem(contents, itemStack, new HashSet<>()) : diff;
+        if (diff == itemStack.getAmount()) {
+            npc.getEntity().getInventory().setItemInMainHand(hotbar[selectedSlot]);
+            Packets.entityEquipment(npc.getEntityId(), Map.of(EquipmentSlot.HAND, hotbar[selectedSlot])).send();
+            return addItem(contents, itemStack, new HashSet<>());
+        } else return diff;
     }
 
     private int addItem(ItemStack[] contents, ItemStack itemStack, Set<Integer> excludedSlots) {
@@ -157,8 +167,8 @@ public class NPCInventory {
             }
         }
         for (int i = 0; i < contents.length; i++) {
-            if (equals(hotbar[i], itemStack)) {
-                hotbar[i] = null;
+            if (equals(contents[i], itemStack)) {
+                contents[i] = null;
                 return;
             }
         }
@@ -189,13 +199,21 @@ public class NPCInventory {
         return contents;
     }
 
+    public List<ItemStack> getHotbar() {
+        List<ItemStack> hotbar = new ArrayList<>();
+        for (int i = 0; i < this.hotbar.length - 1; i++) {
+            if (this.hotbar[i] != null) {
+                hotbar.add(this.hotbar[i]);
+            }
+        }
+        return hotbar;
+    }
+
     public enum SlotIndex {
         HELMET(0),
         CHESTPLATE(1),
         LEGGINGS(2),
-        BOOTS(3)
-
-        ;
+        BOOTS(3);
 
         final int index;
 

@@ -28,6 +28,7 @@ public interface NPC {
     boolean inWater();
     int getGroundTicks();
     void setGroundTicks(int ticks);
+    int getEntityId();
 
     void remove();
     void setSneaking(boolean sneaking);
