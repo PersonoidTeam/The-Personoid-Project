@@ -125,6 +125,14 @@ public class NPCInventory {
         Packets.entityEquipment(npc.getEntityId(), Map.of(EquipmentSlot.OFF_HAND, itemStack)).send();
     }
 
+    public int getSelectedSlot() {
+        return selectedSlot;
+    }
+
+    public ItemStack getSelectedItem() {
+        return hotbar[selectedSlot];
+    }
+
     // contents
 
     public int addItem(ItemStack itemStack) {
