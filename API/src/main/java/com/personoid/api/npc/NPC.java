@@ -6,6 +6,7 @@ import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
 import com.personoid.api.utils.types.HandEnum;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
@@ -44,4 +45,8 @@ public interface NPC {
     void setRotation(float xRot, float yRot);
     void swingHand(HandEnum hand);
     void setSkin(Skin skin);
+    void beginUsingItem(HandEnum hand);
+    void endUsingItem();
+    void setItemCooldown(Material material, int ticks);
+    int getItemCooldown(Material material);
 }

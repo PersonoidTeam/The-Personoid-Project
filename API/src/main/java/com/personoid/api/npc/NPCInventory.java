@@ -133,6 +133,10 @@ public class NPCInventory {
         return hotbar[selectedSlot];
     }
 
+    public ItemStack getOffhandItem() {
+        return offhand;
+    }
+
     // contents
 
     public int addItem(ItemStack itemStack) {
@@ -192,6 +196,7 @@ public class NPCInventory {
     }
 
     private boolean equals(ItemStack a, ItemStack b) {
+        if (a == null || b == null) return false;
         ItemStack sameCount = a.clone();
         sameCount.setAmount(b.getAmount());
         return sameCount.equals(b);

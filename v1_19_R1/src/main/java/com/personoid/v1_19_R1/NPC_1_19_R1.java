@@ -30,9 +30,14 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class NPC_1_19_R1 extends ServerPlayer implements NPC {
     private final CraftPlayer cp;
@@ -52,6 +57,7 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
 
     private boolean sneaking;
     private double lastYIncrease;
+    private final Map<Material, Integer> itemCooldowns = new HashMap<>();
 
     public NPC_1_19_R1(MinecraftServer minecraftserver, ServerLevel worldserver, GameProfile gameprofile) {
         super(minecraftserver, worldserver, gameprofile, null); // needs signing now?!?!?
@@ -107,7 +113,7 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
 
         float health = getHealth();
         float maxHealth = getMaxHealth();
-        float amount = health < maxHealth - 0.005F ? health + 0.005F : maxHealth;
+        float amount = health < maxHealth - 0.05F ? health + 0.05F : maxHealth; // 0.1F = natual regen speed (full saturation)
 
         setHealth(amount);
 
@@ -125,8 +131,26 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
             setSwimming(false);
         }*/
 
+        for (Material material : itemCooldowns.keySet()) {
+            int cooldown = itemCooldowns.get(material);
+            if (cooldown > 0) itemCooldowns.put(material, cooldown - 1);
+            else itemCooldowns.remove(material);
+        }
+
         tickComponents();
         updatePose();
+    }
+
+    @Override
+    public void doTick() {
+        if (this.hurtTime > 0) this.hurtTime--;
+        baseTick();
+        tickEffects();
+        this.animStepO = (int) this.animStep;
+        this.yBodyRotO = this.yBodyRot;
+        this.yHeadRotO = this.yHeadRot;
+        this.yRotO = this.getYRot();
+        this.xRotO = this.getXRot();
     }
 
     private void tickComponents() {
@@ -329,14 +353,36 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
 
     @Override
     public boolean damageEntity0(DamageSource damagesource, float f) {
-        boolean damaged = super.damageEntity0(damagesource, f);
         Entity attacker = damagesource.getEntity();
-        // TODO: if not damaged, and blocked using shield, play block sound
-        if (damaged && attacker != null) {
-            // TODO: check if still alive -> if not, call npc event
-            moveController.applyKnockback(attacker.getBukkitEntity().getLocation());
-        }
-        return damaged;
+        if (attacker != null) {
+            ItemStack mainHand = getNPCInventory().getOffhandItem();
+            ItemStack offHand = getNPCInventory().getSelectedItem();
+            if (mainHand.getType() == Material.SHIELD || offHand.getType() == Material.SHIELD) {
+                if (getItemCooldown(Material.SHIELD) <= 0) {
+                    // check if angle is within 120 degrees
+                    Vector direction = attacker.getBukkitEntity().getLocation().getDirection();
+                    Vector npcDirection = getLocation().getDirection();
+                    double angle = direction.angle(npcDirection);
+                    if (angle < 2.0943951023931953D) {
+                        // shield block
+                        LivingEntity living = (LivingEntity) attacker.getBukkitEntity();
+                        EntityEquipment equipment = living.getEquipment();
+                        if (equipment != null && equipment.getItemInMainHand().getType().name().contains("_AXE")) {
+                            getEntity().playEffect(EntityEffect.SHIELD_BREAK);
+                            setItemCooldown(Material.SHIELD, 100);
+                        }
+                        getEntity().getWorld().playSound(getEntity().getLocation(), Sound.ITEM_SHIELD_BLOCK, 1F, 1F);
+                        return false;
+                    }
+                }
+            }
+            boolean damaged = super.damageEntity0(damagesource, f);
+            if (damaged) {
+                // TODO: check if still alive -> if not, call npc event
+                moveController.applyKnockback(attacker.getBukkitEntity().getLocation());
+            }
+            return damaged;
+        } else return super.damageEntity0(damagesource, f);
     }
 
     public void remove() {
@@ -382,5 +428,28 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
     @Override
     public int getEntityId() {
         return getId();
+    }
+
+    @Override
+    public void beginUsingItem(HandEnum hand) {
+        startUsingItem(switch (hand) {
+            case RIGHT -> InteractionHand.MAIN_HAND;
+            case LEFT, DOMINANT -> InteractionHand.OFF_HAND;
+        });
+    }
+
+    @Override
+    public void endUsingItem() {
+        super.stopUsingItem();
+    }
+
+    @Override
+    public void setItemCooldown(Material material, int ticks) {
+        itemCooldowns.put(material, ticks);
+    }
+
+    @Override
+    public int getItemCooldown(Material material) {
+        return itemCooldowns.getOrDefault(material, 0);
     }
 }
