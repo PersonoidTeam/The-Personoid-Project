@@ -36,7 +36,7 @@ public class MoveController {
     private void tickGravity() {
         if (npc.inWater()) velocity.setY(Math.min(velocity.getY() + 0.1, 0.1));
         else if (npc.onGround()) velocity.setY(0);
-        else velocity.setY(Math.max(velocity.getY() - 0.1, -3.5));
+        else velocity.setY(Math.max(velocity.getY() - 0.09, -3.25));
     }
 
     private void addFriction(double factor) {
@@ -49,7 +49,7 @@ public class MoveController {
 
     public void move(Vector velocity, MovementType type) {
         if (timeoutTicks > 0) return;
-        double max = type.name().contains("SPRINT") ? 0.425 : 0.325;
+        double max = type.name().contains("SPRINT") ? 0.52 : 0.325;
         Vector sum = this.velocity.clone().add(velocity.clone().setY(0));
         if (sum.length() > max) {
             sum.normalize().multiply(max);

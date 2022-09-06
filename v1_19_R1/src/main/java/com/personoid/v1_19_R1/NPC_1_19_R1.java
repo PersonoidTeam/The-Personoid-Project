@@ -36,8 +36,7 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class NPC_1_19_R1 extends ServerPlayer implements NPC {
     private final CraftPlayer cp;
@@ -358,7 +357,7 @@ public class NPC_1_19_R1 extends ServerPlayer implements NPC {
             ItemStack mainHand = getNPCInventory().getOffhandItem();
             ItemStack offHand = getNPCInventory().getSelectedItem();
             if (mainHand.getType() == Material.SHIELD || offHand.getType() == Material.SHIELD) {
-                if (getItemCooldown(Material.SHIELD) <= 0) {
+                if (getItemCooldown(Material.SHIELD) <= 0 && isUsingItem()) {
                     // check if angle is within 120 degrees
                     Vector direction = attacker.getBukkitEntity().getLocation().getDirection();
                     Vector npcDirection = getLocation().getDirection();

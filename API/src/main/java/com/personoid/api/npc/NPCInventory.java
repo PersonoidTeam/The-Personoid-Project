@@ -32,7 +32,7 @@ public class NPCInventory {
 
     private void handleItemPickup() {
         for (Entity entity : npc.getEntity().getNearbyEntities(2, 1, 2)) {
-            if (entity instanceof Item item && getContents().size() < MAX_SIZE) {
+            if (entity instanceof Item item && getContents().length < MAX_SIZE) {
                 if (item.getPickupDelay() == 0) {
                     if (item.getThrower() != null && Bukkit.getEntity(item.getThrower()) != null) {
                         LivingEntity thrower = (LivingEntity) Bukkit.getEntity(item.getThrower());
@@ -202,7 +202,7 @@ public class NPCInventory {
         return sameCount.equals(b);
     }
 
-    public List<ItemStack> getContents() {
+/*    public List<ItemStack> getContents() {
         List<ItemStack> contents = new ArrayList<>();
         for (int i = 0; i < this.contents.length - 1; i++) {
             if (this.contents[i] != null) {
@@ -219,6 +219,14 @@ public class NPCInventory {
                 hotbar.add(this.hotbar[i]);
             }
         }
+        return hotbar;
+    }*/
+
+    public ItemStack[] getContents() {
+        return contents;
+    }
+
+    public ItemStack[] getHotbar() {
         return hotbar;
     }
 

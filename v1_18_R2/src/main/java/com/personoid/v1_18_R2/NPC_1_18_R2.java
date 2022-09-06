@@ -346,7 +346,7 @@ Packets.addPlayer(cp).send(players);
             ItemStack mainHand = getNPCInventory().getOffhandItem();
             ItemStack offHand = getNPCInventory().getSelectedItem();
             if (mainHand.getType() == Material.SHIELD || offHand.getType() == Material.SHIELD) {
-                if (getItemCooldown(Material.SHIELD) <= 0) {
+                if (getItemCooldown(Material.SHIELD) <= 0 && isUsingItem()) {
                     // check if angle is within 120 degrees
                     Vector direction = attacker.getBukkitEntity().getLocation().getDirection();
                     Vector npcDirection = getLocation().getDirection();
