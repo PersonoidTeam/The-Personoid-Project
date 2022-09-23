@@ -1,12 +1,11 @@
 package com.personoid.api.utils.packet;
 
 import com.personoid.api.utils.CacheManager;
-import net.minecraft.server.v1_16_R3.BlockPosition;
+import com.personoid.api.utils.Parameter;
 import net.minecraft.server.v1_16_R3.DataWatcher;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import com.personoid.api.utils.packet.ReflectionUtils.Parameter;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
@@ -40,7 +39,7 @@ public class Packets {
         Parameter actionParam = new Parameter(playerInfoPacketAction, getField(playerInfoPacketAction, "ADD_PLAYER"));
         Parameter playerParam = new Parameter(CACHE.getClass("entity_player"), ReflectionUtils.getEntityPlayer(player));
         Class<?> dataWatcherClass = ReflectionUtils.getClass(Packages.NETWORK.plus("syncher"), "DataWatcher");
-        Object entityData = ReflectionUtils.getMethod(playerParam.value(), "getEntityData");
+        Object entityData = ReflectionUtils.getMethod(playerParam.getValue(), "getEntityData");
         try {
             Packet infoPacket = ReflectionUtils.createPacket("PacketPlayOutPlayerInfo", actionParam, playerParam);
             Packet addPlayerPacket = ReflectionUtils.createPacket("PacketPlayOutNamedEntitySpawn", playerParam);

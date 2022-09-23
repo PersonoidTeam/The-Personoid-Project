@@ -1,9 +1,8 @@
 package com.personoid.api.utils.packet;
 
 import com.personoid.api.utils.CacheManager;
-import net.minecraft.server.v1_16_R3.EnumItemSlot;
+import com.personoid.api.utils.Parameter;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
@@ -97,8 +96,8 @@ public class ReflectionUtils {
             throw new ClassNotFoundException("Could not find packet " + className + " in sub packages");
         }
         try {
-            Class<?>[] types = Arrays.stream(parameters).map(Parameter::type).toArray(Class<?>[]::new);
-            Object[] args = Arrays.stream(parameters).map(Parameter::value).toArray();
+            Class<?>[] types = Arrays.stream(parameters).map(Parameter::getType).toArray(Class<?>[]::new);
+            Object[] args = Arrays.stream(parameters).map(Parameter::getValue).toArray();
             Object packetInstance = packetClass.getConstructor(types).newInstance(args);
             return new Packet() {
                 @Override
@@ -158,24 +157,6 @@ public class ReflectionUtils {
                 .filter(p -> p.toString().startsWith(prefix))
                 .map(p -> p.toString().substring(prefix.length()))
                 .collect(Collectors.toList());
-    }
-
-    public static class Parameter {
-        private final Class<?> type;
-        private final Object value;
-
-        public Parameter(Class<?> type, Object value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        public Class<?> type() {
-            return type;
-        }
-
-        public Object value() {
-            return value;
-        }
     }
 
     public static String getVersion() {

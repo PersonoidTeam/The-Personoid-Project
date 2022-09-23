@@ -1,15 +1,13 @@
 package com.personoid.api.npc;
 
-import com.personoid.api.npc.injection.Feature;
-import com.personoid.api.npc.injection.Hook;
+import com.personoid.api.npc.injection.*;
 import com.personoid.api.utils.CacheManager;
 import com.personoid.api.utils.packet.ReflectionUtils;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.bukkit.Bukkit;
 
-import java.util.UUID;
+import java.util.Random;
 
 public class NPCBuilder {
     private static final CacheManager CACHE = new CacheManager("npc_builder");
@@ -23,12 +21,14 @@ public class NPCBuilder {
         npc.addFeature(new Feature() {
             @Hook("tick")
             public void tick() {
-                Bukkit.broadcastMessage("tick injection");
+                // tick injection
             }
 
             @Hook("damage")
-            public void damageWithRandom() {
-                // damage logic
+            public void damageWithRandom(float damage, CallbackInfo ci) {
+                if (damage > 10) {
+                    ci.setReturnValue(new Random().nextDouble() * 10);
+                }
             }
         });
         try {

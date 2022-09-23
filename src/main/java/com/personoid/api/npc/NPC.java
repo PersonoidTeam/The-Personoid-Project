@@ -4,14 +4,11 @@ import com.personoid.api.ai.NPCBrain;
 import com.personoid.api.ai.looking.LookController;
 import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
-import com.personoid.api.npc.injection.Feature;
-import com.personoid.api.npc.injection.Hook;
+import com.personoid.api.npc.injection.*;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +24,7 @@ public class NPC {
     private final NPCBrain brain = new NPCBrain(this);
     private final BlockBreaker blockBreaker = new BlockBreaker(this);
     private final NPCInventory inventory = new NPCInventory(this);
+    private final Injector injector = new Injector(this);
 
     public NPC(GameProfile profile) {
         this.profile = profile;
@@ -36,37 +34,17 @@ public class NPC {
         return fields;
     }
 
-    // regions UTILS
-
-    private void callHook(String hook, Object... args) {
-        for (Feature feature : features) {
-            for (Method method : feature.getClass().getDeclaredMethods()) {
-                if (method.isAnnotationPresent(Hook.class)) {
-                    Hook methodHook = method.getAnnotation(Hook.class);
-                    if (methodHook.value().equals(hook)) {
-                        try {
-                            method.invoke(feature, args);
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // endregion
-
     void tick() {
         brain.tick();
         moveController.tick();
         lookController.tick();
         blockBreaker.tick();
-        callHook("tick");
+        injector.callHook("tick");
     }
 
     void damage(EntityDamageEvent.DamageCause cause, double damage) {
-        callHook("damage", cause, damage);
+        InjectionInfo ci = injector.callHookReturn("damage", new CallbackInfo(double.class), cause, damage);
+        double finalDamage = ci.isModified() ? ci.getParameter().getValue(double.class) : damage;
     }
 
     public void addFeature(Feature feature) {

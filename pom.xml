@@ -28,8 +28,6 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <compilerArgs>-proc:none</compilerArgs>
-                    <showWarnings>true</showWarnings>
                 </configuration>
             </plugin>
             <plugin>
@@ -128,12 +126,6 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.13</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.auto.service</groupId>
-            <artifactId>auto-service</artifactId>
-            <version>1.0.1</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
