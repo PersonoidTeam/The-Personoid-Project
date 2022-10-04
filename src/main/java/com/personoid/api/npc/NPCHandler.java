@@ -2,7 +2,6 @@ package com.personoid.api.npc;
 
 import com.personoid.api.utils.packet.Packets;
 import org.bukkit.Location;
-import org.bukkit.World;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +12,13 @@ public class NPCHandler {
 
     public NPC createNPCInstance(String name) {
         GameProfile profile = new GameProfile(UUID.randomUUID(), name);
+        NPC npc = NPCBuilder.create(profile);
+        npcs.add(npc);
+        return npc;
+    }
+
+    public NPC createNPCInstance(String name, Skin skin) {
+        GameProfile profile = new GameProfile(UUID.randomUUID(), name, skin);
         NPC npc = NPCBuilder.create(profile);
         npcs.add(npc);
         return npc;

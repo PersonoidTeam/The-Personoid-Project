@@ -4,16 +4,24 @@ import com.personoid.api.ai.NPCBrain;
 import com.personoid.api.ai.looking.LookController;
 import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
-import com.personoid.api.npc.injection.*;
+import com.personoid.api.npc.injection.CallbackInfo;
+import com.personoid.api.npc.injection.Feature;
+import com.personoid.api.npc.injection.InjectionInfo;
+import com.personoid.api.npc.injection.Injector;
+import com.personoid.api.utils.LocationUtils;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.util.BoundingBox;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class NPC {
-    private final NPCFields fields = new NPCFields();
+    private final NPCOverrides overrides = new NPCOverrides(this);
     private final List<Feature> features = new ArrayList<>();
     private final GameProfile profile;
 
@@ -26,12 +34,27 @@ public class NPC {
     private final NPCInventory inventory = new NPCInventory(this);
     private final Injector injector = new Injector(this);
 
+    private Player entity;
+    private Location location;
+    private Pose pose = Pose.STANDING;
+    private boolean hasAI = true;
+    private boolean hasGravity = true;
+    private boolean isInvulnerable;
+    private boolean isPushable = true;
+
+
     public NPC(GameProfile profile) {
         this.profile = profile;
+        init();
     }
 
-    NPCFields getFields() {
-        return fields;
+    NPCOverrides getOverrides() {
+        return overrides;
+    }
+
+    private void init() {
+        entity = (Player) overrides.getBase();
+        injector.callHook("init");
     }
 
     void tick() {
@@ -42,9 +65,9 @@ public class NPC {
         injector.callHook("tick");
     }
 
-    void damage(EntityDamageEvent.DamageCause cause, double damage) {
-        InjectionInfo ci = injector.callHookReturn("damage", new CallbackInfo(double.class), cause, damage);
-        double finalDamage = ci.isModified() ? ci.getParameter().getValue(double.class) : damage;
+    double damage(EntityDamageEvent.DamageCause cause, double damage) {
+        InjectionInfo info = injector.callHookReturn("damage", new CallbackInfo(double.class), cause, damage);
+        return info.isModified() ? info.getParameter().getValue(double.class) : damage;
     }
 
     public void addFeature(Feature feature) {
@@ -59,33 +82,39 @@ public class NPC {
         return features;
     }
 
-    public void setInvulnerable(boolean invulnerable) {
-        // can't take damage
-    }
-
-    public void setPushable(boolean pushable) {
-        // can be pushed by other entities
-    }
-
-    public void setGravity(boolean gravity) {
-        // can be pushed by gravity
-    }
-
-    public void setAI(boolean ai) {
-        // can use AI
-    }
-
     public void teleport(Location location) {
         // internal
+        this.location = location;
     }
 
     public boolean inWater() {
-        // internal
+        Location loc = getLocation();
+        for (int i = 0; i <= 2; i++) {
+            Material type = loc.getBlock().getType();
+            if (type == Material.WATER || type == Material.LAVA) {
+                return true;
+            }
+            loc.add(0, 0.9, 0);
+        }
         return false;
     }
 
     public boolean onGround() {
-        // internal
+        double vy = moveController.getVelocity().getY();
+        if (vy > 0) return false;
+        World world = getEntity().getWorld();
+        BoundingBox box = getEntity().getBoundingBox();
+        double[] xVals = new double[] { box.getMinX(), box.getMaxX() };
+        double[] zVals = new double[] { box.getMinZ(), box.getMaxZ() };
+        for (double x : xVals) {
+            for (double z : zVals) {
+                Location loc = new Location(world, x, getLocation().getY() - 0.01, z);
+                Block block = world.getBlockAt(loc);
+                if (block.getType().isSolid() && LocationUtils.solidBoundsAt(loc)) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -120,17 +149,16 @@ public class NPC {
     }
 
     public Location getLocation() {
-        // internal
-        return null;
+        return location;
     }
 
     public Pose getPose() {
-        // internal
-        return null;
+        return pose;
     }
 
     public void setPose(Pose pose) {
-        // internal
+        this.pose = pose;
+        // internal update
     }
 
     public Player getEntity() {
@@ -139,6 +167,38 @@ public class NPC {
 
     public int getEntityId() {
         return getEntity().getEntityId();
+    }
+
+    public void setInvulnerable(boolean invulnerable) {
+        isInvulnerable = invulnerable;
+    }
+
+    public void setPushable(boolean pushable) {
+        isPushable = pushable;
+    }
+
+    public void setGravity(boolean gravity) {
+        hasGravity = gravity;
+    }
+
+    public void setAI(boolean ai) {
+        hasAI = ai;
+    }
+
+    public boolean isInvulnerable() {
+        return isInvulnerable;
+    }
+
+    public boolean isPushable() {
+        return isPushable;
+    }
+
+    public boolean hasGravity() {
+        return hasGravity;
+    }
+
+    public boolean hasAI() {
+        return hasAI;
     }
 
     // endregion

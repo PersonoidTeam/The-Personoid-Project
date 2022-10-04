@@ -9,11 +9,14 @@ public class GameProfile {
     private String name;
     private Skin skin;
 
+    private boolean visibleInTab;
+
     public GameProfile(UUID id, String name, Skin skin) {
         Validate.notNull(id, "id cannot be null");
         this.id = id;
         this.name = name;
         this.skin = skin;
+        visibleInTab = true;
     }
 
     public GameProfile(UUID id, String name) {
@@ -21,6 +24,7 @@ public class GameProfile {
         this.id = id;
         this.name = name;
         this.skin = Skin.randomDefault();
+        visibleInTab = true;
     }
 
     // region GETTERS AND SETTERS
@@ -43,6 +47,14 @@ public class GameProfile {
 
     public UUID getId() {
         return id;
+    }
+
+    public void setTabVisibility(boolean visible) {
+        this.visibleInTab = visible;
+    }
+
+    public boolean isVisibleInTab() {
+        return visibleInTab;
     }
 
     // endregion

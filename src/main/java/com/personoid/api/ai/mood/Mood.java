@@ -17,6 +17,10 @@ public class Mood {
         return value;
     }
 
+    public void setValue(float value) {
+        this.value = value;
+    }
+
     public void increase(float amount) {
         this.value += amount;
     }

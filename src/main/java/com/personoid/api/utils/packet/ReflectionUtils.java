@@ -151,6 +151,17 @@ public class ReflectionUtils {
         }
     }
 
+    public static Object getField(Object object, String fieldName) {
+        try {
+            Field field = object.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(object);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     private static List<String> getSubPackages(String prefix) {
         // get all sub packages in the given package
         return Arrays.stream(Packages.values())

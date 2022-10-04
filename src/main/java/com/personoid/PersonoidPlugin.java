@@ -1,7 +1,6 @@
 package com.personoid;
 
 import com.personoid.api.PersonoidAPI;
-import com.personoid.api.npc.NPCBuilder;
 import com.personoid.api.npc.NPCHandler;
 import com.personoid.api.utils.bukkit.Logger;
 import com.personoid.api.utils.bukkit.Task;

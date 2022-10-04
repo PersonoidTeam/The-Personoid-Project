@@ -2,18 +2,18 @@ package com.personoid.api.utils.packet;
 
 import com.personoid.api.utils.CacheManager;
 import com.personoid.api.utils.Parameter;
-import net.minecraft.server.v1_16_R3.DataWatcher;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static com.personoid.api.utils.packet.ReflectionUtils.getField;
 
 public class Packets {
     private static final CacheManager CACHE = new CacheManager("packets");
@@ -21,17 +21,6 @@ public class Packets {
     static {
         CACHE.put("entity_player", ReflectionUtils.getClass(Packages.LEVEL, "EntityPlayer"));
         CACHE.put("block_position", ReflectionUtils.getClass(Packages.CORE, "BlockPosition"));
-    }
-
-    private static Object getField(Object object, String fieldName) {
-        try {
-            Field field = object.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            return field.get(object);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public static Packet addPlayer(Player player) {
@@ -99,7 +88,7 @@ public class Packets {
         //ClientboundMoveEntityPacket.Rot rotateEntity = new ClientboundMoveEntityPacket.Rot(entity.getEntityId(), yawByte, pitchByte, false);
     }
 
-    public static Packet setEntityData(int entityId, DataWatcher data, boolean value) {
+/*    public static Packet setEntityData(int entityId, DataWatcher data, boolean value) {
         //ClientboundSetEntityDataPacket packet = new ClientboundSetEntityDataPacket(entityId, data, value);
         try {
             return ReflectionUtils.createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, entityId),
@@ -107,7 +96,7 @@ public class Packets {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
+    }*/
 
     public static Packet entityEquipment(int entityId, Map<EquipmentSlot, ItemStack> equipment) {
         //List<Pair<net.minecraft.world.entity.EquipmentSlot, net.minecraft.world.item.ItemStack>> list = new ArrayList<>();
