@@ -1,7 +1,7 @@
 package com.personoid.api.utils.bukkit;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Color;
+import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 
 public class Logger {
@@ -17,39 +17,44 @@ public class Logger {
     }
 
     public void log(Level level, String message) {
-        sender.sendMessage("[" + logger + "] " + level.color + message);
+        sender.sendMessage("[" + logger + "] " + level + message);
     }
 
     public void info(String message) {
-        sender.sendMessage("[" + logger + "] " + Level.INFO.color + message);
+        sender.sendMessage("[" + logger + "] " + Level.INFO + message);
     }
 
     public void warning(String message) {
-        sender.sendMessage("[" + logger + "] " + Level.WARNING.color + message);
+        sender.sendMessage("[" + logger + "] " + Level.WARNING + message);
     }
 
     public void severe(String message) {
-        sender.sendMessage("[" + logger + "] " + Level.SEVERE.color + message);
+        sender.sendMessage("[" + logger + "] " + Level.SEVERE + message);
     }
 
     public void success(String message) {
-        sender.sendMessage("[" + logger + "] " + Level.SUCCESS.color + message);
+        sender.sendMessage("[" + logger + "] " + Level.SUCCESS + message);
     }
 
     public enum Level {
-        INFO(Color.GRAY),
-        WARNING(Color.ORANGE),
-        SEVERE(Color.RED),
-        SUCCESS(Color.GREEN);
+        INFO(ChatColor.GRAY),
+        WARNING(ChatColor.YELLOW),
+        SEVERE(ChatColor.RED),
+        SUCCESS(ChatColor.GREEN);
 
-        private final Color color;
+        private final ChatColor color;
 
-        Level(Color color) {
+        Level(ChatColor color) {
             this.color = color;
         }
 
-        public Color getColor() {
+        public ChatColor getColor() {
             return color;
+        }
+
+        @Override
+        public String toString() {
+            return color.toString();
         }
     }
 }

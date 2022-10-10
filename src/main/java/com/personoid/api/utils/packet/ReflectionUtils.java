@@ -8,23 +8,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class ReflectionUtils {
     private static final CacheManager CACHE = new CacheManager("reflection_utils");
     private static String version;
 
-    public static Class<?> getClass(Packages packageType, String className) {
-        return getClass(packageType.getPackageName(), className);
+    public static Class<?> findClass(Packages packageType, String className) {
+        return findClass(packageType.getPackageName(), className);
     }
 
-    public static Class<?> getClass(String packageName, String className) {
+    public static Class<?> findClass(String packageName, String className) {
         try {
             if (CACHE.contains(packageName + "." + className)) {
                 return CACHE.getClass(packageName + "." + className);
@@ -77,27 +75,32 @@ public class ReflectionUtils {
         return Class.forName("org.bukkit.craftbukkit." + getVersion() + "." + packageName + "." + className);
     }
 
-    @Nonnull
-    public static <T> T getMethod(Object obj, String methodName) {
+    public static Object invoke(Object obj, String methodName, Object... args) {
         try {
-            return (T) obj.getClass().getMethod(methodName).invoke(obj);
+            return obj.getClass().getMethod(methodName).invoke(obj, args);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        throw new RuntimeException("Failed to get NMS base for " + obj.getClass().getName() + " with method " + methodName);
+        throw new RuntimeException("Failed to invoke method for class " + obj.getClass().getName() + " ( " + methodName + ")");
     }
 
     public static Packet createPacket(String className, Parameter... parameters) throws ClassNotFoundException {
         Class<?> packetClass = null;
-        for (String subPackage : getSubPackages(Packages.PACKETS.toString())) {
+        for (String subPackage : getPacketSubPackages()) {
             try {
-                packetClass = Class.forName(Packages.PACKETS + subPackage + "." + className);
+                packetClass = Class.forName(subPackage + "." + className);
             } catch (ClassNotFoundException ignored) {}
         }
         if (packetClass == null) {
             throw new ClassNotFoundException("Could not find packet " + className + " in sub packages");
         }
         try {
-            Class<?>[] types = Arrays.stream(parameters).map(Parameter::getType).toArray(Class<?>[]::new);
-            Object[] args = Arrays.stream(parameters).map(Parameter::getValue).toArray();
+            Class<?>[] types = new Class[parameters.length];
+            for (int i = 0; i < parameters.length; i++) {
+                types[i] = parameters[i].getType();
+            }
+            Object[] args = new Object[parameters.length];
+            for (int i = 0; i < parameters.length; i++) {
+                args[i] = parameters[i].getValue();
+            }
             Object packetInstance = packetClass.getConstructor(types).newInstance(args);
             return new Packet() {
                 @Override
@@ -145,7 +148,7 @@ public class ReflectionUtils {
 
     public static Object getEquipmentSlot(EquipmentSlot slot) {
         try {
-            return getClass(Packages.WORLD, "EnumItemSlot").getMethod("valueOf", String.class).invoke(null, slot.name());
+            return findClass(Packages.SERVER_WORLD, "EnumItemSlot").getMethod("valueOf", String.class).invoke(null, slot.name());
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("Could not get NMS equipment slot", e);
         }
@@ -162,12 +165,21 @@ public class ReflectionUtils {
         return null;
     }
 
-    private static List<String> getSubPackages(String prefix) {
-        // get all sub packages in the given package
-        return Arrays.stream(Packages.values())
-                .filter(p -> p.toString().startsWith(prefix))
-                .map(p -> p.toString().substring(prefix.length()))
-                .collect(Collectors.toList());
+    public static Object getEnum(Class<?> clazz, String enumName) {
+        try {
+            return clazz.getMethod("valueOf", String.class).invoke(null, enumName);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException("Could not get NMS enum", e);
+        }
+    }
+
+    private static List<String> getPacketSubPackages() {
+        return Arrays.asList(
+                Packages.PACKETS.plus("game"),
+                Packages.PACKETS.plus("handshake"),
+                Packages.PACKETS.plus("login"),
+                Packages.PACKETS.plus("status")
+        );
     }
 
     public static String getVersion() {

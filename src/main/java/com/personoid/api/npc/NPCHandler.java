@@ -1,6 +1,8 @@
 package com.personoid.api.npc;
 
+import com.personoid.api.utils.packet.Packages;
 import com.personoid.api.utils.packet.Packets;
+import com.personoid.api.utils.packet.ReflectionUtils;
 import org.bukkit.Location;
 
 import java.util.ArrayList;
@@ -27,6 +29,9 @@ public class NPCHandler {
     public void spawnNPC(NPC npc, Location location) {
         npc.teleport(location);
         Packets.addPlayer(npc.getEntity()).send();
+        Object level = ReflectionUtils.invoke(ReflectionUtils.getEntityPlayer(npc.getEntity()), "W"); // getLevel
+        ReflectionUtils.invoke(level, "c", ReflectionUtils.getEntityPlayer(npc.getEntity())); // addNewPlayer
+        //((CraftPlayer) npc.getEntity()).getHandle().getLevel().addNewPlayer(((CraftPlayer) npc.getEntity()).getHandle());
         //npc.getLevel().addNewPlayer(npc); // TODO: implement
     }
 
@@ -37,6 +42,9 @@ public class NPCHandler {
 
     private void despawnNPC(NPC npc) {
         Packets.removePlayer(npc.getEntity()).send();
+        Class<?> removalReasonClass = ReflectionUtils.findClass(Packages.ENTITY, "Entity$RemovalReason");
+        Object removalReason = ReflectionUtils.getEnum(removalReasonClass, "DISCARDED");
+        ReflectionUtils.invoke(ReflectionUtils.getEntityPlayer(npc.getEntity()), "a", removalReason); // remove
         //npc.remove(Entity.RemovalReason.DISCARDED); // TODO: implement
     }
 

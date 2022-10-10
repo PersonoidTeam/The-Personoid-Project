@@ -1,7 +1,9 @@
 package com.personoid.api.npc;
 
 import com.personoid.api.utils.packet.Packages;
+import com.personoid.api.utils.packet.Packets;
 import com.personoid.api.utils.packet.ReflectionUtils;
+import com.personoid.api.utils.types.HandEnum;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
@@ -24,12 +26,13 @@ public class NPCOverrides {
 
     String[] getMethods() {
         return new String[] {
-            "tick",
+            "k", //tick
         };
     }
 
     public void setBase(Object base) {
         this.base = base;
+        npc.init();
     }
 
     public Object getBase() {
@@ -38,7 +41,9 @@ public class NPCOverrides {
 
     public Method get(String method) {
         try {
-            return getClass().getMethod(method);
+            Method methodField = getClass().getMethod(method);
+            methodField.setAccessible(true);
+            return methodField;
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -49,7 +54,7 @@ public class NPCOverrides {
     public void invoke(String methodName, Object... args) {
         try {
             Method method = base.getClass().getMethod(methodName);
-            method.invoke(this, args);
+            method.invoke(base, args);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -58,7 +63,7 @@ public class NPCOverrides {
     public <T> T invoke(Class<T> type, String methodName, Object... args) {
         try {
             Method method = base.getClass().getMethod(methodName);
-            return (T) method.invoke(this, args);
+            return (T) method.invoke(base, args);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -68,7 +73,7 @@ public class NPCOverrides {
         try {
             Field field = base.getClass().getField(fieldName);
             field.setAccessible(true);
-            return (T) field.get(this);
+            return (T) field.get(base);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -78,7 +83,7 @@ public class NPCOverrides {
         try {
             Field field = base.getClass().getField(fieldName);
             field.setAccessible(true);
-            field.set(this, value);
+            field.set(base, value);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -88,7 +93,7 @@ public class NPCOverrides {
         try {
             Field field = base.getClass().getField(fieldName);
             field.setAccessible(true);
-            field.set(this, getField(int.class, fieldName) + modifier);
+            field.set(base, getField(int.class, fieldName) + modifier);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -102,7 +107,7 @@ public class NPCOverrides {
     private int groundTicks;
     private final Map<Material, Integer> itemCooldowns = new HashMap<>();
 
-    private void tick() {
+    public void k() { // tick
         Bukkit.broadcastMessage("tick");
         loadChunks();
         invoke("tick");
@@ -152,10 +157,6 @@ public class NPCOverrides {
         npc.tick();
     }
 
-    private Player getEntity() {
-        return (Player) base;
-    }
-
     private void loadChunks() {
         World world = getEntity().getWorld();
         Chunk chunk = getEntity().getLocation().getChunk();
@@ -174,7 +175,7 @@ public class NPCOverrides {
         double yPos = invoke(double.class, "getY");
         if (invoke(boolean.class, "onGround")) {
             float damage = (float) (lastYIncrease - yPos - 3F);
-            Class<?> damageSourceClass = ReflectionUtils.getClass(Packages.WORLD, "DamageSource");
+            Class<?> damageSourceClass = ReflectionUtils.findClass(Packages.SERVER_WORLD, "DamageSource");
             Object fall = ReflectionUtils.getField(damageSourceClass, "FALL");
             if (damage > 0D) invoke("hurt", fall, damage);
         }
@@ -240,4 +241,38 @@ public class NPCOverrides {
             return damaged;
         } else return super.damageEntity0(damagesource, f);
     }*/
+
+    private Object getNMSHand(HandEnum hand) {
+        Class<?> interactionHandClass = ReflectionUtils.findClass(Packages.SERVER_WORLD, "InteractionHand");
+        String nmsHandName = hand == HandEnum.RIGHT || hand == HandEnum.DOMINANT ? "MAIN_HAND" : "OFF_HAND";
+        return ReflectionUtils.getField(interactionHandClass, nmsHandName);
+    }
+
+    public void startUsingItem(HandEnum hand) {
+        invoke("c", getNMSHand(hand));
+    }
+
+    public void stopUsingItem() {
+        invoke("eZ");
+    }
+
+    public void swingHand(HandEnum hand) {
+        invoke("a", getNMSHand(hand));
+    }
+
+    public int getItemCooldown(Material material) {
+        return itemCooldowns.getOrDefault(material, 0);
+    }
+
+    public void setVisibilityTo(Player player, boolean visible) {
+        if (visible) {
+            Packets.showPlayer(npc.getEntity()).send(player);
+        } else {
+            Packets.hidePlayer(npc.getEntity()).send(player);
+        }
+    }
+
+    public Player getEntity() {
+        return invoke(Player.class, "getBukkitEntity");
+    }
 }

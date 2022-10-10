@@ -9,6 +9,7 @@ import com.personoid.api.npc.injection.Feature;
 import com.personoid.api.npc.injection.InjectionInfo;
 import com.personoid.api.npc.injection.Injector;
 import com.personoid.api.utils.LocationUtils;
+import com.personoid.api.utils.types.HandEnum;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -45,15 +46,14 @@ public class NPC {
 
     public NPC(GameProfile profile) {
         this.profile = profile;
-        init();
     }
 
     NPCOverrides getOverrides() {
         return overrides;
     }
 
-    private void init() {
-        entity = (Player) overrides.getBase();
+    void init() {
+        entity = overrides.getEntity();
         injector.callHook("init");
     }
 
@@ -118,6 +118,26 @@ public class NPC {
         return false;
     }
 
+    public void swingHand(HandEnum hand) {
+        overrides.swingHand(hand);
+    }
+
+    public void startUsingItem(HandEnum hand) {
+        overrides.startUsingItem(hand);
+    }
+
+    public void stopUsingItem() {
+        overrides.stopUsingItem();
+    }
+
+    public int getItemCooldown(Material material) {
+        return overrides.getItemCooldown(material);
+    }
+
+    public void setVisibilityTo(Player player, boolean visible) {
+        overrides.setVisibilityTo(player, visible);
+    }
+
     // region GETTERS AND SETTERS
 
     public GameProfile getProfile() {
@@ -162,7 +182,7 @@ public class NPC {
     }
 
     public Player getEntity() {
-        return null;
+        return entity;
     }
 
     public int getEntityId() {
