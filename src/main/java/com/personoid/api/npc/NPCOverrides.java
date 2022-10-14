@@ -4,7 +4,6 @@ import com.personoid.api.utils.packet.Packages;
 import com.personoid.api.utils.packet.Packets;
 import com.personoid.api.utils.packet.ReflectionUtils;
 import com.personoid.api.utils.types.HandEnum;
-import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -54,6 +53,7 @@ public class NPCOverrides {
     public void invoke(String methodName, Object... args) {
         try {
             Method method = base.getClass().getMethod(methodName);
+            method.setAccessible(true);
             method.invoke(base, args);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -63,6 +63,7 @@ public class NPCOverrides {
     public <T> T invoke(Class<T> type, String methodName, Object... args) {
         try {
             Method method = base.getClass().getMethod(methodName);
+            method.setAccessible(true);
             return (T) method.invoke(base, args);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -108,34 +109,34 @@ public class NPCOverrides {
     private final Map<Material, Integer> itemCooldowns = new HashMap<>();
 
     public void k() { // tick
-        Bukkit.broadcastMessage("tick");
         loadChunks();
-        invoke("tick");
-        if (!invoke(Boolean.class, "isAlive")) return;
         aliveTicks++;
+        if (aliveTicks % 10 != 0) return;
+        invoke("k");
+        if (!invoke(Boolean.class, "bo")) return; // isAlive
 
-        double yPos = invoke(int.class, "getY");
+        double yPos = invoke(double.class, "dh"); // getY
 
         if (aliveTicks == 1) {
             lastYIncrease = yPos;
         }
 
-        if (getField(int.class, "hurtTime") > 0) modInt("hurtTime", -1);
+        if (getField(int.class, "aK") > 0) modInt("aK", -1); // hurtTime
 
-        if (invoke(boolean.class, "checkGround")) {
+        if (npc.onGround()) {
             if (groundTicks < Integer.MAX_VALUE) {
                 groundTicks++;
             }
         } else groundTicks = 0;
 
-        float health = invoke(float.class, "getHealth");
-        float maxHealth = invoke(float.class, "getMaxHealth");
+        float health = invoke(float.class, "ef"); // getHealth
+        float maxHealth = invoke(float.class, "et"); // getMaxHealth
         float amount = health < maxHealth - 0.05F ? health + 0.05F : maxHealth; // 0.1F = natual regen speed (full saturation)
 
-        invoke("setHealth", amount);
+        //invoke("c", amount); // setHealth, FIXME: method not found?!?!?
 
         if (yPos < -64) {
-            invoke("outOfWorld");
+            invoke("av"); // outOfWorld
         }
 
         fallDamageCheck();
@@ -172,12 +173,12 @@ public class NPCOverrides {
 
     private void fallDamageCheck() {
         // FIXME: still a little broken
-        double yPos = invoke(double.class, "getY");
-        if (invoke(boolean.class, "onGround")) {
+        double yPos = invoke(double.class, "dh"); // getY
+        if (invoke(boolean.class, "y")) { // onGround
             float damage = (float) (lastYIncrease - yPos - 3F);
             Class<?> damageSourceClass = ReflectionUtils.findClass(Packages.SERVER_WORLD, "DamageSource");
-            Object fall = ReflectionUtils.getField(damageSourceClass, "FALL");
-            if (damage > 0D) invoke("hurt", fall, damage);
+            Object fall = ReflectionUtils.getField(damageSourceClass, "k"); // FALL
+            if (damage > 0D) invoke("a", fall, damage); // hurt
         }
         if (npc.getMoveController().getVelocity().getY() > 0) lastYIncrease = yPos;
     }

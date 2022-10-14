@@ -11,7 +11,6 @@ public class Target {
     private final Block block;
     private final Type type;
     private final Priority priority;
-    private boolean tracking;
 
     public Target(Location location, Priority priority) {
         this.location = location;
@@ -37,11 +36,6 @@ public class Target {
         this.type = Type.BLOCK;
     }
 
-    public Target track() {
-        this.tracking = true;
-        return this;
-    }
-
     public Location getLocation() {
         switch (type) {
             case LOCATION: return location;
@@ -65,10 +59,6 @@ public class Target {
 
     public Priority getPriority() {
         return priority;
-    }
-
-    public boolean isTracking() {
-        return tracking;
     }
 
     public enum Type {

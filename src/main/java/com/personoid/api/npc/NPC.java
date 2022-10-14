@@ -87,18 +87,6 @@ public class NPC {
         this.location = location;
     }
 
-    public boolean inWater() {
-        Location loc = getLocation();
-        for (int i = 0; i <= 2; i++) {
-            Material type = loc.getBlock().getType();
-            if (type == Material.WATER || type == Material.LAVA) {
-                return true;
-            }
-            loc.add(0, 0.9, 0);
-        }
-        return false;
-    }
-
     public boolean onGround() {
         double vy = moveController.getVelocity().getY();
         if (vy > 0) return false;
@@ -114,6 +102,18 @@ public class NPC {
                     return true;
                 }
             }
+        }
+        return false;
+    }
+
+    public boolean inWater() {
+        Location loc = getLocation();
+        for (int i = 0; i <= 2; i++) {
+            Material type = loc.getBlock().getType();
+            if (type == Material.WATER || type == Material.LAVA) {
+                return true;
+            }
+            loc.add(0, 0.9, 0);
         }
         return false;
     }

@@ -19,16 +19,26 @@ public class LookController {
     }
 
     public void tick() {
-        if (canLookInDefaultDirection && !targets.containsKey("default")) {
+        if (canLookInDefaultDirection) {
             Vector vel = npc.getMoveController().getVelocity();
             Location defaultTarget = npc.getLocation().clone().add(vel.multiply(5));
             if (vel.getX() > 0.01 || vel.getZ() > 0.01) targets.put("default", new Target(defaultTarget, Priority.LOWEST));
         }
         if (targets.isEmpty()) return;
-        Vector dir = getHighestPriorityTarget().getLocation().clone().subtract(npc.getLocation().clone()).toVector();
-        Location facing = npc.getLocation().clone().setDirection(dir);
+        Location facing = getFacing(getHighestPriorityTarget().getLocation());
         Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
         //npc.setRotation(facing.getYaw(), facing.getPitch());
+    }
+
+    public void face(Location location) {
+        Location facing = getFacing(location);
+        Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
+        //npc.setRotation(facing.getYaw(), facing.getPitch());
+    }
+
+    private Location getFacing(Location target) {
+        Vector dir = target.clone().subtract(npc.getLocation().clone()).toVector();
+        return npc.getLocation().clone().setDirection(dir);
     }
 
     public Target getHighestPriorityTarget() {

@@ -156,13 +156,23 @@ public class ReflectionUtils {
 
     public static Object getField(Object object, String fieldName) {
         try {
-            Field field = object.getClass().getDeclaredField(fieldName);
+            Field field = object.getClass().getField(fieldName);
             field.setAccessible(true);
             return field.get(object);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static void setField(Object object, String fieldName, Object value) {
+        try {
+            Field field = object.getClass().getField(fieldName);
+            field.setAccessible(true);
+            field.set(object, value);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     public static Object getEnum(Class<?> clazz, String enumName) {
