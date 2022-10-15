@@ -28,7 +28,7 @@ public class MoveController {
 
     private void tickMovement() {
         MathUtils.clean(velocity);
-        //npc.move(velocity); // TODO: implement
+        npc.move(velocity);
         addFriction(npc.inWater() ? 0.6 : 0.375); // 0.8, 0.5
         climbing = BlockTags.CLIMBABLE.is(npc.getLocation().getBlock().getType());
     }

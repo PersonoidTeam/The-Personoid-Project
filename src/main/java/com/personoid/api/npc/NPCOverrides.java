@@ -4,10 +4,14 @@ import com.personoid.api.utils.packet.Packages;
 import com.personoid.api.utils.packet.Packets;
 import com.personoid.api.utils.packet.ReflectionUtils;
 import com.personoid.api.utils.types.HandEnum;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -111,8 +115,8 @@ public class NPCOverrides {
     public void k() { // tick
         loadChunks();
         aliveTicks++;
-        if (aliveTicks % 10 != 0) return;
-        invoke("k");
+        //if (aliveTicks % 2 != 0) return;
+        //invoke("k"); // tick
         if (!invoke(Boolean.class, "bo")) return; // isAlive
 
         double yPos = invoke(double.class, "dh"); // getY
@@ -174,9 +178,9 @@ public class NPCOverrides {
     private void fallDamageCheck() {
         // FIXME: still a little broken
         double yPos = invoke(double.class, "dh"); // getY
-        if (invoke(boolean.class, "y")) { // onGround
+        if (invoke(boolean.class, "aw")) { // onGround
             float damage = (float) (lastYIncrease - yPos - 3F);
-            Class<?> damageSourceClass = ReflectionUtils.findClass(Packages.SERVER_WORLD, "DamageSource");
+            Class<?> damageSourceClass = ReflectionUtils.findClass(Packages.DAMAGE_SOURCE, "DamageSource");
             Object fall = ReflectionUtils.getField(damageSourceClass, "k"); // FALL
             if (damage > 0D) invoke("a", fall, damage); // hurt
         }
@@ -275,5 +279,14 @@ public class NPCOverrides {
 
     public Player getEntity() {
         return invoke(Player.class, "getBukkitEntity");
+    }
+
+    public void move(Vector vector) {
+        ((ServerPlayer)base).move(MoverType.SELF, new Vec3(vector.getX(), vector.getY(), vector.getZ()));
+    }
+
+    // convert bukkit vector to nms vector
+    public Object getVec3(Vector vector) {
+        return new Vec3(vector.getX(), vector.getY(), vector.getZ());
     }
 }

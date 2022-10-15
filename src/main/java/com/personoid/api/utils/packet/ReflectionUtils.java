@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -77,7 +78,9 @@ public class ReflectionUtils {
 
     public static Object invoke(Object obj, String methodName, Object... args) {
         try {
-            return obj.getClass().getMethod(methodName).invoke(obj, args);
+            Method method = obj.getClass().getMethod(methodName);
+            method.setAccessible(true);
+            return method.invoke(obj, args);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         throw new RuntimeException("Failed to invoke method for class " + obj.getClass().getName() + " ( " + methodName + ")");
     }
@@ -165,6 +168,17 @@ public class ReflectionUtils {
         return null;
     }
 
+    public static Object getField(Class<?> clazz, String fieldName) {
+        try {
+            Field field = clazz.getField(fieldName);
+            field.setAccessible(true);
+            return field.get(null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static void setField(Object object, String fieldName, Object value) {
         try {
             Field field = object.getClass().getField(fieldName);
@@ -177,7 +191,9 @@ public class ReflectionUtils {
 
     public static Object getEnum(Class<?> clazz, String enumName) {
         try {
-            return clazz.getMethod("valueOf", String.class).invoke(null, enumName);
+            Method method = clazz.getMethod("valueOf", String.class);
+            method.setAccessible(true);
+            return method.invoke(null, enumName);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("Could not get NMS enum", e);
         }

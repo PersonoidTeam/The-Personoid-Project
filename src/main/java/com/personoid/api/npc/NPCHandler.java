@@ -6,6 +6,7 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
+import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -39,7 +40,10 @@ public class NPCHandler {
     public void spawnNPC(NPC npc, Location location) {
         npc.teleport(location);
         Packets.addPlayer(npc.getEntity()).send();
-        Bukkit.broadcastMessage(((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.connection.address.toString());
+        Connection playerConn = ((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.connection;
+        Bukkit.broadcastMessage("hashcode: " + ((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.hashCode());
+        Bukkit.broadcastMessage("hashcode2: " + playerConn.hashCode());
+        Bukkit.broadcastMessage("address: " + playerConn.address.toString());
         try {
             Class<?> serverPlayerClass = findClass(Packages.SERVER_LEVEL, "EntityPlayer");
             Object serverPlayer = getEntityPlayer(npc.getEntity());
@@ -69,11 +73,10 @@ public class NPCHandler {
             setField(serverPlayer, "b", conn);
 
             Object level = invoke(serverPlayer, "W"); // getLevel
-            level.getClass().getMethod("c", serverPlayerClass).invoke(level, serverPlayer); // addPlayer
-            //((CraftPlayer) npc.getEntity()).getHandle().getLevel().addNewPlayer(((CraftPlayer) npc.getEntity()).getHandle());
-            //npc.getLevel().addNewPlayer(npc); // TODO: implement
-
-            Bukkit.broadcastMessage(((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address.toString());
+            //level.getClass().getMethod("c", serverPlayerClass).invoke(level, serverPlayer); // addPlayer
+            ((CraftPlayer) npc.getEntity()).getHandle().getLevel().addNewPlayer(((CraftPlayer) npc.getEntity()).getHandle());
+            ((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address = playerConn.address;
+            Bukkit.broadcastMessage("npc address: " + ((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address.toString());
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -87,7 +90,7 @@ public class NPCHandler {
     private void despawnNPC(NPC npc) {
         Packets.removePlayer(npc.getEntity()).send();
         Class<?> removalReasonClass = findClass(Packages.ENTITY, "Entity$RemovalReason");
-        Object removalReason = getEnum(removalReasonClass, "DISCARDED"); // DISCARDED
+        Object removalReason = getEnum(removalReasonClass, "b"); // DISCARDED FIXME: no enum constant found ?!?!?
         invoke(getEntityPlayer(npc.getEntity()), "a", removalReason); // remove
         //npc.remove(Entity.RemovalReason.DISCARDED); // TODO: implement
     }

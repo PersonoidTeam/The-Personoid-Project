@@ -17,6 +17,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.util.BoundingBox;
+import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +86,10 @@ public class NPC {
     public void teleport(Location location) {
         // internal
         this.location = location;
+    }
+
+    public void move(Vector vector) {
+        overrides.move(vector);
     }
 
     public boolean onGround() {

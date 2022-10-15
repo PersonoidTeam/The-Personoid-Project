@@ -84,7 +84,7 @@ public class NPCBuilder {
                                 .and(ElementMatchers.named(method))
                                 .and(ElementMatchers.returns(TypeDescription.VOID))
                         .and(ElementMatchers.takesNoArguments())
-                ).intercept(MethodCall.invoke(NPCOverrides.class.getMethod(method)).on(npc.getOverrides()));
+                ).intercept(MethodCall.invokeSuper().andThen(MethodCall.invoke(NPCOverrides.class.getMethod(method)).on(npc.getOverrides())));
             }
             Class<?> loaded = builder.make().load(NPCBuilder.class.getClassLoader(), ClassLoadingStrategy.Default.WRAPPER).getLoaded();
             Object base;

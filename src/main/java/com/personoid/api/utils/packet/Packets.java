@@ -106,7 +106,7 @@ public class Packets {
         byte yawByte = (byte) ((yaw % 360) * 256 / 360);
         byte pitchByte = (byte) ((pitch % 360) * 256 / 360);
         try {
-            Parameter entityParam = new Parameter(CACHE.get("entity_player"), getNMSEntity(entity));
+            Parameter entityParam = new Parameter(findClass(Packages.ENTITY, "Entity"), getNMSEntity(entity));
             return createPacket("PacketPlayOutEntityHeadRotation", entityParam, new Parameter(byte.class, yawByte));
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);

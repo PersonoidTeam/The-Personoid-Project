@@ -15,14 +15,15 @@ public class Injector {
 
     public void callHook(String hook, Object... args) {
         for (Feature feature : npc.getFeatures()) {
-            for (Method method : feature.getClass().getDeclaredMethods()) {
-                if (method.isAnnotationPresent(Hook.class)) {
+            for (Method method : feature.getClass().getMethods()) {
+                if (method.getDeclaringClass().isInstance(Feature.class) && method.isAnnotationPresent(Hook.class)) {
                     Hook methodHook = method.getAnnotation(Hook.class);
                     if (methodHook.value().equals(hook)) {
                         try {
+                            method.setAccessible(true);
                             method.invoke(feature, args);
                         } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
+                            throw new RuntimeException("Could not inject hook: " + hook, e);
                         }
                     }
                 }
