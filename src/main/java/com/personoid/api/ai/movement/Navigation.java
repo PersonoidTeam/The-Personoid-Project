@@ -94,8 +94,8 @@ public class Navigation {
         }
         if (path != null) {
             for (Node node : path.getNodes()) {
-                npc.getLocation().getWorld().spawnParticle(Particle.FALLING_DUST, node.getLocation().clone().add(0.5F, 0, 0.5F), 5,
-                        new Particle.DustOptions(Color.RED, 1));
+                npc.getLocation().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, node.getLocation().clone().add(0.5F, 0, 0.5F), 5,
+                        new Particle.DustTransition(Color.RED, Color.ORANGE, 1));
             }
         }
         //trimPath();

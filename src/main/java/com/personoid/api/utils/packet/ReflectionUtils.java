@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -78,7 +79,9 @@ public class ReflectionUtils {
 
     public static Object invoke(Object obj, String methodName, Object... args) {
         try {
-            Method method = obj.getClass().getMethod(methodName);
+            List<Class<?>> argTypes = new ArrayList<>();
+            for (Object arg : args) argTypes.add(arg.getClass());
+            Method method = obj.getClass().getMethod(methodName, argTypes.toArray(new Class[0]));
             method.setAccessible(true);
             return method.invoke(obj, args);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
@@ -133,9 +136,9 @@ public class ReflectionUtils {
         }
     }
 
-    public static Object getNMSEntity(Entity player) {
+    public static Object getNMSEntity(Entity entity) {
         try {
-            return player.getClass().getMethod("getHandle").invoke(player);
+            return entity.getClass().getMethod("getHandle").invoke(entity);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("Could not get handle of entity", e);
         }
@@ -143,18 +146,22 @@ public class ReflectionUtils {
 
     public static Object getItemStack(ItemStack itemStack) {
         try {
-            return itemStack.getClass().getMethod("asNMSCopy", ItemStack.class).invoke(null, itemStack);
+            Class<?> craftItemStackClass = findClass(Packages.CRAFT_ITEM_STACK, "CraftItemStack");
+            return craftItemStackClass.getMethod("asNMSCopy", ItemStack.class).invoke(null, itemStack);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("Could not get NMS item stack", e);
         }
     }
 
     public static Object getEquipmentSlot(EquipmentSlot slot) {
-        try {
-            return findClass(Packages.SERVER_WORLD, "EnumItemSlot").getMethod("valueOf", String.class).invoke(null, slot.name());
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("Could not get NMS equipment slot", e);
+        String slotName = slot.name();
+        if (slotName.equals("HAND")) {
+            slotName = "MAINHAND";
+        } else if (slotName.equals("OFF_HAND")) {
+            slotName = "OFFHAND";
         }
+        Class<?> itemSlotClass = findClass(Packages.ITEM_SLOT, "EnumItemSlot");
+        return getEnum(itemSlotClass, slotName);
     }
 
     public static Object getField(Object object, String fieldName) {

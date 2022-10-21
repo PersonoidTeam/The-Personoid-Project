@@ -1,17 +1,14 @@
 package com.personoid.api.npc.injection;
 
-public class CallbackInfo {
+public class CallbackInfo<T> {
     private final Class<?> returnType;
     private Object returnValue;
 
-    public CallbackInfo(Class<?> returnType) {
+    public CallbackInfo(Class<T> returnType) {
         this.returnType = returnType;
     }
 
-    public void setReturnValue(Object value) {
-        if (value.getClass() != returnType) {
-            throw new IllegalArgumentException("Return type is not " + returnType.getSimpleName());
-        }
+    public void setReturnValue(T value) {
         returnValue = value;
     }
 

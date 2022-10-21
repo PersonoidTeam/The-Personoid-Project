@@ -15,8 +15,8 @@ public class Injector {
 
     public void callHook(String hook, Object... args) {
         for (Feature feature : npc.getFeatures()) {
-            for (Method method : feature.getClass().getMethods()) {
-                if (method.getDeclaringClass().isInstance(Feature.class) && method.isAnnotationPresent(Hook.class)) {
+            for (Method method : feature.getClass().getDeclaredMethods()) {
+                if (method.isAnnotationPresent(Hook.class)) {
                     Hook methodHook = method.getAnnotation(Hook.class);
                     if (methodHook.value().equals(hook)) {
                         try {
@@ -31,7 +31,7 @@ public class Injector {
         }
     }
 
-    public InjectionInfo callHookReturn(String hook, CallbackInfo info, Object... args) {
+    public InjectionInfo callHookReturn(String hook, CallbackInfo<?> info, Object... args) {
         for (Feature feature : npc.getFeatures()) {
             for (Method method : feature.getClass().getDeclaredMethods()) {
                 if (method.isAnnotationPresent(Hook.class)) {
@@ -41,8 +41,11 @@ public class Injector {
                             Object[] newArgs = new Object[args.length + 1];
                             System.arraycopy(args, 0, newArgs, 0, args.length);
                             newArgs[args.length] = info;
+                            method.setAccessible(true);
                             method.invoke(feature, newArgs);
-                            return new InjectionInfo(new Parameter(info.getReturnType(), info.getReturnValue()));
+                            if (info.getReturnValue() != null) {
+                                return new InjectionInfo(new Parameter(info.getReturnType(), info.getReturnValue()));
+                            }
                         } catch (IllegalAccessException | InvocationTargetException e) {
                             throw new RuntimeException(e);
                         }

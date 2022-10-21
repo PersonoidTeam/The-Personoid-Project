@@ -115,28 +115,29 @@ public class Packets {
         //ClientboundMoveEntityPacket.Rot rotateEntity = new ClientboundMoveEntityPacket.Rot(entity.getEntityId(), yawByte, pitchByte, false);
     }
 
-/*    public static Packet setEntityData(int entityId, DataWatcher data, boolean value) {
-        //ClientboundSetEntityDataPacket packet = new ClientboundSetEntityDataPacket(entityId, data, value);
+    public static Packet updateEntityData(Entity entity) {
         try {
-            return createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, entityId),
-                    new Parameter(DataWatcher.class, data), new Parameter(boolean.class, value));
+            Object entityData = invoke(getNMSEntity(entity), "ai"); // getEntityData
+            Class<?> dataWatcherClass = findClass(Packages.NETWORK.plus("syncher"), "DataWatcher");
+            return createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, entity.getEntityId()),
+                    new Parameter(dataWatcherClass, entityData), new Parameter(boolean.class, true));
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }*/
+    }
 
     public static Packet entityEquipment(int entityId, Map<EquipmentSlot, ItemStack> equipment) {
         //List<Pair<net.minecraft.world.entity.EquipmentSlot, net.minecraft.world.item.ItemStack>> list = new ArrayList<>();
         //equipment.forEach((slot, item) -> list.add(Pair.of(getSlot(slot), getItemStack(item))));
         //ClientboundSetEquipmentPacket packet = new ClientboundSetEquipmentPacket(entityId, list);
         try {
-            Class<?> slotClass = findClass(Packages.NETWORK.plus("world.entity"), "EquipmentSlot");
-            Class<?> itemStackClass = findClass(Packages.NETWORK.plus("world.item"), "ItemStack");
-            Class<?> pairClass = findClass(Packages.NETWORK.plus("util"), "Pair");
+            Class<?> slotClass = findClass(Packages.ITEM_SLOT, "EnumItemSlot");
+            Class<?> itemStackClass = findClass(Packages.ITEM_STACK, "ItemStack");
+            Class<?> pairClass = findClass("com.mojang.datafixers.util", "Pair");
             List<Object> list = new ArrayList<>();
             equipment.forEach((slot, item) -> {
                 try {
-                    Object pair = pairClass.getConstructor(slotClass, itemStackClass)
+                    Object pair = pairClass.getConstructor(Object.class, Object.class)
                             .newInstance(getEquipmentSlot(slot), getItemStack(item));
                     list.add(pair);
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {

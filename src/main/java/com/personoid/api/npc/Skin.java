@@ -1,10 +1,8 @@
 package com.personoid.api.npc;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.cdimascio.dotenv.Dotenv;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -21,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Random;
 import java.util.UUID;
@@ -48,14 +45,18 @@ public class Skin {
         try {
             URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
             InputStreamReader reader = new InputStreamReader(url.openStream());
-            UUID uuid = UUID.fromString(new JsonParser().parse(reader).getAsJsonObject().get("id").getAsString());
-            return get(uuid);
+            String uuid = JsonParser.parseReader(reader).getAsJsonObject().get("id").getAsString();
+            return getFromUUID(uuid);
         } catch (IOException e) {
             throw new RuntimeException("Error ", e);
         }
     }
 
     public static Skin get(UUID uuid) {
+        return getFromUUID(uuid.toString());
+    }
+
+    private static Skin getFromUUID(String uuid) {
         try {
             URL url2 = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid + "?unsigned=false");
             InputStreamReader reader2 = new InputStreamReader(url2.openStream());

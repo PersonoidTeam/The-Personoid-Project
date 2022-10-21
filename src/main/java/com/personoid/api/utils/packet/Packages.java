@@ -19,6 +19,12 @@ public enum Packages {
     PLAYER((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD + ".entity.player"),
     ENTITY((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD + ".entity"),
     DAMAGE_SOURCE((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD + ".damagesource"),
+    ITEM_SLOT((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD + ".entity"),
+    ITEM_STACK((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD + ".item"),
+    CRAFT_ITEM_STACK((version, vInt) -> CRAFTBUKKIT + "." + version + ".inventory"),
+    INTERACTION_HAND((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD.toString()),
+    ATTRIBUTES((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD + ".entity.ai.attributes"),
+    PARTICLE_TYPES((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : CORE + ".particles"),
     ;
 
     private final String packageName;

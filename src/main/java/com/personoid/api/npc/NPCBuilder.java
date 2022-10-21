@@ -1,8 +1,5 @@
 package com.personoid.api.npc;
 
-import com.personoid.api.npc.injection.CallbackInfo;
-import com.personoid.api.npc.injection.Feature;
-import com.personoid.api.npc.injection.Hook;
 import com.personoid.api.utils.CacheManager;
 import com.personoid.api.utils.packet.Packages;
 import com.personoid.api.utils.packet.ReflectionUtils;
@@ -16,7 +13,6 @@ import net.bytebuddy.matcher.ElementMatchers;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.UUID;
 
 public class NPCBuilder {
@@ -32,53 +28,9 @@ public class NPCBuilder {
 
     public static NPC create(GameProfile profile) {
         NPC npc = new NPC(profile);
-        // add feature example
-        npc.addFeature(new Feature() {
-            @Hook("tick")
-            public void tick() {
-                // tick injection
-            }
-
-            @Hook("damage")
-            public void constantDamage(float damage, CallbackInfo ci) {
-                if (damage > 10) {
-                    ci.setReturnValue(2);
-                }
-            }
-        });
         try {
-/*            new AgentBuilder.Default()
-                    .disableClassFormatChanges()
-                    .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-                    .ignore(ElementMatchers.none())
-                    .type(ElementMatchers.is(CACHE.getClass("entity_player")))
-                    .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                        for (String method : npc.getOverrides().getMethods()) {
-                            builder.visit(Advice.to(NPCOverrides.class).on(ElementMatchers.named(method)));
-                        }
-                        return builder;
-                    }).installOnByteBuddyAgent();*/
             DynamicType.Builder<?> builder = new ByteBuddy().subclass(CACHE.getClass("entity_player"),
                     ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC);
-/*            if (ReflectionUtils.getVersionInt() >= 19) {
-                builder = builder.defineConstructor(Visibility.PUBLIC).withParameters(
-                        CACHE.getClass("dedicated_server"),
-                        CACHE.getClass("world_server"),
-                        CACHE.getClass("game_profile"),
-                        CACHE.getClass("profile_public_key")
-                ).intercept(MethodCall.invoke(CACHE.getClass("entity_player").getConstructor(
-                        CACHE.getClass("dedicated_server"),
-                        CACHE.getClass("world_server"),
-                        CACHE.getClass("game_profile"),
-                        CACHE.getClass("profile_public_key")
-                )).onSuper().withAllArguments());
-            } else {
-                builder = builder.defineConstructor(Visibility.PUBLIC).withParameters(
-                        CACHE.getClass("dedicated_server"),
-                        CACHE.getClass("world_server"),
-                        CACHE.getClass("game_profile")
-                ).intercept(MethodDelegation.toConstructor(CACHE.getClass("entity_player")));
-            }*/
             for (String method : npc.getOverrides().getMethods()) {
                 builder = builder.method(ElementMatchers.isMethod()
                                 .and(ElementMatchers.named(method))
@@ -110,9 +62,9 @@ public class NPCBuilder {
                                 new com.mojang.authlib.GameProfile(UUID.randomUUID(), profile.getName())
                         );
             }
-            for (Method method : base.getClass().getDeclaredMethods()) {
+/*            for (Method method : base.getClass().getDeclaredMethods()) {
                 Bukkit.broadcastMessage(method.getName());
-            }
+            }*/
             npc.getOverrides().setBase(base);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);

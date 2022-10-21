@@ -4,9 +4,7 @@ import com.personoid.api.ai.NPCBrain;
 import com.personoid.api.ai.looking.LookController;
 import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
-import com.personoid.api.npc.injection.CallbackInfo;
 import com.personoid.api.npc.injection.Feature;
-import com.personoid.api.npc.injection.InjectionInfo;
 import com.personoid.api.npc.injection.Injector;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.types.HandEnum;
@@ -15,7 +13,6 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
@@ -34,10 +31,9 @@ public class NPC {
     private final NPCBrain brain = new NPCBrain(this);
     private final BlockBreaker blockBreaker = new BlockBreaker(this);
     private final NPCInventory inventory = new NPCInventory(this);
-    private final Injector injector = new Injector(this);
+    final Injector injector = new Injector(this);
 
     private Player entity;
-    private Location location;
     private Pose pose = Pose.STANDING;
     private boolean hasAI = true;
     private boolean hasGravity = true;
@@ -47,6 +43,7 @@ public class NPC {
 
     public NPC(GameProfile profile) {
         this.profile = profile;
+        profile.setNPC(this);
     }
 
     NPCOverrides getOverrides() {
@@ -62,13 +59,10 @@ public class NPC {
         brain.tick();
         moveController.tick();
         lookController.tick();
+        navigation.tick();
         blockBreaker.tick();
+        inventory.tick();
         injector.callHook("tick");
-    }
-
-    double damage(EntityDamageEvent.DamageCause cause, double damage) {
-        InjectionInfo info = injector.callHookReturn("damage", new CallbackInfo(double.class), cause, damage);
-        return info.isModified() ? info.getParameter().getValue(double.class) : damage;
     }
 
     public void addFeature(Feature feature) {
@@ -84,8 +78,7 @@ public class NPC {
     }
 
     public void teleport(Location location) {
-        // internal
-        this.location = location;
+        getEntity().teleport(location);
     }
 
     public void move(Vector vector) {
@@ -139,6 +132,14 @@ public class NPC {
         return overrides.getItemCooldown(material);
     }
 
+    public void setItemCooldown(Material material, int ticks) {
+        overrides.setItemCooldown(material, ticks);
+    }
+
+    public int getItemUsingTicks() {
+        return overrides.getItemUsingTicks();
+    }
+
     public void setVisibilityTo(Player player, boolean visible) {
         overrides.setVisibilityTo(player, visible);
     }
@@ -174,7 +175,7 @@ public class NPC {
     }
 
     public Location getLocation() {
-        return location;
+        return getEntity().getLocation();
     }
 
     public Pose getPose() {
@@ -224,6 +225,10 @@ public class NPC {
 
     public boolean hasAI() {
         return hasAI;
+    }
+
+    public void setRotation(float yaw, float pitch) {
+        getOverrides().setRotation(yaw, pitch);
     }
 
     // endregion

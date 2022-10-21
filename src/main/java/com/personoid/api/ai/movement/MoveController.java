@@ -1,8 +1,8 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.utils.types.BlockTags;
 import com.personoid.api.utils.math.MathUtils;
+import com.personoid.api.utils.types.BlockTags;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
@@ -34,6 +34,10 @@ public class MoveController {
     }
 
     private void tickGravity() {
+        if (!npc.hasGravity()) {
+            velocity.setY(0);
+            return;
+        }
         if (npc.inWater()) velocity.setY(Math.min(velocity.getY() + 0.1, 0.1));
         else if (npc.onGround()) velocity.setY(0);
         else velocity.setY(Math.max(velocity.getY() - 0.09, -3.25));
@@ -48,7 +52,7 @@ public class MoveController {
     }
 
     public void move(Vector velocity, MovementType type) {
-        if (timeoutTicks > 0) return;
+        if (timeoutTicks > 0 || !npc.hasAI()) return;
         double max = type.name().contains("SPRINT") ? 0.52 : 0.325;
         Vector sum = this.velocity.clone().add(velocity.clone().setY(0));
         if (sum.length() > max) {
@@ -59,7 +63,7 @@ public class MoveController {
     }
 
     public void jump() {
-        if (npc.onGround()) {
+        if (npc.hasAI() && npc.onGround()) {
             velocity.setY(0.55);
             //npc.setGroundTicks(0);
             jumpTicks = 4;
@@ -67,6 +71,7 @@ public class MoveController {
     }
 
     public void applyKnockback(Location source) {
+        if (!npc.hasAI()) return;
         Vector vel = npc.getLocation().toVector().subtract(source.toVector()).setY(0).normalize().multiply(0.3);
         if (npc.onGround()) vel.multiply(1.7).setY(0.35);
         timeoutTicks = 10;
@@ -74,7 +79,7 @@ public class MoveController {
     }
 
     public void step(double force) {
-        if (npc.onGround()) {
+        if (npc.hasAI() && npc.onGround()) {
             velocity.setY(force);
             //npc.setGroundTicks(0);
             jumpTicks = 4;

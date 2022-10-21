@@ -1,5 +1,9 @@
 package com.personoid.api.npc;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import com.personoid.api.npc.injection.CallbackInfo;
+import com.personoid.api.npc.injection.InjectionInfo;
 import com.personoid.api.utils.packet.Packages;
 import com.personoid.api.utils.packet.Packets;
 import com.personoid.api.utils.packet.ReflectionUtils;
@@ -7,29 +11,41 @@ import com.personoid.api.utils.types.HandEnum;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Chunk;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class NPCOverrides {
+public class NPCOverrides implements Listener {
     private Object base;
     private final NPC npc;
 
     public NPCOverrides(NPC npc) {
         this.npc = npc;
+        JavaPlugin userPlugin = JavaPlugin.getProvidingPlugin(NPCOverrides.class);
+        Bukkit.getPluginManager().registerEvents(this, userPlugin);
     }
 
     String[] getMethods() {
+        // TRANSLATIONS: tick
         return new String[] {
-            "k", //tick
+            "k"
         };
     }
 
@@ -56,7 +72,9 @@ public class NPCOverrides {
 
     public void invoke(String methodName, Object... args) {
         try {
-            Method method = base.getClass().getMethod(methodName);
+            List<Class<?>> argTypes = new ArrayList<>();
+            for (Object arg : args) argTypes.add(arg.getClass());
+            Method method = base.getClass().getMethod(methodName, argTypes.toArray(new Class[0]));
             method.setAccessible(true);
             method.invoke(base, args);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
@@ -66,7 +84,9 @@ public class NPCOverrides {
 
     public <T> T invoke(Class<T> type, String methodName, Object... args) {
         try {
-            Method method = base.getClass().getMethod(methodName);
+            List<Class<?>> argTypes = new ArrayList<>();
+            for (Object arg : args) argTypes.add(arg.getClass());
+            Method method = base.getClass().getMethod(methodName, argTypes.toArray(new Class[0]));
             method.setAccessible(true);
             return (T) method.invoke(base, args);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
@@ -111,54 +131,47 @@ public class NPCOverrides {
     private int aliveTicks;
     private int groundTicks;
     private final Map<Material, Integer> itemCooldowns = new HashMap<>();
+    private int handUsing = -1;
+    private int itemUsingTicks;
 
     public void k() { // tick
         loadChunks();
         aliveTicks++;
-        //if (aliveTicks % 2 != 0) return;
+        if (aliveTicks % 5 != 0) {
+            updateSkin();
+        }
         //invoke("k"); // tick
         if (!invoke(Boolean.class, "bo")) return; // isAlive
-
         double yPos = invoke(double.class, "dh"); // getY
-
         if (aliveTicks == 1) {
             lastYIncrease = yPos;
         }
-
         if (getField(int.class, "aK") > 0) modInt("aK", -1); // hurtTime
-
         if (npc.onGround()) {
             if (groundTicks < Integer.MAX_VALUE) {
                 groundTicks++;
             }
         } else groundTicks = 0;
-
         float health = invoke(float.class, "ef"); // getHealth
         float maxHealth = invoke(float.class, "et"); // getMaxHealth
         float amount = health < maxHealth - 0.05F ? health + 0.05F : maxHealth; // 0.1F = natual regen speed (full saturation)
-
+        getEntity().setHealth(amount);
         //invoke("c", amount); // setHealth, FIXME: method not found?!?!?
-
-        if (yPos < -64) {
-            invoke("av"); // outOfWorld
-        }
-
+        if (yPos < -64) invoke("av"); // outOfWorld
         fallDamageCheck();
-
         // FIXME: swimming not working
-
 /*        if (inWater() && targetLoc.getY() - 1F < getLocation().getY()) {
             if (!isSwimming()) setSwimming(true);
         } else if (isSwimming()) {
             setSwimming(false);
         }*/
-
         for (Material material : itemCooldowns.keySet()) {
             int cooldown = itemCooldowns.get(material);
             if (cooldown > 0) itemCooldowns.put(material, cooldown - 1);
             else itemCooldowns.remove(material);
         }
-
+        if (handUsing != -1) itemUsingTicks++;
+        Packets.updateEntityData(getEntity()).send();
         npc.tick();
     }
 
@@ -180,9 +193,13 @@ public class NPCOverrides {
         double yPos = invoke(double.class, "dh"); // getY
         if (invoke(boolean.class, "aw")) { // onGround
             float damage = (float) (lastYIncrease - yPos - 3F);
-            Class<?> damageSourceClass = ReflectionUtils.findClass(Packages.DAMAGE_SOURCE, "DamageSource");
-            Object fall = ReflectionUtils.getField(damageSourceClass, "k"); // FALL
-            if (damage > 0D) invoke("a", fall, damage); // hurt
+            if (damage > 0) {
+                getEntity().setLastDamageCause(new EntityDamageEvent(getEntity(), EntityDamageEvent.DamageCause.FALL, damage));
+                getEntity().damage(damage);
+                //Class<?> damageSourceClass = ReflectionUtils.findClass(Packages.DAMAGE_SOURCE, "DamageSource");
+                //Object fall = ReflectionUtils.getField(damageSourceClass, "k"); // FALL
+                //if (damage > 0D) invoke("a", fall, damage); // hurt FIXME: method not found?!?!?
+            }
         }
         if (npc.getMoveController().getVelocity().getY() > 0) lastYIncrease = yPos;
     }
@@ -214,51 +231,72 @@ public class NPCOverrides {
         }
     }*/
 
-/*    public boolean damageEntity0(DamageSource damagesource, float f) {
-        Entity attacker = damagesource.getEntity();
-        if (attacker != null) {
-            ItemStack mainHand = npc.getInventory().getOffhandItem();
-            ItemStack offHand = npc.getInventory().getSelectedItem();
-            if ((mainHand != null && mainHand.getType() == Material.SHIELD) || (offHand != null && offHand.getType() == Material.SHIELD)) {
-                if (getItemCooldown(Material.SHIELD) <= 0 && isUsingItem()) {
-                    // check if angle is within 120 degrees
-                    Vector direction = attacker.getBukkitEntity().getLocation().getDirection();
-                    Vector npcDirection = getLocation().getDirection();
-                    double angle = direction.angle(npcDirection);
-                    if (angle < 2.0943951023931953D) {
-                        // shield block
-                        LivingEntity living = (LivingEntity) attacker.getBukkitEntity();
-                        EntityEquipment equipment = living.getEquipment();
-                        if (equipment != null && equipment.getItemInMainHand().getType().name().contains("_AXE")) {
-                            getEntity().playEffect(EntityEffect.SHIELD_BREAK);
-                            setItemCooldown(Material.SHIELD, 100);
-                        }
-                        getEntity().getWorld().playSound(getEntity().getLocation(), Sound.ITEM_SHIELD_BLOCK, 1F, 1F);
-                        return false;
+    @EventHandler
+    private void damage(EntityDamageByEntityEvent event) {
+        if (event.getEntity() != getEntity()) return;
+        Entity attacker = event.getDamager();
+        double damage = event.getDamage();
+        InjectionInfo info = npc.injector.callHookReturn("damage", new CallbackInfo<>(double.class), damage);
+        if (info.isModified()) damage = info.getParameter().getValue(Double.class);
+        ItemStack mainHand = npc.getInventory().getOffhandItem();
+        ItemStack offHand = npc.getInventory().getSelectedItem();
+        if ((mainHand != null && mainHand.getType() == Material.SHIELD) || (offHand != null && offHand.getType() == Material.SHIELD)) {
+            if (getItemCooldown(Material.SHIELD) <= 0 && isUsingItem()) {
+                // check if angle is within 120 degrees
+                Vector direction = attacker.getLocation().getDirection();
+                Vector npcDirection = getLocation().getDirection();
+                double angle = direction.angle(npcDirection);
+                if (angle < 2.0943951023931953D && itemUsingTicks >= 5) {
+                    // shield block
+                    LivingEntity living = (LivingEntity) attacker;
+                    EntityEquipment equipment = living.getEquipment();
+                    if (equipment != null && equipment.getItemInMainHand().getType().name().contains("_AXE")) {
+                        getEntity().playEffect(EntityEffect.SHIELD_BREAK);
+                        setItemCooldown(Material.SHIELD, 100);
                     }
+                    getEntity().getWorld().playSound(getEntity().getLocation(), Sound.ITEM_SHIELD_BLOCK, 1F, 1F);
+                    event.setCancelled(true);
+                    return;
                 }
             }
-            boolean damaged = super.damageEntity0(damagesource, f);
-            if (damaged) {
-                // TODO: check if still alive -> if not, call npc event
-                //moveController.applyKnockback(attacker.getBukkitEntity().getLocation());
-            }
-            return damaged;
-        } else return super.damageEntity0(damagesource, f);
-    }*/
+        }
+        event.setDamage(damage);
+        npc.getMoveController().applyKnockback(attacker.getLocation());
+    }
+
+    @EventHandler
+    private void damage(EntityDamageEvent event) {
+        if (event.getEntity() != getEntity()) return;
+        double damage = event.getDamage();
+        InjectionInfo info = npc.injector.callHookReturn("damage", new CallbackInfo<>(double.class), damage);
+        if (info.isModified()) damage = info.getParameter().getValue(Double.class);
+        event.setDamage(damage);
+    }
 
     private Object getNMSHand(HandEnum hand) {
-        Class<?> interactionHandClass = ReflectionUtils.findClass(Packages.SERVER_WORLD, "InteractionHand");
+        Class<?> interactionHandClass = ReflectionUtils.findClass(Packages.INTERACTION_HAND, "EnumHand");
         String nmsHandName = hand == HandEnum.RIGHT || hand == HandEnum.DOMINANT ? "MAIN_HAND" : "OFF_HAND";
-        return ReflectionUtils.getField(interactionHandClass, nmsHandName);
+        return ReflectionUtils.getEnum(interactionHandClass, nmsHandName);
     }
 
     public void startUsingItem(HandEnum hand) {
         invoke("c", getNMSHand(hand));
+        if (handUsing != (hand == HandEnum.LEFT ? 0 : 1)) itemUsingTicks = 0;
+        handUsing = hand == HandEnum.LEFT ? 0 : 1;
+    }
+
+    public boolean isUsingItem() {
+        return invoke(boolean.class, "eT");
     }
 
     public void stopUsingItem() {
         invoke("eZ");
+        handUsing = -1;
+        itemUsingTicks = 0;
+    }
+
+    public int getItemUsingTicks() {
+        return itemUsingTicks;
     }
 
     public void swingHand(HandEnum hand) {
@@ -267,6 +305,10 @@ public class NPCOverrides {
 
     public int getItemCooldown(Material material) {
         return itemCooldowns.getOrDefault(material, 0);
+    }
+
+    public void setItemCooldown(Material material, int ticks) {
+        itemCooldowns.put(material, ticks);
     }
 
     public void setVisibilityTo(Player player, boolean visible) {
@@ -288,5 +330,24 @@ public class NPCOverrides {
     // convert bukkit vector to nms vector
     public Object getVec3(Vector vector) {
         return new Vec3(vector.getX(), vector.getY(), vector.getZ());
+    }
+
+    public Location getLocation() {
+        return getEntity().getLocation();
+    }
+
+    public void setLocation(Location location) {
+        getEntity().teleport(location);
+    }
+
+    public void setRotation(float yaw, float pitch) {
+        ((ServerPlayer)base).setXRot(pitch);
+        ((ServerPlayer)base).setYRot(yaw);
+    }
+
+    public void updateSkin() {
+        Skin skin = npc.getProfile().getSkin();
+        GameProfile profile = ((ServerPlayer)base).getGameProfile();
+        profile.getProperties().put("textures", new Property("textures", skin.getTexture(), skin.getSignature()));
     }
 }

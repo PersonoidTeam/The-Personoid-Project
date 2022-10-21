@@ -27,13 +27,13 @@ public class LookController {
         if (targets.isEmpty()) return;
         Location facing = getFacing(getHighestPriorityTarget().getLocation());
         Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
-        //npc.setRotation(facing.getYaw(), facing.getPitch());
+        npc.setRotation(facing.getYaw(), facing.getPitch());
     }
 
     public void face(Location location) {
         Location facing = getFacing(location);
         Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
-        //npc.setRotation(facing.getYaw(), facing.getPitch());
+        npc.setRotation(facing.getYaw(), facing.getPitch());
     }
 
     private Location getFacing(Location target) {
