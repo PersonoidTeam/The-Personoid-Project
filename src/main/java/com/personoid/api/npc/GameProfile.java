@@ -45,6 +45,7 @@ public class GameProfile {
 
     public void setSkin(Skin skin) {
         this.skin = skin;
+        npc.getOverrides().updateSkin();
     }
 
     public UUID getId() {
@@ -52,12 +53,13 @@ public class GameProfile {
     }
 
     public void setTabVisibility(boolean visible) {
-        this.visibleInTab = visible;
-        if (visible) {
+        if (!npc.isSpawned()) return;
+        if (visible && !visibleInTab) {
             Packets.showPlayer(npc.getEntity()).send();
-        } else {
+        } else if (!visible && visibleInTab) {
             Packets.hidePlayer(npc.getEntity()).send();
         }
+        this.visibleInTab = visible;
     }
 
     public boolean isVisibleInTab() {

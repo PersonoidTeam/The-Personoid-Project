@@ -8,6 +8,8 @@ import com.personoid.api.utils.packet.Packages;
 import com.personoid.api.utils.packet.Packets;
 import com.personoid.api.utils.packet.ReflectionUtils;
 import com.personoid.api.utils.types.HandEnum;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
@@ -27,10 +29,7 @@ import org.bukkit.util.Vector;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class NPCOverrides implements Listener {
     private Object base;
@@ -51,7 +50,9 @@ public class NPCOverrides implements Listener {
 
     public void setBase(Object base) {
         this.base = base;
+        npc.entity = getEntity();
         npc.init();
+        init();
     }
 
     public Object getBase() {
@@ -126,6 +127,19 @@ public class NPCOverrides implements Listener {
 
     // endregion
 
+    public void onSpawn() {
+        if (!npc.getProfile().isVisibleInTab()) {
+            Bukkit.getScheduler().runTaskLater(JavaPlugin.getProvidingPlugin(NPCOverrides.class), () ->
+                    Packets.hidePlayer(npc.getEntity()).send(), 1);
+        }
+    }
+
+    public void init() {
+        npc.getInventory().updateVisuals();
+        Packets.updateEntityData(getEntity()).send();
+        updateSkin();
+    }
+
     // NPC METHODS + VARIABLES
     private double lastYIncrease;
     private int aliveTicks;
@@ -133,13 +147,11 @@ public class NPCOverrides implements Listener {
     private final Map<Material, Integer> itemCooldowns = new HashMap<>();
     private int handUsing = -1;
     private int itemUsingTicks;
+    private final Set<UUID> playersInRange = new HashSet<>();
 
     public void k() { // tick
         loadChunks();
         aliveTicks++;
-        if (aliveTicks % 5 != 0) {
-            updateSkin();
-        }
         //invoke("k"); // tick
         if (!invoke(Boolean.class, "bo")) return; // isAlive
         double yPos = invoke(double.class, "dh"); // getY
@@ -171,6 +183,24 @@ public class NPCOverrides implements Listener {
             else itemCooldowns.remove(material);
         }
         if (handUsing != -1) itemUsingTicks++;
+        // TODO: hacky workaround (fixes npc spawning invisible when a player is out of view of where it spawned)
+        Bukkit.getOnlinePlayers().forEach(player -> {
+            if (player.getLocation().distance(npc.getLocation()) <= 48F) {
+                if (!playersInRange.contains(player.getUniqueId())) {
+                    player.showPlayer(JavaPlugin.getProvidingPlugin(NPCOverrides.class), getEntity());
+                    if (!npc.getProfile().isVisibleInTab()) {
+                        Bukkit.getScheduler().runTaskLater(JavaPlugin.getProvidingPlugin(NPCOverrides.class), () ->
+                                Packets.hidePlayer(npc.getEntity()).send(player), 1);
+                    }
+                    playersInRange.add(player.getUniqueId());
+                }
+            } else {
+                if (playersInRange.contains(player.getUniqueId())) {
+                    player.hidePlayer(JavaPlugin.getProvidingPlugin(NPCOverrides.class), getEntity());
+                    playersInRange.remove(player.getUniqueId());
+                }
+            }
+        });
         Packets.updateEntityData(getEntity()).send();
         npc.tick();
     }
@@ -349,5 +379,7 @@ public class NPCOverrides implements Listener {
         Skin skin = npc.getProfile().getSkin();
         GameProfile profile = ((ServerPlayer)base).getGameProfile();
         profile.getProperties().put("textures", new Property("textures", skin.getTexture(), skin.getSignature()));
+        ((ServerPlayer)base).getEntityData().set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0x00);
+        ((ServerPlayer)base).getEntityData().set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0xFF);
     }
 }

@@ -60,6 +60,17 @@ public class NPCInventory {
         }
     }
 
+    public void updateVisuals() {
+        Packets.entityEquipment(npc.getEntityId(), new HashMap<EquipmentSlot, ItemStack>() {{
+            put(EquipmentSlot.HAND, hotbar[selectedSlot]);
+            put(EquipmentSlot.OFF_HAND, offhand);
+            put(EquipmentSlot.HEAD, armorContents[SlotIndex.HELMET.index]);
+            put(EquipmentSlot.CHEST, armorContents[SlotIndex.CHESTPLATE.index]);
+            put(EquipmentSlot.LEGS, armorContents[SlotIndex.LEGGINGS.index]);
+            put(EquipmentSlot.FEET, armorContents[SlotIndex.BOOTS.index]);
+        }}).send();
+    }
+
     public void select(int slot) {
         if (slot > 8 || slot < 0) {
             throw new IndexOutOfBoundsException("Slot index must be between than 0-8 (was " + slot + ")");

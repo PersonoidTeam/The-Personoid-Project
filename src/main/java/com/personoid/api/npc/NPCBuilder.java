@@ -17,6 +17,7 @@ import java.util.UUID;
 
 public class NPCBuilder {
     private static final CacheManager CACHE = new CacheManager("npc_builder");
+    private static DynamicType.Builder<?> builder;
 
     static {
         CACHE.put("entity_player", ReflectionUtils.findClass(Packages.SERVER_LEVEL, "EntityPlayer"));
@@ -28,13 +29,14 @@ public class NPCBuilder {
 
     public static NPC create(GameProfile profile) {
         NPC npc = new NPC(profile);
+        if (builder == null) {
+            builder = new ByteBuddy().subclass(CACHE.getClass("entity_player"), ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC);
+        }
         try {
-            DynamicType.Builder<?> builder = new ByteBuddy().subclass(CACHE.getClass("entity_player"),
-                    ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC);
             for (String method : npc.getOverrides().getMethods()) {
                 builder = builder.method(ElementMatchers.isMethod()
-                                .and(ElementMatchers.named(method))
-                                .and(ElementMatchers.returns(TypeDescription.VOID))
+                        .and(ElementMatchers.named(method))
+                        .and(ElementMatchers.returns(TypeDescription.VOID))
                         .and(ElementMatchers.takesNoArguments())
                 ).intercept(MethodCall.invokeSuper().andThen(MethodCall.invoke(NPCOverrides.class.getMethod(method)).on(npc.getOverrides())));
             }

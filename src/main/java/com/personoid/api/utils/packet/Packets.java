@@ -35,7 +35,7 @@ public class Packets {
             Parameter playerParam2 = new Parameter(findClass(Packages.PLAYER, "EntityHuman"), getEntityPlayer(player));
             Packet addPlayerPacket = createPacket("PacketPlayOutNamedEntitySpawn", playerParam2);
             Packet setEntityDataPacket = createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, player.getEntityId()),
-                    new Parameter(dataWatcherClass, entityData), new Parameter(boolean.class, true));
+                    new Parameter(dataWatcherClass, entityData), new Parameter(boolean.class, false));
             return Packet.mergePackets(infoPacket, addPlayerPacket, setEntityDataPacket);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -120,7 +120,7 @@ public class Packets {
             Object entityData = invoke(getNMSEntity(entity), "ai"); // getEntityData
             Class<?> dataWatcherClass = findClass(Packages.NETWORK.plus("syncher"), "DataWatcher");
             return createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, entity.getEntityId()),
-                    new Parameter(dataWatcherClass, entityData), new Parameter(boolean.class, true));
+                    new Parameter(dataWatcherClass, entityData), new Parameter(boolean.class, false));
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -131,8 +131,6 @@ public class Packets {
         //equipment.forEach((slot, item) -> list.add(Pair.of(getSlot(slot), getItemStack(item))));
         //ClientboundSetEquipmentPacket packet = new ClientboundSetEquipmentPacket(entityId, list);
         try {
-            Class<?> slotClass = findClass(Packages.ITEM_SLOT, "EnumItemSlot");
-            Class<?> itemStackClass = findClass(Packages.ITEM_STACK, "ItemStack");
             Class<?> pairClass = findClass("com.mojang.datafixers.util", "Pair");
             List<Object> list = new ArrayList<>();
             equipment.forEach((slot, item) -> {

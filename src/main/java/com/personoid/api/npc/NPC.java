@@ -33,7 +33,7 @@ public class NPC {
     private final NPCInventory inventory = new NPCInventory(this);
     final Injector injector = new Injector(this);
 
-    private Player entity;
+    Player entity;
     private Pose pose = Pose.STANDING;
     private boolean hasAI = true;
     private boolean hasGravity = true;
@@ -51,17 +51,24 @@ public class NPC {
     }
 
     void init() {
-        entity = overrides.getEntity();
         injector.callHook("init");
     }
 
+    public void respawn() {
+        overrides.onSpawn();
+        overrides.init();
+        injector.callHook("respawn");
+    }
+
     void tick() {
-        brain.tick();
         moveController.tick();
         lookController.tick();
-        navigation.tick();
-        blockBreaker.tick();
-        inventory.tick();
+        if (hasAI) {
+            brain.tick();
+            navigation.tick();
+            blockBreaker.tick();
+            inventory.tick();
+        }
         injector.callHook("tick");
     }
 
@@ -229,6 +236,10 @@ public class NPC {
 
     public void setRotation(float yaw, float pitch) {
         getOverrides().setRotation(yaw, pitch);
+    }
+
+    public boolean isSpawned() {
+        return getEntity() != null;
     }
 
     // endregion

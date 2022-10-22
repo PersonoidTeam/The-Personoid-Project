@@ -9,12 +9,12 @@ import net.bytebuddy.matcher.ElementMatchers;
 import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 
 import java.lang.reflect.InvocationTargetException;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -38,8 +38,23 @@ public class NPCHandler {
         return npc;
     }
 
+    public void respawnNPC(NPC npc, Location location) {
+        ServerPlayer sp = ((ServerPlayer)npc.getOverrides().getBase());
+/*        sp.connection.send(new ClientboundRespawnPacket(sp.getLevel().dimensionTypeId(), sp.getLevel().dimension(),
+                BiomeManager.obfuscateSeed(sp.getLevel().getSeed()), sp.gameMode.getGameModeForPlayer(), sp.gameMode.getPreviousGameModeForPlayer(),
+                sp.getLevel().isDebug(), sp.getLevel().isFlat(), true, sp.getLastDeathLocation()));*/
+        sp.respawn();
+        sp.setPos(new Vec3(location.getX(), location.getY(), location.getZ()));
+        //sp.getLevel().addRespawnedPlayer(sp);
+        npc.getEntity().setHealth(20);
+        //sp.unsetRemoved();
+        Packets.removePlayer(npc.getEntity()).send();
+        Packets.addPlayer(npc.getEntity()).send();
+        npc.respawn();
+    }
+
     public void spawnNPC(NPC npc, Location location) {
-        npc.teleport(location);
+        ((CraftPlayer) npc.getEntity()).getHandle().setPos(new Vec3(location.getX(), location.getY(), location.getZ()));
         Packets.addPlayer(npc.getEntity()).send();
         Connection playerConn = ((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.connection;
         //Bukkit.broadcastMessage("hashcode: " + ((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.hashCode());
@@ -68,16 +83,16 @@ public class NPCHandler {
             // connection class
             Object conn = connClass.getConstructor(minecraftServerClass, networkManagerClassBase, serverPlayerClass)
                     .newInstance(server, networkManager, serverPlayer);
-            setField(networkManager, "n", new SocketAddress() {
+/*            setField(networkManager, "n", new SocketAddress() {
                 private static final long serialVersionUID = 6994835504305404545L;
-            });
+            });*/
             setField(serverPlayer, "b", conn);
 
             Object level = invoke(serverPlayer, "W"); // getLevel
             //level.getClass().getMethod("c", serverPlayerClass).invoke(level, serverPlayer); // addPlayer
             ((CraftPlayer) npc.getEntity()).getHandle().getLevel().addNewPlayer(((CraftPlayer) npc.getEntity()).getHandle());
             ((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address = playerConn.address;
-            npc.teleport(location);
+            npc.getOverrides().onSpawn();
             //Bukkit.broadcastMessage("npc address: " + ((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address.toString());
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -94,7 +109,8 @@ public class NPCHandler {
         Class<?> removalReasonClass = findClass(Packages.ENTITY, "Entity$RemovalReason");
         //Object removalReason = getEnum(removalReasonClass, "b"); // DISCARDED FIXME: no enum constant found ?!?!?
         //invoke(getEntityPlayer(npc.getEntity()), "a", removalReason); // remove
-        ((ServerPlayer)npc.getOverrides().getBase()).remove(Entity.RemovalReason.DISCARDED); // TODO: implement
+        //((ServerPlayer)npc.getOverrides().getBase()).remove(Entity.RemovalReason.DISCARDED); // TODO: implement
+        ((CraftPlayer) npc.getEntity()).getHandle().getLevel().removePlayerImmediately(((ServerPlayer)npc.getOverrides().getBase()), Entity.RemovalReason.DISCARDED);
     }
 
     public NPC getNPC(String name) {
