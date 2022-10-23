@@ -1,46 +1,44 @@
 package com.personoid.api;
 
 import com.personoid.PersonoidPlugin;
-import com.personoid.api.npc.NPCHandler;
+import com.personoid.api.npc.NPCRegistry;
 import com.personoid.api.utils.bukkit.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class PersonoidAPI {
-    private static NPCHandler npcHandler;
-    private static String version;
-    private static Plugin plugin;
-    private static final Logger logger = Logger.get("Personoid");
+    private static final Logger LOGGER = Logger.get("Personoid");
+    private static final Logger LOGGER_REG = Logger.get("Personoid Registry");
+    private static NPCRegistry registry;
+    private static PersonoidPlugin basePlugin;
 
     static {
-        Plugin userPlugin = JavaPlugin.getProvidingPlugin(PersonoidAPI.class);
-        if (userPlugin.getClass() != PersonoidPlugin.class) {
-/*            PersonoidPlugin basePlugin = (PersonoidPlugin) Bukkit.getPluginManager().getPlugin("Personoid");
-            if (basePlugin != null) basePlugin.addUserPlugin(userPlugin.getName());*/
+        PersonoidPlugin basePlugin = (PersonoidPlugin) Bukkit.getPluginManager().getPlugin("Personoid");
+        Plugin providingPlugin = JavaPlugin.getProvidingPlugin(PersonoidAPI.class);
+        if (basePlugin != null) {
+            PersonoidAPI.basePlugin = basePlugin;
+            basePlugin.addProvidingPlugin(providingPlugin.getName());
+            LOGGER_REG.info("Located Personoid plugin, using it as registry");
+        } else {
+            LOGGER_REG.info("Personoid plugin not found, using shaded API as registry");
         }
-        if (PersonoidAPI.plugin == null) {
-            logger.info("Registered " + userPlugin.getName() + ".");
+        if (PersonoidAPI.basePlugin != null) {
+            LOGGER.info("Registered internal binding: " + providingPlugin.getName());
+        } else {
+            LOGGER.info("Registered external binding: " + providingPlugin.getName());
         }
     }
 
-    public static NPCHandler getRegistry() {
-        if (npcHandler != null) return npcHandler;
-        return npcHandler = new NPCHandler();
-/*        if (npcHandler != null) return npcHandler;
-        return npcHandler = switch (Objects.requireNonNull(getVersion()).split("_R")[0]) {
-            case "v1_18" -> new NPCHandler_1_18_R2();
-            case "v1_19" -> new NPCHandler_1_19_R1();
-            default -> null;
-        };*/
+    public static NPCRegistry getRegistry() {
+        if (registry != null) return registry;
+        return registry = basePlugin != null ? basePlugin.getBaseRegistry() : new NPCRegistry();
     }
 
-    private static String getVersion() {
-        if (version != null) return version;
-        try {
-            return version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-        } catch (ArrayIndexOutOfBoundsException e) {
-            return null;
+    public static NPCRegistry getRegistry(String name) {
+        if (basePlugin == null) {
+            throw new IllegalStateException("Cannot get registry for " + name + " because the base plugin cannot be found.");
         }
+        return basePlugin.getRegistry(name);
     }
 }

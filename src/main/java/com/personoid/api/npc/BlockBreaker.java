@@ -25,9 +25,9 @@ public class BlockBreaker {
 
     public void tick() {
         if (!canTick) return;
-        //currentProgress += block.getBreakSpeed(npc.getEntity()) * 5.1F; // TODO: implement
+        currentProgress += block.getBreakSpeed(npc.getEntity()) * 5.1F; // TODO: implement
         sendPacket(getProgress());
-        //npc.swingHand(HandEnum.RIGHT);
+        npc.swingHand(HandEnum.RIGHT);
         if (hardnessOfBlock * currentProgress >= hardnessOfBlock) {
             block.breakNaturally(npc.getEntity().getItemInHand());
             playBreakSound();

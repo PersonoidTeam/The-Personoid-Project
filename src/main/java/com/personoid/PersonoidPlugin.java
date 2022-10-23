@@ -1,7 +1,6 @@
 package com.personoid;
 
-import com.personoid.api.PersonoidAPI;
-import com.personoid.api.npc.NPCHandler;
+import com.personoid.api.npc.NPCRegistry;
 import com.personoid.api.utils.bukkit.Logger;
 import com.personoid.api.utils.bukkit.Task;
 import com.personoid.commands.CommandManager;
@@ -15,7 +14,9 @@ import java.util.Map;
 
 public class PersonoidPlugin extends JavaPlugin {
     private final Logger LOGGER = Logger.get("Personoid");
-    private final Map<String, NPCHandler> registries = new HashMap<>();
+    private final NPCRegistry baseRegistry = new NPCRegistry();
+    private final Map<String, NPCRegistry> registries = new HashMap<>();
+    private static PersonoidPlugin plugin;
 
     @Override
     public void onEnable() {
@@ -31,8 +32,8 @@ public class PersonoidPlugin extends JavaPlugin {
         LOGGER.info("Successfully unloaded Personoid plugin.");
     }
 
-    public void addUserPlugin(String name) {
-        registries.put(name, PersonoidAPI.getRegistry());
+    public void addProvidingPlugin(String name) {
+        registries.put(name, new NPCRegistry());
     }
 
     public void initReloader() {
@@ -44,5 +45,18 @@ public class PersonoidPlugin extends JavaPlugin {
                 Bukkit.reload();
             }
         }, this).repeat(0, 20);
+    }
+
+    public static JavaPlugin getPlugin() {
+        if (plugin == null) plugin = getPlugin(PersonoidPlugin.class);
+        return plugin;
+    }
+
+    public NPCRegistry getBaseRegistry() {
+        return baseRegistry;
+    }
+
+    public NPCRegistry getRegistry(String name) {
+        return registries.get(name);
     }
 }

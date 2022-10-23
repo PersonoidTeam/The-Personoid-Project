@@ -21,7 +21,7 @@ import java.util.UUID;
 
 import static com.personoid.api.utils.packet.ReflectionUtils.*;
 
-public class NPCHandler {
+public class NPCRegistry {
     private static final List<NPC> NPCs = new ArrayList<>();
 
     public NPC createNPCInstance(String name) {
