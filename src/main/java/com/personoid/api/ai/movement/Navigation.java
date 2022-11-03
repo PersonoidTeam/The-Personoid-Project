@@ -187,7 +187,7 @@ public class Navigation {
 
     public static class Options {
         private float maxStepHeight = 0.3F;
-        private float movementSmoothing = 0.1F;
+        private float movementSmoothing = 1F; // 0.1F
         private MovementType movementType;
 
         public float getMaxStepHeight() {

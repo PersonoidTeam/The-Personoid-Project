@@ -18,12 +18,25 @@ public enum BlockTags {
     }
 
     public boolean is(Material material) {
-        String name = material.name().toLowerCase();
         switch (this) {
-            case SOLID: return material.isSolid() || name.contains("leaves");
-            case LIQUID: return material == Material.WATER || material == Material.LAVA;
-            case CLIMBABLE: return material == Material.LADDER || name.contains("vine");
+            case SOLID: return isSolid(material);
+            case LIQUID: return isLiquid(material);
+            case CLIMBABLE: return isClimbable(material);
         }
         return false;
+    }
+
+    private boolean isSolid(Material material) {
+        String name = material.name().toLowerCase();
+        return material.isSolid() || name.contains("leaves");
+    }
+
+    private boolean isLiquid(Material material) {
+        return material == Material.WATER || material == Material.LAVA;
+    }
+
+    private boolean isClimbable(Material material) {
+        String name = material.name().toLowerCase();
+        return material == Material.LADDER || name.contains("vine");
     }
 }

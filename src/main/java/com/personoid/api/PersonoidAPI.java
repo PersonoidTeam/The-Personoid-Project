@@ -3,9 +3,6 @@ package com.personoid.api;
 import com.personoid.PersonoidPlugin;
 import com.personoid.api.npc.NPCRegistry;
 import com.personoid.api.utils.bukkit.Logger;
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public class PersonoidAPI {
     private static final Logger LOGGER = Logger.get("Personoid");
@@ -13,7 +10,7 @@ public class PersonoidAPI {
     private static NPCRegistry registry;
     private static PersonoidPlugin basePlugin;
 
-    static {
+/*    static {
         PersonoidPlugin basePlugin = (PersonoidPlugin) Bukkit.getPluginManager().getPlugin("Personoid");
         Plugin providingPlugin = JavaPlugin.getProvidingPlugin(PersonoidAPI.class);
         if (basePlugin != null) {
@@ -28,7 +25,7 @@ public class PersonoidAPI {
         } else {
             LOGGER.info("Registered external binding: " + providingPlugin.getName());
         }
-    }
+    }*/
 
     public static NPCRegistry getRegistry() {
         if (registry != null) return registry;

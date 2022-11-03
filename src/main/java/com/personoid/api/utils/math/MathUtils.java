@@ -100,4 +100,9 @@ public class MathUtils {
     public static Vector getDirection(Location loc1, Location loc2) {
         return loc2.clone().subtract(loc1).toVector();
     }
+
+    public static int floor(double value) {
+        int intValue = (int) value;
+        return value < (double) intValue ? intValue - 1 : intValue;
+    }
 }

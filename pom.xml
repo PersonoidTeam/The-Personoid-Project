@@ -14,7 +14,6 @@
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <generatedSources>${project.build.directory}/generated-sources/java</generatedSources>
         <personoid-version>1.0.0</personoid-version>
         <nms.version>1.19.2-R0.1</nms.version>
     </properties>
@@ -116,7 +115,7 @@
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>1.12.16</version>
+            <version>1.12.18</version>
         </dependency>
         <dependency>
             <groupId>io.github.cdimascio</groupId>
