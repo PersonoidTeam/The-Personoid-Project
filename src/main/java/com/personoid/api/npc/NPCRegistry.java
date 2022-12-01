@@ -1,18 +1,15 @@
 package com.personoid.api.npc;
 
+import com.personoid.api.utils.NMSBridge;
 import com.personoid.api.utils.packet.Packages;
 import com.personoid.api.utils.packet.Packets;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
-import net.minecraft.network.Connection;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -39,37 +36,38 @@ public class NPCRegistry {
     }
 
     public void respawnNPC(NPC npc, Location location) {
-        ServerPlayer sp = ((ServerPlayer)npc.getOverrides().getBase());
+        //ServerPlayer sp = ((ServerPlayer)npc.getOverrides().getBase());
 /*        sp.connection.send(new ClientboundRespawnPacket(sp.getLevel().dimensionTypeId(), sp.getLevel().dimension(),
                 BiomeManager.obfuscateSeed(sp.getLevel().getSeed()), sp.gameMode.getGameModeForPlayer(), sp.gameMode.getPreviousGameModeForPlayer(),
                 sp.getLevel().isDebug(), sp.getLevel().isFlat(), true, sp.getLastDeathLocation()));*/
-        sp.respawn();
-        sp.setPos(new Vec3(location.getX(), location.getY(), location.getZ()));
+        NMSBridge.respawn(npc);
+        NMSBridge.setPos(npc, new Vector(location.getX(), location.getY(), location.getZ()));
         //sp.getLevel().addRespawnedPlayer(sp);
         npc.getEntity().setHealth(20);
         //sp.unsetRemoved();
+        NMSBridge.setArrowCount(npc, 0);
         Packets.removePlayer(npc.getEntity()).send();
         Packets.addPlayer(npc.getEntity()).send();
         npc.respawn();
     }
 
     public void spawnNPC(NPC npc, Location location) {
-        ((CraftPlayer) npc.getEntity()).getHandle().setPos(new Vec3(location.getX(), location.getY(), location.getZ()));
+        NMSBridge.setPos(npc, new Vector(location.getX(), location.getY(), location.getZ()));
         Packets.addPlayer(npc.getEntity()).send();
-        Connection playerConn = ((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.connection;
+        //Connection playerConn = ((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.connection;
         //Bukkit.broadcastMessage("hashcode: " + ((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.hashCode());
         //Bukkit.broadcastMessage("hashcode2: " + playerConn.hashCode());
         //Bukkit.broadcastMessage("address: " + playerConn.address.toString());
         try {
             Class<?> serverPlayerClass = findClass(Packages.SERVER_LEVEL, "EntityPlayer");
             Object serverPlayer = getEntityPlayer(npc.getEntity());
-            Class<?> connClass = findClass(Packages.SERVER_NETWORK, "PlayerConnection");
+            Class<?> connClass = findClass(Packages.SERVER_NETWORK, "PlayerConnection"); // ServerGamePacketListenerImpl
 
             Object server = invoke(Bukkit.getServer(), "getServer");
             Class<?> minecraftServerClass = findClass(Packages.SERVER_VERSION_MOD, "MinecraftServer");
 
             // network manager
-            Class<?> networkManagerClassBase = findClass(Packages.NETWORK, "NetworkManager");
+            Class<?> networkManagerClassBase = findClass(Packages.NETWORK, "NetworkManager"); // Connection
             Class<?> networkManagerClass = new ByteBuddy().subclass(networkManagerClassBase)
                     .method(ElementMatchers.named("a")).intercept(MethodCall.run(() -> {
 
@@ -88,10 +86,13 @@ public class NPCRegistry {
             });*/
             setField(serverPlayer, "b", conn);
 
-            Object level = invoke(serverPlayer, "W"); // getLevel
+            //Object level = invoke(serverPlayer, "W"); // getLevel
             //level.getClass().getMethod("c", serverPlayerClass).invoke(level, serverPlayer); // addPlayer
-            ((CraftPlayer) npc.getEntity()).getHandle().getLevel().addNewPlayer(((CraftPlayer) npc.getEntity()).getHandle());
-            ((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address = playerConn.address;
+
+            //ServerPlayer sp = ((ServerPlayer)NMSBridge.toNMSPlayer(npc));
+            //sp.connection = new ServerGamePacketListenerImpl(sp.getServer(), new Connection(PacketFlow.CLIENTBOUND), sp);
+            NMSBridge.addToWorld(npc, location.getWorld());
+            //((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address = playerConn.address;
             npc.getOverrides().onSpawn();
             //Bukkit.broadcastMessage("npc address: " + ((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address.toString());
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
@@ -106,11 +107,12 @@ public class NPCRegistry {
 
     private void despawnNPC(NPC npc) {
         Packets.removePlayer(npc.getEntity()).send();
-        Class<?> removalReasonClass = findClass(Packages.ENTITY, "Entity$RemovalReason");
+        NMSBridge.remove(npc);
+        //Class<?> removalReasonClass = findClass(Packages.ENTITY, "Entity$RemovalReason");
         //Object removalReason = getEnum(removalReasonClass, "b"); // DISCARDED FIXME: no enum constant found ?!?!?
         //invoke(getEntityPlayer(npc.getEntity()), "a", removalReason); // remove
         //((ServerPlayer)npc.getOverrides().getBase()).remove(Entity.RemovalReason.DISCARDED); // TODO: implement
-        ((CraftPlayer) npc.getEntity()).getHandle().getLevel().removePlayerImmediately(((ServerPlayer)npc.getOverrides().getBase()), Entity.RemovalReason.DISCARDED);
+        //((CraftPlayer) npc.getEntity()).getHandle().getLevel().removePlayerImmediately(((ServerPlayer)npc.getOverrides().getBase()), Entity.RemovalReason.DISCARDED);
     }
 
     public NPC getNPC(String name) {

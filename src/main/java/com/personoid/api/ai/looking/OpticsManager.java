@@ -28,7 +28,7 @@ public class OpticsManager {
     public List<Block> raycast(int range) {
         List<Block> blocks = new ArrayList<>();
         Location eyeLoc = npc.getLocation().add(0, npc.getEntity().getEyeHeight(), 0);
-        BlockIterator iterator = new BlockIterator(npc.getLocation().getWorld(), eyeLoc.toVector(), eyeLoc.getDirection(), 0.0D, range);
+        BlockIterator iterator = new BlockIterator(npc.getWorld(), eyeLoc.toVector(), eyeLoc.getDirection(), 0.0D, range);
         while (iterator.hasNext()) {
             Block block = iterator.next();
             if (block.getType().isSolid()) {

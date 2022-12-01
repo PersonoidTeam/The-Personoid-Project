@@ -29,7 +29,7 @@ public class MoveController {
     private void tickMovement() {
         MathUtils.clean(velocity);
         npc.move(velocity);
-        addFriction(npc.inWater() ? 0.6 : 0.375); // 0.8, 0.5
+        addFriction(npc.isInWater() ? 0.1 : 0.375); // 0.8, 0.5
         climbing = BlockTags.CLIMBABLE.is(npc.getLocation().getBlock().getType());
     }
 
@@ -38,8 +38,8 @@ public class MoveController {
             velocity.setY(0);
             return;
         }
-        if (npc.inWater()) velocity.setY(Math.min(velocity.getY() + 0.1, 0.1));
-        else if (npc.onGround()) velocity.setY(0);
+        if (npc.isInWater()) velocity.setY(Math.min(velocity.getY() + 0.02, 0.1));
+        else if (npc.isOnGround()) velocity.setY(0);
         else velocity.setY(Math.max(velocity.getY() - 0.09, -3.25));
     }
 
@@ -63,7 +63,7 @@ public class MoveController {
     }
 
     public void jump() {
-        if (npc.hasAI() && npc.onGround()) {
+        if (npc.hasAI() && npc.isOnGround()) {
             velocity.setY(0.55);
             //npc.setGroundTicks(0);
             jumpTicks = 4;
@@ -73,13 +73,13 @@ public class MoveController {
     public void applyKnockback(Location source) {
         if (!npc.hasAI()) return;
         Vector vel = npc.getLocation().toVector().subtract(source.toVector()).setY(0).normalize().multiply(0.3);
-        if (npc.onGround()) vel.multiply(1.7).setY(0.35);
+        if (npc.isOnGround()) vel.multiply(1.7).setY(0.35);
         timeoutTicks = 10;
         velocity = vel;
     }
 
     public void step(double force) {
-        if (npc.hasAI() && npc.onGround()) {
+        if (npc.hasAI() && npc.isOnGround()) {
             velocity.setY(force);
             //npc.setGroundTicks(0);
             jumpTicks = 4;

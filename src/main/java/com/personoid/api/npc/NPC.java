@@ -7,6 +7,7 @@ import com.personoid.api.ai.movement.Navigation;
 import com.personoid.api.npc.injection.Feature;
 import com.personoid.api.npc.injection.Injector;
 import com.personoid.api.utils.LocationUtils;
+import com.personoid.api.utils.bukkit.BlockPos;
 import com.personoid.api.utils.types.HandEnum;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -24,6 +25,7 @@ public class NPC {
     private final List<Feature> features = new ArrayList<>();
     private final GameProfile profile;
 
+    private final InputEmulator inputEmulator = new InputEmulator(this);
     private final Navigation navigation = new Navigation(this);
     private final MoveController moveController = new MoveController(this);
     private final LookController lookController = new LookController(this);
@@ -65,6 +67,7 @@ public class NPC {
         lookController.tick();
         if (hasAI) {
             brain.tick();
+            inputEmulator.tick();
             navigation.tick();
             blockBreaker.tick();
             inventory.tick();
@@ -92,7 +95,7 @@ public class NPC {
         overrides.move(vector);
     }
 
-    public boolean onGround() {
+    public boolean isOnGround() {
         double vy = moveController.getVelocity().getY();
         if (vy > 0) return false;
         World world = getEntity().getWorld();
@@ -111,7 +114,7 @@ public class NPC {
         return false;
     }
 
-    public boolean inWater() {
+    public boolean isInWater() {
         Location loc = getLocation();
         for (int i = 0; i <= 2; i++) {
             Material type = loc.getBlock().getType();
@@ -157,6 +160,10 @@ public class NPC {
         return profile;
     }
 
+    public InputEmulator getInputEmulator() {
+        return inputEmulator;
+    }
+
     public Navigation getNavigation() {
         return navigation;
     }
@@ -183,6 +190,14 @@ public class NPC {
 
     public Location getLocation() {
         return getEntity().getLocation();
+    }
+
+    public BlockPos getBlockPos() {
+        return new BlockPos(getLocation().getX(), getLocation().getY(), getLocation().getZ());
+    }
+
+    public World getWorld() {
+        return getEntity().getWorld();
     }
 
     public Pose getPose() {

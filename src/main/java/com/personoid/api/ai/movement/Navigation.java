@@ -4,7 +4,6 @@ import com.personoid.api.npc.NPC;
 import com.personoid.api.pathfinding.Node;
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.Pathfinder;
-import com.personoid.api.pathfinding.astar.AstarPathfinder;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.math.MathUtils;
@@ -19,7 +18,7 @@ import org.bukkit.util.Vector;
 
 public class Navigation {
     private final NPC npc;
-    private final Pathfinder pathfinder = new AstarPathfinder();
+    private final Pathfinder pathfinder = new Pathfinder();
     private final Options options = new Options();
     private Path path;
 
@@ -30,14 +29,14 @@ public class Navigation {
     }
 
     public void tick() {
-        if (npc.onGround() && groundTicks < Integer.MAX_VALUE) groundTicks++;
+        if (npc.isOnGround() && groundTicks < Integer.MAX_VALUE) groundTicks++;
         if (isDone()) return;
         if (canUpdatePath()) {
             followPath();
         } else if (path != null && !path.isDone()) {
             Vector tempNPCPos = getTempNPCPos();
             Vector nextNPCPos = path.getNextNPCPos(npc);
-            if (tempNPCPos.getY() > nextNPCPos.getY() && !npc.onGround() && Math.floor(tempNPCPos.getX()) == Math.floor(nextNPCPos.getX()) &&
+            if (tempNPCPos.getY() > nextNPCPos.getY() && !npc.isOnGround() && Math.floor(tempNPCPos.getX()) == Math.floor(nextNPCPos.getX()) &&
                     Math.floor(tempNPCPos.getZ()) == Math.floor(nextNPCPos.getZ())) {
                 Profiler.NAVIGATION.push("advancing to next node 1");
                 path.advance();
@@ -55,23 +54,24 @@ public class Navigation {
 
         // check if next npc pos is one block up from current
         if (options.movementType == MovementType.SPRINT_JUMPING) {
-            int count = 0;
-            for (int i = 0; i < 3; i++) {
-                Vector nextIndexNPCPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);
-                if (nextIndexNPCPos.getY() > npc.getLocation().getY()) {
-                    count++;
+            Vector lookAheadPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 3);
+            if (lookAheadPos.getY() > npc.getLocation().getY()) {
+                // do something here?
+            } else {
+                Vector nextPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 1);
+                if (nextPos.getY() < npc.getLocation().getY() - 2) {
+                    Profiler.NAVIGATION.push("didn't jump to avoid fall damage");
+                } else {
+                    npc.getMoveController().jump();
+                    Profiler.NAVIGATION.push("jumped (sprint jumping)");
                 }
-            }
-            if (count == 0) {
-                npc.getMoveController().jump();
-                Profiler.NAVIGATION.push("jumped (sprint jumping)");
             }
         }
 
         // movement specifics
         if (nextNPCPos.getY() >= npc.getLocation().getY() + options.getMaxStepHeight()) {
             Block blockDown = nextLoc.getBlock().getRelative(BlockFace.DOWN);
-            if (npc.onGround()) {
+            if (npc.isOnGround()) {
                 if (blockDown.getType().name().contains("STAIRS")) {
                     npc.getMoveController().step(((nextNPCPos.getY() - npc.getLocation().getY()) / 2) * 1.2F); // move up to half stair height
                     Profiler.NAVIGATION.push("stepping on stairs");
@@ -154,8 +154,8 @@ public class Navigation {
     }
 
     private boolean canUpdatePath() {
-        Profiler.NAVIGATION.push("can update path: " + npc.onGround());
-        return (npc.onGround()); // TODO: or if in liquid
+        Profiler.NAVIGATION.push("can update path: " + npc.isOnGround());
+        return (npc.isOnGround()); // TODO: or if in liquid
     }
 
     private boolean isDone() {
@@ -187,7 +187,7 @@ public class Navigation {
 
     public static class Options {
         private float maxStepHeight = 0.3F;
-        private float movementSmoothing = 1F; // 0.1F
+        private float movementSmoothing = 0.1F; // 0.1F
         private MovementType movementType;
 
         public float getMaxStepHeight() {

@@ -1,133 +1,76 @@
 package com.personoid.api.pathfinding;
 
+import com.personoid.api.utils.debug.Profiler;
+import com.personoid.api.utils.math.MathUtils;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 
-public abstract class Pathfinder {
-    protected final Options options = new Options();
+public class Pathfinder {
+    protected PathingConfig config = new PathingConfig();
 
-    public abstract Path getPath(Location start, Location end);
+    public Path getPath(Location start, Location end) {
+        PathingContext context = new PathingContext(start, end, config);
+        boolean pathFound = config.canUseChunking();
 
-    public Options getOptions() {
-        return options;
+        //if (!(canStandAt(start) && canStandAt(end))) return null;
+
+        long nsStart = System.nanoTime();
+        Node best = null;
+
+        while (context.getClosedSet().size() < config.getMaxNodeTests() && context.getOpenSet().size() > 0) {
+            best = context.getOpenSet().poll();
+            if (best.getExpenseLeft() < 1) {
+                pathFound = true;
+                context.setEndNode(best);
+                Profiler.PATHFINDING.push("Unchecked: " + context.getOpenSet().size() + ", Checked: " +
+                        context.getClosedSet().size() + ", Expense: " + MathUtils.round(best.getExpense(), 2) +
+                        ", Final Expense: " + MathUtils.round(best.getFinalExpense(), 2));
+                break;
+            }
+            best.getReachableLocations();
+            context.getClosedSet().add(best);
+        }
+
+        if (config.canUseChunking() && best != null) context.setEndNode(best);
+
+        // returning if no path has been found
+        if (!pathFound) {
+            float duration = (System.nanoTime() - nsStart) / 1000000f;
+            Profiler.PATHFINDING.push("A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) +
+                    duration + "ms" + ChatColor.WHITE + " to not find a path.");
+            return null;
+        }
+
+        // get length of path to create array, 1 because of start
+        int length = 1;
+        Node node = context.getEndNode();
+        while (node.getOrigin() != null) {
+            node = node.getOrigin();
+            length++;
+        }
+
+        Node[] nodes = new Node[length];
+
+        //fill Array
+        node = context.getEndNode();
+        for (int i = length - 1; i >= 0; i--) {
+            nodes[i] = node;
+            node = node.getOrigin();
+        }
+        //nodes[0] = context.getStartNode();
+
+        // outputting benchmark result
+        float duration = (System.nanoTime() - nsStart) / 1000000f;
+        Profiler.PATHFINDING.push("A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) +
+                duration + "ms" + ChatColor.WHITE + " to find a path.");
+        return new Path(nodes);
     }
 
-    public static class Options {
-        private int maxFallDistance = 3;
-        private boolean useClimbing = true;
-        private boolean useBlockPlacement = true;
-        private boolean useDiagonalMovement = true;
-        private boolean useChunking = true;
+    public PathingConfig getConfig() {
+        return config;
+    }
 
-        private double diagonalMovementCost = 1.5;
-        private double fallingCost = 0.7;
-        private double climbingCost = 1.4;
-        private double jumpingCost = 0.95;
-        private double stairsCost = 0.8;
-        private int chunkingRadius = 25;
-        private int maxNodeTests = 1000;
-
-        //region toggle getters and setters
-
-        public int getMaxFallDistance() {
-            return maxFallDistance;
-        }
-
-        public void setMaxFallDistance(int maxFallDistance) {
-            this.maxFallDistance = maxFallDistance;
-        }
-
-        public boolean canUseClimbing() {
-            return useClimbing;
-        }
-
-        public void useClimbing(boolean useClimbing) {
-            this.useClimbing = useClimbing;
-        }
-
-        public boolean canUseBlockPlacement() {
-            return useBlockPlacement;
-        }
-
-        public void useBlockPlacement(boolean useBlockPlacement) {
-            this.useBlockPlacement = useBlockPlacement;
-        }
-
-        public boolean canUseDiagonalMovement() {
-            return useDiagonalMovement;
-        }
-
-        public void useDiagonalMovement(boolean useDiagonalMovement) {
-            this.useDiagonalMovement = useDiagonalMovement;
-        }
-
-        public boolean canUseChunking() {
-            return useChunking;
-        }
-
-        public void setUseChunking(boolean useChunking) {
-            this.useChunking = useChunking;
-        }
-
-        //endregion
-
-        //region value getters and setters
-
-        public double getDiagonalMovementCost() {
-            return diagonalMovementCost;
-        }
-
-        public void setDiagonalMovementCost(double diagonalMovementCost) {
-            this.diagonalMovementCost = diagonalMovementCost;
-        }
-
-        public double getFallingCost() {
-            return fallingCost;
-        }
-
-        public void setFallingCost(double fallingCost) {
-            this.fallingCost = fallingCost;
-        }
-
-        public double getClimbingCost() {
-            return climbingCost;
-        }
-
-        public void setClimbingCost(double climbingCost) {
-            this.climbingCost = climbingCost;
-        }
-
-        public double getJumpingCost() {
-            return jumpingCost;
-        }
-
-        public void setJumpingCost(double jumpingCost) {
-            this.jumpingCost = jumpingCost;
-        }
-
-        public double getStairsCost() {
-            return stairsCost;
-        }
-
-        public void setStairsCost(double stairsCost) {
-            this.stairsCost = stairsCost;
-        }
-
-        public int getChunkSize() {
-            return chunkingRadius;
-        }
-
-        public void setChunkSize(int chunkingRadius) {
-            this.chunkingRadius = chunkingRadius;
-        }
-
-        public int getMaxNodeTests() {
-            return maxNodeTests;
-        }
-
-        public void setMaxNodeTests(int maxNodeTests) {
-            this.maxNodeTests = maxNodeTests;
-        }
-
-        //endregion
+    public void setConfig(PathingConfig config) {
+        this.config = config;
     }
 }

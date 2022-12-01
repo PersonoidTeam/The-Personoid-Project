@@ -10,12 +10,12 @@ public class PathingContext {
     private Node endNode;
     private final Set<Node> closedSet = new HashSet<>();
     private final OpenSetHeap openSet = new OpenSetHeap(1024);
-    private final Pathfinder.Options options;
+    private final PathingConfig config;
 
-    public PathingContext(Location startLocation, Location endLocation, Pathfinder.Options options) {
+    public PathingContext(Location startLocation, Location endLocation, PathingConfig config) {
         this.startNode = new Node(startLocation, 0, null, this);
         this.endNode = new Node(endLocation, 0, null, this);
-        this.options = options;
+        this.config = config;
         openSet.add(startNode);
     }
 
@@ -47,8 +47,8 @@ public class PathingContext {
         return openSet;
     }
 
-    public Pathfinder.Options getOptions() {
-        return options;
+    public PathingConfig getConfig() {
+        return config;
     }
 
     public Node getNode(Location location) {

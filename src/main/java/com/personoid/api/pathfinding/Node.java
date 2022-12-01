@@ -37,16 +37,27 @@ public class Node implements Comparable<Node> {
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
                 // check is current node location or diagonal
-                if (x == 0 && z == 0 || (!context.getOptions().canUseDiagonalMovement() && x * z != 0)) continue;
+                if (x == 0 && z == 0 || (!context.getConfig().canUseDiagonalMovement() && x * z != 0)) continue;
                 Location loc = new Location(location.getWorld(), this.x + x, this.y, this.z + z);
 
                 // check if outside of pathfinder chunk
-                if (context.getOptions().canUseChunking() && context.getStartLocation().distance(loc) > context.getOptions().getChunkSize()) continue;
+                Location sameY = new Location(loc.getWorld(), loc.getBlockX(), location.getBlockY(), loc.getBlockZ());
+                // FIXME: chunkSizeYMod incorrect calculation
+                int yDiff = Math.abs(loc.getBlockY() - context.getEndLocation().getBlockY());
+                int chunkSize = context.getConfig().getChunkSize();
+                boolean outsideRange = context.getStartLocation().distance(sameY) > chunkSize;
+                if (outsideRange && context.getConfig().canUseChunking()) {
+                    if (yDiff > chunkSize) continue;
+                    if (yDiff > chunkSize / 2) {
+                        if (Math.abs(loc.getBlockY() - context.getStartLocation().getBlockY()) > chunkSize / 2) continue;
+                    }
+                }
+                //if (context.getConfig().canUseChunking() && outsideRange) continue;
 
                 // movement
                 if (LocationUtils.canStandAt(loc)) {
                     if (x * z != 0) { // if diagonal movement
-                        reachNode(loc, expense + context.getOptions().getDiagonalMovementCost());
+                        reachNode(loc, expense + context.getConfig().getDiagonalMovementCost());
                     } else {
                         reachNode(loc, expense + 1);
                     }
@@ -57,9 +68,9 @@ public class Node implements Comparable<Node> {
                     Location upLoc = loc.clone().add(0, 1, 0);
                     if (LocationUtils.canStandAt(upLoc)) {
                         if (upLoc.getBlock().getType().name().contains("STAIRS")) {
-                            reachNode(upLoc, expense + context.getOptions().getStairsCost());
+                            reachNode(upLoc, expense + context.getConfig().getStairsCost());
                         } else {
-                            reachNode(upLoc, expense + context.getOptions().getJumpingCost());
+                            reachNode(upLoc, expense + context.getConfig().getJumpingCost());
                         }
                     }
                 }
@@ -67,14 +78,14 @@ public class Node implements Comparable<Node> {
                 // falling
                 if (!BlockTags.SOLID.is(loc.clone().add(0, 1, 0))) { // block above possible new tile
                     Location nLoc = loc.clone().add(0, -1, 0);
-                    if (LocationUtils.canStandAt(nLoc)) reachNode(nLoc, expense + context.getOptions().getFallingCost()); // one block down
+                    if (LocationUtils.canStandAt(nLoc)) reachNode(nLoc, expense + context.getConfig().getFallingCost()); // one block down
                     else if (!BlockTags.SOLID.is(nLoc) && !BlockTags.SOLID.is(nLoc.clone().add(0, 1, 0))) { // fall
                         int drop = 1;
-                        while (drop <= context.getOptions().getMaxFallDistance() && !BlockTags.SOLID.is(loc.clone().add(0, -drop, 0))) {
+                        while (drop <= context.getConfig().getMaxFallDistance() && !BlockTags.SOLID.is(loc.clone().add(0, -drop, 0))) {
                             Location dropLoc = loc.clone().add(0, -drop, 0);
                             if (LocationUtils.canStandAt(dropLoc)) {
                                 Node fallNode = createNode(loc, expense + 1);
-                                fallNode.reachNode(dropLoc, expense + (drop * context.getOptions().getFallingCost()));
+                                fallNode.reachNode(dropLoc, expense + (drop * context.getConfig().getFallingCost()));
                             }
                             drop++;
                         }
@@ -82,12 +93,12 @@ public class Node implements Comparable<Node> {
                 }
 
                 // climbing
-                if (context.getOptions().canUseClimbing()) {
+                if (context.getConfig().canUseClimbing()) {
                     if (BlockTags.CLIMBABLE.is(loc.clone().add(-x, 0, -z).getBlock().getType())) {
                         Location nLoc = loc.clone().add(-x, 0, -z);
                         int up = 1;
                         while (BlockTags.CLIMBABLE.is(nLoc.clone().add(0, up, 0).getBlock().getType())) up++;
-                        reachNode(nLoc.clone().add(0, up, 0), expense + (up * context.getOptions().getClimbingCost()));
+                        reachNode(nLoc.clone().add(0, up, 0), expense + (up * context.getConfig().getClimbingCost()));
                     }
                 }
             }

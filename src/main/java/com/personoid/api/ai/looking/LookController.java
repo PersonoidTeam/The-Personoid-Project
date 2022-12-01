@@ -1,6 +1,7 @@
 package com.personoid.api.ai.looking;
 
 import com.personoid.api.npc.NPC;
+import com.personoid.api.utils.bukkit.BlockPos;
 import com.personoid.api.utils.packet.Packets;
 import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
@@ -12,14 +13,14 @@ import java.util.Map;
 public class LookController {
     private final NPC npc;
     private final Map<String, Target> targets = new HashMap<>();
-    private boolean canLookInDefaultDirection = false;
+    private boolean canLookAhead = false;
 
     public LookController(NPC npc) {
         this.npc = npc;
     }
 
     public void tick() {
-        if (canLookInDefaultDirection) {
+        if (canLookAhead) {
             Vector vel = npc.getMoveController().getVelocity();
             Location defaultTarget = npc.getLocation().clone().add(vel.multiply(5));
             if (vel.getX() > 0.01 || vel.getZ() > 0.01) targets.put("default", new Target(defaultTarget, Priority.LOWEST));
@@ -28,6 +29,10 @@ public class LookController {
         Location facing = getFacing(getHighestPriorityTarget().getLocation());
         Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
         npc.setRotation(facing.getYaw(), facing.getPitch());
+    }
+
+    public void face(BlockPos blockPos) {
+        face(blockPos.toLocation(npc.getWorld()));
     }
 
     public void face(Location location) {
@@ -66,12 +71,16 @@ public class LookController {
         return true;
     }
 
+    public Vector getDirection() {
+        return npc.getLocation().getDirection();
+    }
+
     public void purgeTargets() {
         this.targets.clear();
     }
 
-    public void setCanLookInDefaultDirection(boolean value) {
-        this.canLookInDefaultDirection = value;
+    public void setCanLookAhead(boolean value) {
+        this.canLookAhead = value;
     }
 
     public Map<String, Target> getTargets() {

@@ -25,6 +25,9 @@ public enum Packages {
     INTERACTION_HAND((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD.toString()),
     ATTRIBUTES((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD + ".entity.ai.attributes"),
     PARTICLE_TYPES((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : CORE + ".particles"),
+    ENTITY_DATA_WATCHER((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : "net.minecraft.network.syncher"),
+    MOVER_TYPE((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : WORLD + ".entity"),
+    VEC3D((version, vInt) -> vInt < 17 ? SERVER_VERSION.toString() : "net.minecraft.world.phys"),
     ;
 
     private final String packageName;

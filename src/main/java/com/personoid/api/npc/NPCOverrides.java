@@ -1,18 +1,13 @@
 package com.personoid.api.npc;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
+import com.google.common.collect.ForwardingMultimap;
 import com.personoid.api.npc.injection.CallbackInfo;
 import com.personoid.api.npc.injection.InjectionInfo;
+import com.personoid.api.utils.NMSBridge;
 import com.personoid.api.utils.packet.Packages;
 import com.personoid.api.utils.packet.Packets;
 import com.personoid.api.utils.packet.ReflectionUtils;
 import com.personoid.api.utils.types.HandEnum;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.MoverType;
-import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -159,7 +154,7 @@ public class NPCOverrides implements Listener {
             lastYIncrease = yPos;
         }
         if (getField(int.class, "aK") > 0) modInt("aK", -1); // hurtTime
-        if (npc.onGround()) {
+        if (npc.isOnGround()) {
             if (groundTicks < Integer.MAX_VALUE) {
                 groundTicks++;
             }
@@ -271,22 +266,24 @@ public class NPCOverrides implements Listener {
         ItemStack mainHand = npc.getInventory().getOffhandItem();
         ItemStack offHand = npc.getInventory().getSelectedItem();
         if ((mainHand != null && mainHand.getType() == Material.SHIELD) || (offHand != null && offHand.getType() == Material.SHIELD)) {
-            if (getItemCooldown(Material.SHIELD) <= 0 && isUsingItem()) {
-                // check if angle is within 120 degrees
-                Vector direction = attacker.getLocation().getDirection();
-                Vector npcDirection = getLocation().getDirection();
-                double angle = direction.angle(npcDirection);
-                if (angle < 2.0943951023931953D && itemUsingTicks >= 5) {
-                    // shield block
-                    LivingEntity living = (LivingEntity) attacker;
-                    EntityEquipment equipment = living.getEquipment();
-                    if (equipment != null && equipment.getItemInMainHand().getType().name().contains("_AXE")) {
-                        getEntity().playEffect(EntityEffect.SHIELD_BREAK);
-                        setItemCooldown(Material.SHIELD, 100);
+            if (attacker instanceof LivingEntity) {
+                if (getItemCooldown(Material.SHIELD) <= 0 && isUsingItem()) {
+                    // check if angle is within 120 degrees
+                    Vector direction = attacker.getLocation().getDirection();
+                    Vector npcDirection = getLocation().getDirection();
+                    double angle = direction.angle(npcDirection);
+                    if (angle < 2.0943951023931953D && itemUsingTicks >= 5) {
+                        // shield block
+                        LivingEntity living = (LivingEntity) attacker;
+                        EntityEquipment equipment = living.getEquipment();
+                        if (equipment != null && equipment.getItemInMainHand().getType().name().contains("_AXE")) {
+                            getEntity().playEffect(EntityEffect.SHIELD_BREAK);
+                            setItemCooldown(Material.SHIELD, 100);
+                        }
+                        getEntity().getWorld().playSound(getEntity().getLocation(), Sound.ITEM_SHIELD_BLOCK, 1F, 1F);
+                        event.setCancelled(true);
+                        return;
                     }
-                    getEntity().getWorld().playSound(getEntity().getLocation(), Sound.ITEM_SHIELD_BLOCK, 1F, 1F);
-                    event.setCancelled(true);
-                    return;
                 }
             }
         }
@@ -354,12 +351,9 @@ public class NPCOverrides implements Listener {
     }
 
     public void move(Vector vector) {
-        ((ServerPlayer)base).move(MoverType.SELF, new Vec3(vector.getX(), vector.getY(), vector.getZ()));
-    }
-
-    // convert bukkit vector to nms vector
-    public Object getVec3(Vector vector) {
-        return new Vec3(vector.getX(), vector.getY(), vector.getZ());
+        Class<?> moverType = ReflectionUtils.findClass(Packages.MOVER_TYPE, "EnumMoveType");
+        Object selfMoverType = ReflectionUtils.getEnum(moverType, "SELF"); // SELF (a)
+        invoke("a", selfMoverType, NMSBridge.toVec3(vector)); // move
     }
 
     public Location getLocation() {
@@ -371,15 +365,34 @@ public class NPCOverrides implements Listener {
     }
 
     public void setRotation(float yaw, float pitch) {
-        ((ServerPlayer)base).setXRot(pitch);
-        ((ServerPlayer)base).setYRot(yaw);
+        try {
+            base.getClass().getMethod("p", float.class).invoke(base, pitch);
+            base.getClass().getMethod("o", float.class).invoke(base, yaw);
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void updateSkin() {
         Skin skin = npc.getProfile().getSkin();
-        GameProfile profile = ((ServerPlayer)base).getGameProfile();
-        profile.getProperties().put("textures", new Property("textures", skin.getTexture(), skin.getSignature()));
-        ((ServerPlayer)base).getEntityData().set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0x00);
-        ((ServerPlayer)base).getEntityData().set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0xFF);
+        //GameProfile profile = ((ServerPlayer)base).getGameProfile();
+        //profile.getProperties().put("textures", new Property("textures", skin.getTexture(), skin.getSignature()));
+        // convert to reflection
+        Object profile = ReflectionUtils.invoke(base, "fy"); // getGameProfile()
+        Object properties = ReflectionUtils.invoke(profile, "getProperties");
+        // put textures
+        Class<?> propertyClass = ReflectionUtils.findClass("com.mojang.authlib.properties", "Property");
+        try {
+            Object property = propertyClass.getConstructor(String.class, String.class, String.class)
+                    .newInstance("textures", skin.getTexture(), skin.getSignature());
+            ((ForwardingMultimap)properties).put("textures", property);
+            //ReflectionUtils.invoke(properties, "put", "textures", property);
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException("Failed to create property whilst updating skin", e);
+        }
+        NMSBridge.setEntityData(npc, 17, "byte", (byte)0x00);
+        NMSBridge.setEntityData(npc, 17, "byte", (byte)0xFF);
+        //((ServerPlayer)base).getEntityData().set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0x00);
+        //((ServerPlayer)base).getEntityData().set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0xFF);
     }
 }

@@ -1,7 +1,8 @@
 package com.personoid.api.utils.bukkit;
 
 import com.personoid.api.utils.math.MathUtils;
-import net.minecraft.core.Direction;
+import org.bukkit.Location;
+import org.bukkit.World;
 
 public class BlockPos {
     private final int x;
@@ -20,6 +21,10 @@ public class BlockPos {
         this.z = MathUtils.floor(z);
     }
 
+    public Location toLocation(World world) {
+        return new Location(world, x, y, z);
+    }
+
     public int getX() {
         return x;
     }
@@ -32,7 +37,7 @@ public class BlockPos {
         return z;
     }
 
-    public BlockPos above() {
+/*    public BlockPos above() {
         return this.relative(Direction.UP);
     }
 
@@ -78,5 +83,5 @@ public class BlockPos {
 
     public BlockPos east(int mod) {
         return this.relative(Direction.EAST, mod);
-    }
+    }*/
 }
