@@ -216,7 +216,7 @@ public class NPCOverrides implements Listener {
     private void fallDamageCheck() {
         // FIXME: still a little broken
         double yPos = invoke(double.class, "dh"); // getY
-        if (invoke(boolean.class, "aw")) { // onGround
+        if (npc.isOnGround()) { // onGround
             float damage = (float) (lastYIncrease - yPos - 3F);
             if (damage > 0) {
                 getEntity().setLastDamageCause(new EntityDamageEvent(getEntity(), EntityDamageEvent.DamageCause.FALL, damage));
@@ -246,7 +246,7 @@ public class NPCOverrides implements Listener {
                 d1 *= d3;
                 d0 *= 0.05000000074505806D;
                 d1 *= 0.05000000074505806D;
-                if (!this.isVehicle()) {
+                if (!base.isVehicle()) {
                     //moveController.addVelocity(new Vector(-d0, 0D, -d1));
                 }
                 if (!entity.isVehicle()) {

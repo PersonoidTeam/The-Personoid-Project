@@ -8,10 +8,7 @@ import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.types.BlockTags;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
@@ -47,26 +44,11 @@ public class Navigation {
         // movement
         Vector nextNPCPos = path.getNextNPCPos(npc);
         Location nextLoc = new Location(npc.getLocation().getWorld(), nextNPCPos.getX(), nextNPCPos.getY(), nextNPCPos.getZ());
-        Vector velocity = nextLoc.toVector().subtract(npc.getLocation().toVector());
+        Vector velocity = nextLoc.toVector().subtract(npc.getLocation().toVector()).normalize();
         Vector lerpedVelocity = MathUtils.lerpVector(npc.getMoveController().getVelocity(), velocity, options.getMovementSmoothing());
         lerpedVelocity.setY(velocity.getY());
         npc.getMoveController().move(lerpedVelocity, options.movementType);
-
-        // check if next npc pos is one block up from current
-        if (options.movementType == MovementType.SPRINT_JUMPING) {
-            Vector lookAheadPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 3);
-            if (lookAheadPos.getY() > npc.getLocation().getY()) {
-                // do something here?
-            } else {
-                Vector nextPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 1);
-                if (nextPos.getY() < npc.getLocation().getY() - 2) {
-                    Profiler.NAVIGATION.push("didn't jump to avoid fall damage");
-                } else {
-                    npc.getMoveController().jump();
-                    Profiler.NAVIGATION.push("jumped (sprint jumping)");
-                }
-            }
-        }
+        if (shouldJump()) npc.getMoveController().jump();
 
         // movement specifics
         if (nextNPCPos.getY() >= npc.getLocation().getY() + options.getMaxStepHeight()) {
@@ -78,13 +60,13 @@ public class Navigation {
                 } else if (BlockTags.CLIMBABLE.is(blockDown.getType())) {
                     npc.getMoveController().step(0.2F);
                     Profiler.NAVIGATION.push("climbing");
-                } else if (path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 1).getY() >
+                }/* else if (path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 1).getY() >
                         npc.getLocation().getY() + options.getMaxStepHeight()) {
                     if (groundTicks >= 4) {
                         npc.getMoveController().jump();
                         Profiler.NAVIGATION.push("jumped");
                     }
-                }
+                }*/
             }
         } else {
             double diff = nextNPCPos.getY() - npc.getLocation().getY();
@@ -99,6 +81,33 @@ public class Navigation {
             }
         }
         //trimPath();
+    }
+
+    private boolean shouldJump() {
+        int blockadeDist = Integer.MAX_VALUE;
+        for (int i = 0; i <= 3; i++) {
+            Vector lookAheadPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);
+            if (lookAheadPos.getY() < npc.getLocation().getY() - 2) {
+                return false; // jumping here would result in the npc taking fall damage
+            }
+            if (lookAheadPos.getY() > npc.getLocation().getY() + options.maxStepHeight) {
+                blockadeDist = i;
+                break;
+            }
+        }
+        if (options.movementType == MovementType.SPRINT_JUMPING) {
+            if (blockadeDist == 3) return false;
+            else if (blockadeDist > 3) return true;
+        }
+        if (npc.isOnGround() && groundTicks >= 4) {
+            if (options.movementType.name().contains("SPRINT")) {
+                return blockadeDist <= 2;
+            } else if (options.movementType == MovementType.WALKING) {
+                return blockadeDist <= 1;
+            }
+            return true;
+        }
+        return false;
     }
 
     public Pathfinder getPathfinder() {
@@ -187,7 +196,7 @@ public class Navigation {
 
     public static class Options {
         private float maxStepHeight = 0.3F;
-        private float movementSmoothing = 0.1F; // 0.1F
+        private float movementSmoothing = 0.2F;
         private MovementType movementType;
 
         public float getMaxStepHeight() {

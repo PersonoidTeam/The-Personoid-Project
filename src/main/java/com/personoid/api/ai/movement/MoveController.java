@@ -14,6 +14,7 @@ public class MoveController {
     private int timeoutTicks;
     private int jumpTicks;
     private boolean climbing;
+    private MovementType movementType;
 
     public MoveController(NPC npc) {
         this.npc = npc;
@@ -29,7 +30,7 @@ public class MoveController {
     private void tickMovement() {
         MathUtils.clean(velocity);
         npc.move(velocity);
-        addFriction(npc.isInWater() ? 0.1 : 0.375); // 0.8, 0.5
+        addFriction(npc.isInWater() ? 0.5 : npc.isOnGround() ? 0.8 : 0.7); // 0.8, 0.5
         climbing = BlockTags.CLIMBABLE.is(npc.getLocation().getBlock().getType());
     }
 
@@ -53,7 +54,21 @@ public class MoveController {
 
     public void move(Vector velocity, MovementType type) {
         if (timeoutTicks > 0 || !npc.hasAI()) return;
-        double max = type.name().contains("SPRINT") ? 0.52 : 0.325;
+        movementType = type;
+        double max;
+        switch (type) {
+            case SPRINT_JUMPING:
+                max = 0.4;
+                break;
+            case SPRINTING:
+                max = 0.33;
+                break;
+            case WALKING:
+                max = 0.22;
+                break;
+            default:
+                max = 0.38;
+        }
         Vector sum = this.velocity.clone().add(velocity.clone().setY(0));
         if (sum.length() > max) {
             sum.normalize().multiply(max);
@@ -73,8 +88,8 @@ public class MoveController {
     public void applyKnockback(Location source) {
         if (!npc.hasAI()) return;
         Vector vel = npc.getLocation().toVector().subtract(source.toVector()).setY(0).normalize().multiply(0.3);
-        if (npc.isOnGround()) vel.multiply(1.7).setY(0.35);
-        timeoutTicks = 10;
+        if (npc.isOnGround()) vel.setY(0.2);
+        //timeoutTicks = 10;
         velocity = vel;
     }
 

@@ -15,6 +15,7 @@ public class GoToLocationActivity extends Activity {
     private final MovementType movementType;
     private final Options options;
     private Block blockLoc;
+    private int tick;
 
     public GoToLocationActivity(Location location, MovementType movementType) {
         super(ActivityType.LOCATION);
@@ -34,14 +35,19 @@ public class GoToLocationActivity extends Activity {
     public void onStart(StartType startType) {
         blockLoc = location.getBlock();
         if (finishCheck()) return;
+        updateLocation();
         Profiler.ACTIVITIES.push("going to location: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
-        blockLoc = getNPC().getNavigation().moveTo(location, movementType);
-        if (options.canFaceLocation()) getNPC().getLookController().addTarget("travel_location", new Target(location, Priority.NORMAL));
     }
 
     @Override
     public void onUpdate() {
+        if (++tick % 10 == 0) updateLocation();
         finishCheck();
+    }
+
+    private void updateLocation() {
+        blockLoc = getNPC().getNavigation().moveTo(location, movementType);
+        if (options.canFaceLocation()) getNPC().getLookController().addTarget("travel_location", new Target(location, Priority.NORMAL));
     }
 
     private boolean finishCheck() {
