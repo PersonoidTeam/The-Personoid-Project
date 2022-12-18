@@ -24,13 +24,6 @@ public class GoToLocationActivity extends Activity {
         options = new Options();
     }
 
-    public GoToLocationActivity(Location location, MovementType movementType, Options options) {
-        super(ActivityType.LOCATION);
-        this.location = location;
-        this.movementType = movementType;
-        this.options = options;
-    }
-
     @Override
     public void onStart(StartType startType) {
         blockLoc = location.getBlock();
@@ -74,13 +67,15 @@ public class GoToLocationActivity extends Activity {
         return true;
     }
 
+    public Options getOptions() {
+        return options;
+    }
+
     public static class Options {
         public double stoppingDistance = 0.5;
         public boolean faceLocation = true;
 
-        public Options() {
-
-        }
+        private Options() {}
 
         public double getStoppingDistance() {
             return stoppingDistance;

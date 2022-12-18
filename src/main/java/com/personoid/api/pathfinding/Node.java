@@ -45,12 +45,13 @@ public class Node implements Comparable<Node> {
                 // FIXME: chunkSizeYMod incorrect calculation
                 int yDiff = Math.abs(loc.getBlockY() - context.getEndLocation().getBlockY());
                 int chunkSize = context.getConfig().getChunkSize();
-                boolean outsideRange = context.getStartLocation().distance(sameY) > chunkSize;
+                boolean outsideRange = context.getStartLocation().distance(loc) > chunkSize;
                 if (outsideRange && context.getConfig().canUseChunking()) {
-                    if (yDiff > chunkSize) continue;
+                    continue;
+/*                    if (yDiff > chunkSize) continue;
                     if (yDiff > chunkSize / 2) {
                         if (Math.abs(loc.getBlockY() - context.getStartLocation().getBlockY()) > chunkSize / 2) continue;
-                    }
+                    }*/
                 }
                 //if (context.getConfig().canUseChunking() && outsideRange) continue;
 

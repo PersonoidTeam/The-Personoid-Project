@@ -119,17 +119,20 @@ public class Packets {
         try {
             Object entityData = invoke(getNMSEntity(entity), "ai"); // getEntityData
             Class<?> dataWatcherClass = findClass(Packages.NETWORK.plus("syncher"), "DataWatcher");
-            return createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, entity.getEntityId()),
-                    new Parameter(dataWatcherClass, entityData), new Parameter(boolean.class, false));
-        } catch (ClassNotFoundException e) {
+            if (ReflectionUtils.getVersionInt() >= 19 && ReflectionUtils.getSubVersionInt() <= 2) {
+                return createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, entity.getEntityId()),
+                        new Parameter(dataWatcherClass, entityData), new Parameter(boolean.class, false));
+            } else {
+                Object nonDefaultValues = entityData.getClass().getMethod("c").invoke(entityData); // getNonDefaultValues
+                return createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, entity.getEntityId()),
+                        new Parameter(List.class, nonDefaultValues));
+            }
+        } catch (ClassNotFoundException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static Packet entityEquipment(int entityId, Map<EquipmentSlot, ItemStack> equipment) {
-        //List<Pair<net.minecraft.world.entity.EquipmentSlot, net.minecraft.world.item.ItemStack>> list = new ArrayList<>();
-        //equipment.forEach((slot, item) -> list.add(Pair.of(getSlot(slot), getItemStack(item))));
-        //ClientboundSetEquipmentPacket packet = new ClientboundSetEquipmentPacket(entityId, list);
         try {
             Class<?> pairClass = findClass("com.mojang.datafixers.util", "Pair");
             List<Object> list = new ArrayList<>();

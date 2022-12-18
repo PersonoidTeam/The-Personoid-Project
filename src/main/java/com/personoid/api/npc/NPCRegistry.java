@@ -54,10 +54,6 @@ public class NPCRegistry {
     public void spawnNPC(NPC npc, Location location) {
         NMSBridge.setPos(npc, new Vector(location.getX(), location.getY(), location.getZ()));
         Packets.addPlayer(npc.getEntity()).send();
-        //Connection playerConn = ((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.connection;
-        //Bukkit.broadcastMessage("hashcode: " + ((CraftPlayer)Bukkit.getPlayer("DefineDoddy")).getHandle().connection.hashCode());
-        //Bukkit.broadcastMessage("hashcode2: " + playerConn.hashCode());
-        //Bukkit.broadcastMessage("address: " + playerConn.address.toString());
         try {
             Class<?> serverPlayerClass = findClass(Packages.SERVER_LEVEL, "EntityPlayer");
             Object serverPlayer = getEntityPlayer(npc.getEntity());
@@ -69,9 +65,7 @@ public class NPCRegistry {
             // network manager
             Class<?> networkManagerClassBase = findClass(Packages.NETWORK, "NetworkManager"); // Connection
             Class<?> networkManagerClass = new ByteBuddy().subclass(networkManagerClassBase)
-                    .method(ElementMatchers.named("a")).intercept(MethodCall.run(() -> {
-
-                    })).make()
+                    .method(ElementMatchers.named("a")).intercept(MethodCall.run(() -> {})).make()
                     .load(networkManagerClassBase.getClassLoader(), ClassLoadingStrategy.Default.INJECTION).getLoaded();
 
             Class<?> packetFlowClass = findClass(Packages.NETWORK.plus("protocol"), "EnumProtocolDirection");
@@ -81,20 +75,10 @@ public class NPCRegistry {
             // connection class
             Object conn = connClass.getConstructor(minecraftServerClass, networkManagerClassBase, serverPlayerClass)
                     .newInstance(server, networkManager, serverPlayer);
-/*            setField(networkManager, "n", new SocketAddress() {
-                private static final long serialVersionUID = 6994835504305404545L;
-            });*/
+
             setField(serverPlayer, "b", conn);
-
-            //Object level = invoke(serverPlayer, "W"); // getLevel
-            //level.getClass().getMethod("c", serverPlayerClass).invoke(level, serverPlayer); // addPlayer
-
-            //ServerPlayer sp = ((ServerPlayer)NMSBridge.toNMSPlayer(npc));
-            //sp.connection = new ServerGamePacketListenerImpl(sp.getServer(), new Connection(PacketFlow.CLIENTBOUND), sp);
             NMSBridge.addToWorld(npc, location.getWorld());
-            //((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address = playerConn.address;
             npc.getOverrides().onSpawn();
-            //Bukkit.broadcastMessage("npc address: " + ((ServerPlayer)npc.getOverrides().getBase()).connection.connection.address.toString());
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -102,17 +86,13 @@ public class NPCRegistry {
 
     public void removeNPC(NPC npc) {
         despawnNPC(npc);
+        NMSBridge.removeCachedData(npc);
         NPCs.remove(npc);
     }
 
     private void despawnNPC(NPC npc) {
         Packets.removePlayer(npc.getEntity()).send();
         NMSBridge.remove(npc);
-        //Class<?> removalReasonClass = findClass(Packages.ENTITY, "Entity$RemovalReason");
-        //Object removalReason = getEnum(removalReasonClass, "b"); // DISCARDED FIXME: no enum constant found ?!?!?
-        //invoke(getEntityPlayer(npc.getEntity()), "a", removalReason); // remove
-        //((ServerPlayer)npc.getOverrides().getBase()).remove(Entity.RemovalReason.DISCARDED); // TODO: implement
-        //((CraftPlayer) npc.getEntity()).getHandle().getLevel().removePlayerImmediately(((ServerPlayer)npc.getOverrides().getBase()), Entity.RemovalReason.DISCARDED);
     }
 
     public NPC getNPC(String name) {

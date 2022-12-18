@@ -233,4 +233,14 @@ public class ReflectionUtils {
             return -1;
         }
     }
+
+    public static int getSubVersionInt() {
+        if (version != null) return Integer.parseInt(version.split("_")[2].replace("R", ""));
+        try {
+            String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
+            return Integer.parseInt(version.split("_")[2].replace("R", ""));
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return -1;
+        }
+    }
 }

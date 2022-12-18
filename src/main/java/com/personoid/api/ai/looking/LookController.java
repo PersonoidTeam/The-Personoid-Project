@@ -22,8 +22,10 @@ public class LookController {
     public void tick() {
         if (canLookAhead) {
             Vector vel = npc.getMoveController().getVelocity();
+            vel.setY(0);
             Location defaultTarget = npc.getLocation().clone().add(vel.multiply(5));
-            if (vel.getX() > 0.01 || vel.getZ() > 0.01) targets.put("default", new Target(defaultTarget, Priority.LOWEST));
+            if (Math.abs(vel.getX()) > 0.01 || Math.abs(vel.getZ()) > 0.01) targets.put("default", new Target(defaultTarget, Priority.LOWEST));
+            else targets.remove("default");
         }
         if (targets.isEmpty()) return;
         Location facing = getFacing(getHighestPriorityTarget().getLocation());
@@ -37,8 +39,18 @@ public class LookController {
 
     public void face(Location location) {
         Location facing = getFacing(location);
+        // if target facing is greater than 45 degrees away from the direction of player's velocity, clamp to 45 degrees looking towards target
+        Vector vel = npc.getMoveController().getVelocity();
+        if (vel.lengthSquared() > 0.01) {
+            Vector facingVec = facing.toVector().subtract(npc.getLocation().toVector());
+            double angle = facingVec.angle(vel);
+            if (angle > Math.toRadians(45)) {
+                facingVec = facingVec.normalize().multiply(vel.length());
+                facing = npc.getLocation().clone().add(facingVec);
+            }
+        }
         Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
-        npc.setRotation(facing.getYaw(), facing.getPitch());
+        //npc.setRotation(facingTarget.getYaw(), facingTarget.getPitch());
     }
 
     private Location getFacing(Location target) {

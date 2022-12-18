@@ -64,7 +64,7 @@ public class NPC {
 
     void tick() {
         moveController.tick();
-        lookController.tick();
+        //lookController.tick();
         if (hasAI) {
             brain.tick();
             inputEmulator.tick();
@@ -115,7 +115,7 @@ public class NPC {
     }
 
     public boolean isInWater() {
-        Location loc = getLocation();
+        Location loc = getLocation().clone();
         for (int i = 0; i <= 2; i++) {
             Material type = loc.getBlock().getType();
             if (type == Material.WATER || type == Material.LAVA) {
@@ -192,6 +192,30 @@ public class NPC {
         return getEntity().getLocation();
     }
 
+    public double getX() {
+        return getEntity().getLocation().getX();
+    }
+
+    public double getY() {
+        return getEntity().getLocation().getY();
+    }
+
+    public double getZ() {
+        return getEntity().getLocation().getZ();
+    }
+
+    public int getBlockX() {
+        return getEntity().getLocation().getBlockX();
+    }
+
+    public int getBlockY() {
+        return getEntity().getLocation().getBlockY();
+    }
+
+    public int getBlockZ() {
+        return getEntity().getLocation().getBlockZ();
+    }
+
     public BlockPos getBlockPos() {
         return new BlockPos(getLocation().getX(), getLocation().getY(), getLocation().getZ());
     }
@@ -251,6 +275,38 @@ public class NPC {
 
     public void setRotation(float yaw, float pitch) {
         getOverrides().setRotation(yaw, pitch);
+    }
+
+    public void setYaw(float yaw) {
+        getOverrides().setYaw(yaw);
+    }
+
+    public void setPitch(float pitch) {
+        getOverrides().setPitch(pitch);
+    }
+
+    public float getYaw() {
+        return getEntity().getLocation().getYaw();
+    }
+
+    public float getPitch() {
+        return getEntity().getLocation().getPitch();
+    }
+
+    public void setZza(float zza) {
+        getOverrides().setZza(zza);
+    }
+
+    public float getZza() {
+        return getOverrides().getZza();
+    }
+
+    public void setXxa(float xxa) {
+        getOverrides().setXxa(xxa);
+    }
+
+    public float getXxa() {
+        return getOverrides().getXxa();
     }
 
     public boolean isSpawned() {

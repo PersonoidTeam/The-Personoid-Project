@@ -147,7 +147,6 @@ public class NPCOverrides implements Listener {
     public void k() { // tick
         loadChunks();
         aliveTicks++;
-        //invoke("k"); // tick
         if (!invoke(Boolean.class, "bo")) return; // isAlive
         double yPos = invoke(double.class, "dh"); // getY
         if (aliveTicks == 1) {
@@ -366,8 +365,24 @@ public class NPCOverrides implements Listener {
 
     public void setRotation(float yaw, float pitch) {
         try {
-            base.getClass().getMethod("p", float.class).invoke(base, pitch);
-            base.getClass().getMethod("o", float.class).invoke(base, yaw);
+            base.getClass().getMethod("p", float.class).invoke(base, pitch); // setXRot/pitch
+            base.getClass().getMethod("o", float.class).invoke(base, yaw); // setYRot/yaw
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setYaw(float yaw) {
+        try {
+            base.getClass().getMethod("o", float.class).invoke(base, yaw); // setYRot/yaw
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setPitch(float pitch) {
+        try {
+            base.getClass().getMethod("p", float.class).invoke(base, pitch); // setXRot/pitch
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -375,24 +390,64 @@ public class NPCOverrides implements Listener {
 
     public void updateSkin() {
         Skin skin = npc.getProfile().getSkin();
-        //GameProfile profile = ((ServerPlayer)base).getGameProfile();
-        //profile.getProperties().put("textures", new Property("textures", skin.getTexture(), skin.getSignature()));
-        // convert to reflection
         Object profile = ReflectionUtils.invoke(base, "fy"); // getGameProfile()
         Object properties = ReflectionUtils.invoke(profile, "getProperties");
-        // put textures
         Class<?> propertyClass = ReflectionUtils.findClass("com.mojang.authlib.properties", "Property");
         try {
             Object property = propertyClass.getConstructor(String.class, String.class, String.class)
                     .newInstance("textures", skin.getTexture(), skin.getSignature());
             ((ForwardingMultimap)properties).put("textures", property);
-            //ReflectionUtils.invoke(properties, "put", "textures", property);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException("Failed to create property whilst updating skin", e);
         }
         NMSBridge.setEntityData(npc, 17, "byte", (byte)0x00);
         NMSBridge.setEntityData(npc, 17, "byte", (byte)0xFF);
-        //((ServerPlayer)base).getEntityData().set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0x00);
-        //((ServerPlayer)base).getEntityData().set(new EntityDataAccessor<>(17, EntityDataSerializers.BYTE), (byte) 0xFF);
+    }
+
+    public void setZza(float zza) {
+/*        ServerPlayer sp = (ServerPlayer)base;
+        sp.setSpeed(zza);
+        Bukkit.broadcastMessage("forward: " + sp.getForward());
+        Bukkit.broadcastMessage("current zza: " + sp.zza);
+        Bukkit.broadcastMessage("target zza: " + zza);
+        Bukkit.broadcastMessage("-------------------------------");
+        sp.zza = zza;*/
+/*        try {
+            Field field = base.getClass().getField("bq"); // zza
+            field.setAccessible(true);
+            field.set(base, zza);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }*/
+    }
+
+    public float getZza() {
+        try {
+            Field field = base.getClass().getField("bq"); // zza
+            field.setAccessible(true);
+            return (float) field.get(base);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setXxa(float xxa) {
+        try {
+            Field field = base.getClass().getField("bo"); // xxa
+            field.setAccessible(true);
+            field.set(base, xxa);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public float getXxa() {
+        try {
+            Field field = base.getClass().getField("bo"); // xxa
+            field.setAccessible(true);
+            return (float) field.get(base);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

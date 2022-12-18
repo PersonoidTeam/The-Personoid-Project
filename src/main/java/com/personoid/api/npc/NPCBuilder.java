@@ -42,7 +42,7 @@ public class NPCBuilder {
             }
             Class<?> loaded = builder.make().load(NPCBuilder.class.getClassLoader(), ClassLoadingStrategy.Default.WRAPPER).getLoaded();
             Object base;
-            if (ReflectionUtils.getVersionInt() >= 19) {
+            if (ReflectionUtils.getVersionInt() >= 19 && ReflectionUtils.getSubVersionInt() <= 2) {
                 base = loaded.getConstructor(
                         CACHE.getClass("minecraft_server"),
                         CACHE.getClass("world_server"),

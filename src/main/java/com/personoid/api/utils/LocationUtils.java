@@ -206,4 +206,11 @@ public class LocationUtils {
 
         return x > minX && x < maxX && y > minY && y < maxY && z > minZ && z < maxZ;
     }
+
+    public static Vector toLocalSpace(Vector vector, double yaw) {
+        double angle = Math.toRadians(yaw);
+        double x = vector.getX() * Math.cos(angle) + vector.getZ() * Math.sin(angle);
+        double z = vector.getZ() * Math.cos(angle) - vector.getX() * Math.sin(angle);
+        return new Vector(x, vector.getY(), z);
+    }
 }
