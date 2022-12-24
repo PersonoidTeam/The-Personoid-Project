@@ -4,7 +4,7 @@ import com.personoid.api.npc.NPC;
 import org.bukkit.util.Vector;
 
 public class Path {
-    private final Node[] nodes;
+    private Node[] nodes;
     private int nextNodeIndex;
 
     public Path(Node[] nodes) {
@@ -65,5 +65,12 @@ public class Path {
 
     public void replaceNode(int index, Node node) {
         this.nodes[index] = node;
+    }
+
+    public void clean() {
+        // remove first node and move all nodes along
+        Node[] newNodes = new Node[nodes.length - 1];
+        System.arraycopy(nodes, 1, newNodes, 0, newNodes.length);
+        nodes = newNodes;
     }
 }

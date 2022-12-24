@@ -5,7 +5,6 @@ import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.packet.Packets;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -19,6 +18,7 @@ public class MoveController {
 
     private int jumpTicks;
     private int timeoutTicks;
+    private boolean initTick;
 
     private double motionX;
     private double motionY;
@@ -26,6 +26,9 @@ public class MoveController {
 
     private double moveForward;
     private double moveStrafing;
+
+    private double targetX;
+    private double targetZ;
 
     public MoveController(NPC npc) {
         this.npc = npc;
@@ -35,9 +38,16 @@ public class MoveController {
         if (jumpTicks > 0) --jumpTicks;
         if (timeoutTicks > 0) timeoutTicks--;
 
+        if (!initTick) {
+            targetX = npc.getLocation().getX();
+            targetZ = npc.getLocation().getZ();
+            initTick = true;
+        }
+
         moveForward *= 0.98;
         moveStrafing *= 0.98;
         if (Math.abs(motionY) < 0.005D || npc.isOnGround()) motionY = 0.0D;
+        calculateMovement();
         moveEntityWithHeading(moveForward, moveStrafing);
 
         //tickGravity();
@@ -50,7 +60,6 @@ public class MoveController {
         npc.move(new Vector(motionX, motionY, motionZ));
         double friction = isInWater(0.15) ? 0.35 : 0.6; //npc.isOnGround() ? 0.8 : 0.6
         addFriction(friction);
-        Bukkit.broadcastMessage("motion: " + String.format("%.2f, %.2f", motionX, motionZ));
         //climbing = BlockTags.CLIMBABLE.is(npc.getLocation().getBlock().getType());
     }
 
@@ -85,20 +94,33 @@ public class MoveController {
         return var4;
     }
 
+    private void calculateMovement() {
+        double dX = targetX - npc.getLocation().getX();
+        double dZ = targetZ - npc.getLocation().getZ();
+
+        if (Math.abs(dX) < 0.005D && Math.abs(dZ) < 0.005D) { // FIXME: not working
+            moveForward = 0;
+            moveStrafing = 0;
+            return;
+        }
+
+        // look towards target location
+        float yaw = (float) Math.toDegrees(Math.atan2(dZ, dX)) - 90F;
+        Packets.rotateEntity(npc.getEntity(), yaw, npc.getPitch()).send();
+        npc.setYaw(yaw);
+
+        Vec3 input = getInputVector(new Vec3(Math.abs(dX), 0, Math.abs(dZ)), 10F, yaw).scale(1000);
+        //Bukkit.broadcastMessage("input: " + String.format("%.2f, %.2f", input.x, input.z));
+        moveForward = input.z;
+        moveStrafing = input.x;
+    }
+
     // WALKING: 0.4, SPRINTING: 0.6, SPRING_JUMPING: 0.8
 
     public void moveTo(double x, double z, MovementType movementType) {
-        double dX = x - npc.getLocation().getX();
-        double dZ = z - npc.getLocation().getZ();
+        targetX = x;
+        targetZ = z;
         this.movementType = movementType;
-        float yaw = (float) Math.toDegrees(Math.atan2(dZ, dX)) - 90F;
-        float lerpedYaw = MathUtils.lerpRotation(npc.getYaw(), yaw, 90F);
-        Vec3 input = getInputVector(new Vec3(Math.abs(dX), 0, Math.abs(dZ)), 10F, yaw).scale(5);
-        moveForward = input.z;
-        moveStrafing = input.x;
-        Bukkit.broadcastMessage("input: " + String.format("%.2f, %.2f", input.x, input.z));
-        npc.setYaw(yaw);
-        Packets.rotateEntity(npc.getEntity(), yaw, npc.getPitch()).send();
     }
 
     private void moveEntityWithHeading(double forward, double strafe) {
@@ -161,11 +183,11 @@ public class MoveController {
                 this.motionY += (npc.getEntity().getPotionEffect(PotionEffectType.JUMP).getAmplifier() + 1) * 0.1F;
             }
             // apply sprint jump boost
-            if (movementType == MovementType.SPRINT_JUMPING) {
+/*            if (movementType == MovementType.SPRINT_JUMPING) {
                 float f = npc.getYaw() * 0.017453292F; // radians
                 motionX -= Math.sin(f) * 0.2;
                 motionZ += Math.cos(f) * 0.2;
-            }
+            }*/
         }
     }
 

@@ -148,6 +148,7 @@ public class NPCOverrides implements Listener {
         loadChunks();
         aliveTicks++;
         if (!invoke(Boolean.class, "bo")) return; // isAlive
+        invoke("aq"); // baseTick
         double yPos = invoke(double.class, "dh"); // getY
         if (aliveTicks == 1) {
             lastYIncrease = yPos;

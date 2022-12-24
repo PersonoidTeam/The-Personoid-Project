@@ -53,6 +53,7 @@ public class GoToLocationActivity extends Activity {
 
     @Override
     public void onStop(StopType stopType) {
+        getNPC().getNavigation().stop();
         if (options.canFaceLocation()) getNPC().getLookController().removeTarget("travel_location");
     }
 

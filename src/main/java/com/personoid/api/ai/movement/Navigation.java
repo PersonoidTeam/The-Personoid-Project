@@ -5,12 +5,7 @@ import com.personoid.api.pathfinding.Node;
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.Pathfinder;
 import com.personoid.api.utils.LocationUtils;
-import com.personoid.api.utils.debug.Profiler;
-import com.personoid.api.utils.types.BlockTags;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
@@ -43,24 +38,19 @@ public class Navigation {
         }
         if (isDone()) return;
 
-        // movement
+/*        // movement
         Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
         if (options.straightLine) {
             Location groundLoc = LocationUtils.getBlockInDir(goal, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
             nextNPCPos = groundLoc.toVector();
-        }
-        Location nextLoc = new Location(npc.getLocation().getWorld(), nextNPCPos.getX(), nextNPCPos.getY(), nextNPCPos.getZ());
-        Vector velocity = nextLoc.toVector().subtract(npc.getLocation().toVector()).normalize();
-        //Vector lerpedVelocity = MathUtils.lerpVector(npc.getMoveController().getVelocity(), velocity, options.getMovementSmoothing());
-        //lerpedVelocity.setY(velocity.getY());
-        npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ(), options.movementType);
+        }*/
 
-        //if (shouldJump()) npc.getMoveController().jump();
+        if (shouldJump()) npc.getMoveController().jump();
 
-        if (BlockTags.CLIMBABLE.is(npc.getWorld().getBlockAt(nextNPCPos.toLocation(npc.getWorld())).getType())) {
+/*        if (BlockTags.CLIMBABLE.is(npc.getWorld().getBlockAt(nextNPCPos.toLocation(npc.getWorld())).getType())) {
             npc.getMoveController().step(0.15F);
             Profiler.NAVIGATION.push("climbing");
-        }
+        }*/
 
         if (path != null) {
             for (Node node : path.getNodes()) {
@@ -107,8 +97,12 @@ public class Navigation {
         Location groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         goal = location.clone();
-        if ((!options.straightLineInWater || !npc.isInWater()) && !options.straightLine) path = pathfinder.getPath(npcGroundLoc, groundLoc);
-        else path = null;
+        if ((!options.straightLineInWater || !npc.isInWater()) && !options.straightLine) {
+            path = pathfinder.getPath(npcGroundLoc, groundLoc);
+            path.clean();
+        } else path = null;
+        Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
+        npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ(), options.movementType);
         return groundLoc.getBlock();
     }
 
@@ -123,6 +117,8 @@ public class Navigation {
         boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < 1D); //y < 1D
         if (withinMaxDist || (canCutCorner(block.getType()) && shouldTargetNextNode(tempNPCPos))) {
             this.path.advance();
+            Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
+            npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ(), options.movementType);
         }
         //doStuckDetection(tempNPCPos);
     }
