@@ -2,7 +2,7 @@ package com.personoid.api.ai.movement;
 
 public enum MovementType {
     WALKING(1F),
-    SPRINTING(0.38F),
+    SPRINTING(1F),
     SPRINT_JUMPING(1F),
     FLYING(1F),
     SWIMMING(1F)

@@ -55,7 +55,7 @@ public class Navigation {
         //lerpedVelocity.setY(velocity.getY());
         npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ(), options.movementType);
 
-        if (shouldJump()) npc.getMoveController().jump();
+        //if (shouldJump()) npc.getMoveController().jump();
 
         if (BlockTags.CLIMBABLE.is(npc.getWorld().getBlockAt(nextNPCPos.toLocation(npc.getWorld())).getType())) {
             npc.getMoveController().step(0.15F);
@@ -71,7 +71,7 @@ public class Navigation {
     }
 
     private boolean shouldJump() {
-        if (npc.getMoveController().isClimbing()) return false;
+        //if (npc.getMoveController().isClimbing()) return false;
         int blockadeDist = Integer.MAX_VALUE;
         for (int i = 0; i <= 3; i++) {
             Vector lookAheadPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);

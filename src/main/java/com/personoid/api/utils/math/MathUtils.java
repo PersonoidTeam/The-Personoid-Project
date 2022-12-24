@@ -75,8 +75,19 @@ public class MathUtils {
         return ThreadLocalRandom.current().nextBoolean();
     }
 
-    public static Vector lerpVector(Vector v1, Vector v2, double t) {
+    public static Vector lerpVector(Vector v1, Vector v2, float t) {
         return v1.clone().add(v2.clone().subtract(v1).multiply(t));
+    }
+
+    public static float lerpYaw(float v1, float v2, float t) {
+        // take into account angles
+        float diff = v2 - v1;
+        if (diff > 180) {
+            v2 -= 360;
+        } else if (diff < -180) {
+            v2 += 360;
+        }
+        return v1 + (v2 - v1) * t;
     }
 
     public static float lerpRotation(float f1, float f2, float t) {
