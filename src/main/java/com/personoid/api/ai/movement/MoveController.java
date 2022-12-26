@@ -12,7 +12,6 @@ import org.bukkit.util.Vector;
 
 public class MoveController {
     private final NPC npc;
-    private final Options options = new Options();
     private MovementType movementType = MovementType.SPRINTING;
 
     private int jumpTicks;
@@ -199,32 +198,5 @@ public class MoveController {
 
     public Vector getVelocity() {
         return new Vector(motionX, motionY, motionZ);
-    }
-
-    public Options getOptions() {
-        return options;
-    }
-
-    public static class Options {
-        private float maxTurn = 0.15F;
-        private float speedMultiplier = 1F;
-
-        private Options() {}
-
-        public float getMaxTurn() {
-            return maxTurn;
-        }
-
-        public void setMaxTurn(float maxTurn) {
-            this.maxTurn = maxTurn;
-        }
-
-        public float getSpeed() {
-            return speedMultiplier;
-        }
-
-        public void setSpeed(float speed) {
-            this.speedMultiplier = speed;
-        }
     }
 }
