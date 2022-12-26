@@ -1,7 +1,6 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.packet.Packets;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -49,73 +48,31 @@ public class MoveController {
         if (Math.abs(motionY) < 0.005D || npc.isOnGround()) motionY = 0.0D;
         calculateMovement();
         moveEntityWithHeading(moveForward, moveStrafing);
-
-        //tickGravity();
-        //tickMovement();
-    }
-
-    private void tickMovement() {
-        //Vec3 input = getInputVector(new Vec3(motionX, 0, motionZ), 1F, npc.getYaw());
-        //Bukkit.broadcastMessage("input: " + String.format("%.2f, %.2f", input.x, input.z));
-        npc.move(new Vector(motionX, motionY, motionZ));
-        double friction = isInWater(0.15) ? 0.35 : 0.6; //npc.isOnGround() ? 0.8 : 0.6
-        addFriction(friction);
-        //climbing = BlockTags.CLIMBABLE.is(npc.getLocation().getBlock().getType());
-    }
-
-    private void tickGravity() {
-        if (!npc.hasGravity()) {
-            motionY = 0;
-            return;
-        }
-        if (npc.isOnGround()) {
-            motionY = 0D;
-        } else {
-            motionY -= 0.08;
-            motionY *= 0.98;
-            if (Math.abs(motionY) < 0.005D) motionY = 0.0D;
-        }
-        //if (isInWater(0.2)) motionY = Math.min(motionY + 0.015, 0.1);
-    }
-
-    private void addFriction(double factor) {
-        double min = 0.005D;
-        motionX = Math.abs(motionX) < min ? 0 : motionX * factor;
-        motionZ = Math.abs(motionZ) < min ? 0 : motionZ * factor;
-    }
-
-    protected float rotLerp(float a, float b, float t) {
-        float deg = MathUtils.wrapDegrees(b - a);
-        if (deg > t) deg = t;
-        if (deg < -t) deg = -t;
-        float var4 = a + deg;
-        if (var4 < 0.0F) var4 += 360.0F;
-        else if (var4 > 360.0F) var4 -= 360.0F;
-        return var4;
     }
 
     private void calculateMovement() {
         double dX = targetX - npc.getLocation().getX();
         double dZ = targetZ - npc.getLocation().getZ();
 
-        if (Math.abs(dX) < 0.005D && Math.abs(dZ) < 0.005D) { // FIXME: not working
+        // stop moving if close enough to target
+        if (Math.abs(dX) < 0.05 && Math.abs(dZ) < 0.05) {
             moveForward = 0;
             moveStrafing = 0;
+            motionX *= 0.8;
+            motionZ *= 0.8;
             return;
         }
 
         // look towards target location
-        float yaw = (float) Math.toDegrees(Math.atan2(dZ, dX)) - 90F;
+        float yaw = (float) (Math.toDegrees(Math.atan2(dZ, dX)) - 90F) % 360F;
         Packets.rotateEntity(npc.getEntity(), yaw, npc.getPitch()).send();
         npc.setYaw(yaw);
 
-        Vec3 input = getInputVector(new Vec3(Math.abs(dX), 0, Math.abs(dZ)), 10F, yaw).scale(1000);
-        //Bukkit.broadcastMessage("input: " + String.format("%.2f, %.2f", input.x, input.z));
+        // calculate movement based on yaw
+        Vec3 input = movementInputToVelocity(new Vec3(0, 0, 1), getSlipperiness(), yaw);
         moveForward = input.z;
         moveStrafing = input.x;
     }
-
-    // WALKING: 0.4, SPRINTING: 0.6, SPRING_JUMPING: 0.8
 
     public void moveTo(double x, double z, MovementType movementType) {
         targetX = x;
@@ -133,14 +90,13 @@ public class MoveController {
         float movementFactor = npc.isOnGround() ? getLandMovementFactor() * acceleration : getAirMovementFactor();
 
         updateMotionXZ(forward, strafe, movementFactor);
+        npc.move(new Vector(motionX, motionY, motionZ));
 
         this.motionY -= 0.08D;
         this.motionY *= 0.98D;
 
         this.motionX *= mult;
         this.motionZ *= mult;
-
-        npc.move(new Vector(motionX, motionY, motionZ));
     }
 
     private void updateMotionXZ(double forward, double strafe, float movementFactor) {
@@ -149,8 +105,8 @@ public class MoveController {
             distance = Math.sqrt(distance);
             if (distance < 1.0F) distance = 1.0F;
             distance = movementFactor / distance;
-            strafe = strafe * distance;
-            forward = forward * distance;
+            strafe *= distance;
+            forward *= distance;
             double sinYaw = Math.sin(npc.getYaw() * Math.PI / 180.0F);
             double cosYaw = Math.cos(npc.getYaw() * Math.PI / 180.0F);
             this.motionX += strafe * cosYaw - forward * sinYaw;
@@ -159,7 +115,7 @@ public class MoveController {
     }
 
     public float getMovementFactor() {
-        return 0.1F;
+        return 0.2F;
     }
 
     public float getLandMovementFactor() {
@@ -183,23 +139,22 @@ public class MoveController {
                 this.motionY += (npc.getEntity().getPotionEffect(PotionEffectType.JUMP).getAmplifier() + 1) * 0.1F;
             }
             // apply sprint jump boost
-/*            if (movementType == MovementType.SPRINT_JUMPING) {
-                float f = npc.getYaw() * 0.017453292F; // radians
-                motionX -= Math.sin(f) * 0.2;
-                motionZ += Math.cos(f) * 0.2;
-            }*/
+            if (movementType == MovementType.SPRINT_JUMPING) {
+                moveForward *= 1.5;
+                moveStrafing *= 1.5;
+            }
         }
     }
 
-    private static Vec3 getInputVector(Vec3 vec3d, float f, float f1) {
-        double d0 = vec3d.lengthSqr();
-        if (d0 < 1.0E-7) {
+    private static Vec3 movementInputToVelocity(Vec3 movementInput, float speed, float yaw) {
+        double d = movementInput.lengthSqr();
+        if (d < 1.0E-7) {
             return Vec3.ZERO;
         } else {
-            Vec3 vec3d1 = (d0 > 1.0 ? vec3d.normalize() : vec3d).scale(f);
-            float f2 = Mth.sin(f1 * 0.017453292F);
-            float f3 = Mth.cos(f1 * 0.017453292F);
-            return new Vec3(vec3d1.x * (double)f3 - vec3d1.z * (double)f2, vec3d1.y, vec3d1.z * (double)f3 + vec3d1.x * (double)f2);
+            Vec3 vec3d = (d > 1.0 ? movementInput.normalize() : movementInput).scale(speed);
+            float f = Mth.sin(yaw * 0.017453292F);
+            float g = Mth.cos(yaw * 0.017453292F);
+            return new Vec3(vec3d.x * (double)g - vec3d.z * (double)f, vec3d.y, vec3d.z * (double)g + vec3d.x * (double)f);
         }
     }
 
@@ -209,10 +164,12 @@ public class MoveController {
 
     public void applyKnockback(Location source) {
         if (!npc.hasAI()) return;
-/*        Vector vel = npc.getLocation().toVector().subtract(source.toVector()).setY(0).normalize().multiply(0.4);
-        if (npc.isOnGround()) vel.setY(0.23);
+        Vector vel = npc.getLocation().toVector().subtract(source.toVector()).setY(0).normalize().multiply(0.4);
+        if (npc.isOnGround()) vel.setY(0.15);
         //timeoutTicks = 10;
-        velocity = vel;*/
+        motionX += vel.getX();
+        motionY += vel.getY();
+        motionZ += vel.getZ();
     }
 
     public void step(double force) {

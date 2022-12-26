@@ -64,7 +64,7 @@ public class NPC {
 
     void tick() {
         moveController.tick();
-        //lookController.tick();
+        lookController.tick();
         if (hasAI) {
             brain.tick();
             inputEmulator.tick();

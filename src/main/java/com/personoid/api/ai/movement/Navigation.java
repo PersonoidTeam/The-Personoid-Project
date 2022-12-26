@@ -101,7 +101,7 @@ public class Navigation {
             path = pathfinder.getPath(npcGroundLoc, groundLoc);
             path.clean();
         } else path = null;
-        Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
+        Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 1);
         npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ(), options.movementType);
         return groundLoc.getBlock();
     }
@@ -117,7 +117,8 @@ public class Navigation {
         boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < 1D); //y < 1D
         if (withinMaxDist || (canCutCorner(block.getType()) && shouldTargetNextNode(tempNPCPos))) {
             this.path.advance();
-            Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
+            // we target the next-next node so that the move controller doesn't jitter the yaw as it gets closer to the next node
+            Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNPCPosAtNode(npc, path.getNextNodeIndex() + 1);
             npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ(), options.movementType);
         }
         //doStuckDetection(tempNPCPos);
