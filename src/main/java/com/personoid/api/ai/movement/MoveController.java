@@ -8,6 +8,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 public class MoveController {
@@ -27,6 +28,8 @@ public class MoveController {
 
     private double targetX;
     private double targetZ;
+
+    private boolean climbing;
 
     public MoveController(NPC npc) {
         this.npc = npc;
@@ -64,8 +67,9 @@ public class MoveController {
 
         // look towards target location
         float yaw = (float) (Math.toDegrees(Math.atan2(dZ, dX)) - 90F) % 360F;
-        Packets.rotateEntity(npc.getEntity(), yaw, npc.getPitch()).send();
+        Packets.rotateEntity(npc.getEntity(), yaw, 0F).send();
         npc.setYaw(yaw);
+        npc.setPitch(0F);
 
         // calculate movement based on yaw
         Vec3 input = movementInputToVelocity(new Vec3(0, 0, 1), getSlipperiness(), yaw);
@@ -89,10 +93,17 @@ public class MoveController {
         float movementFactor = npc.isOnGround() ? getLandMovementFactor() * acceleration : getAirMovementFactor();
 
         updateMotionXZ(forward, strafe, movementFactor);
+
+        if (!NumberConversions.isFinite(motionX)) motionX = 0;
+        if (!NumberConversions.isFinite(motionY)) motionY = 0;
+        if (!NumberConversions.isFinite(motionZ)) motionZ = 0;
+
         npc.move(new Vector(motionX, motionY, motionZ));
 
-        this.motionY -= 0.08D;
-        this.motionY *= 0.98D;
+        if (!climbing && npc.hasGravity()) {
+            this.motionY -= 0.08D;
+            this.motionY *= 0.98D;
+        }
 
         this.motionX *= mult;
         this.motionZ *= mult;
@@ -171,11 +182,10 @@ public class MoveController {
         motionZ += vel.getZ();
     }
 
-    public void step(double force) {
-/*        Validate.isTrue(force < 0.5, "Force must be less than 0.5");
-        if (npc.hasAI() && npc.isOnGround()) {
-            velocity.setY(force);
-        }*/
+    public void applyUpwardForce(double force) {
+        if (npc.hasAI()) {
+            motionY = force;
+        }
     }
 
     private boolean isInWater(double yOffset) {
@@ -198,5 +208,13 @@ public class MoveController {
 
     public Vector getVelocity() {
         return new Vector(motionX, motionY, motionZ);
+    }
+
+    public void setClimbing(boolean climbing) {
+        this.climbing = climbing;
+    }
+
+    public boolean isClimbing() {
+        return climbing;
     }
 }

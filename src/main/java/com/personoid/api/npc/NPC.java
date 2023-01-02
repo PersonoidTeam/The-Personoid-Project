@@ -293,22 +293,6 @@ public class NPC {
         return getEntity().getLocation().getPitch();
     }
 
-    public void setZza(float zza) {
-        getOverrides().setZza(zza);
-    }
-
-    public float getZza() {
-        return getOverrides().getZza();
-    }
-
-    public void setXxa(float xxa) {
-        getOverrides().setXxa(xxa);
-    }
-
-    public float getXxa() {
-        return getOverrides().getXxa();
-    }
-
     public boolean isSpawned() {
         return getEntity() != null;
     }

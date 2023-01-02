@@ -28,9 +28,7 @@ public class BreakBlockActivity extends Activity {
         if (!LocationUtils.canReach(block.getLocation(), getNPC().getLocation())) {
             Profiler.ACTIVITIES.push("Block too far away, distance: " + getNPC().getLocation().distance(block.getLocation()));
             markAsFinished(new Result<>(Result.Type.FAILURE));
-        }
-        // Broke the block
-        else if (block.getType() != originalMaterial){
+        } else if (block.getType() != originalMaterial) {
             Profiler.ACTIVITIES.push("Broke " + originalMaterial.name().toLowerCase().replace("_", ""));
             markAsFinished(new Result<>(Result.Type.SUCCESS));
         }

@@ -46,8 +46,12 @@ public class LocationUtils {
     }
 
     public static boolean canStandAt(Location location) {
-        return !BlockTags.SOLID.is(location) && !BlockTags.SOLID.is(location.clone().add(0, 1, 0)) &&
-                BlockTags.SOLID.is(location.clone().add(0, -1, 0));
+        return !isSolid(location) && !isSolid(location.clone().add(0, 1, 0)) &&
+                isSolid(location.clone().add(0, -1, 0));
+    }
+
+    public static boolean isSolid(Location location) {
+        return location.getBlock().getType().isSolid();
     }
 
     public static Vector atBottomCenterOf(Vector vector) {

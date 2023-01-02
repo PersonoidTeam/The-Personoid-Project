@@ -46,6 +46,7 @@ public class GoToLocationActivity extends Activity {
     private boolean finishCheck() {
         if (blockLoc.getLocation().distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
             markAsFinished(new Result<>(Result.Type.SUCCESS));
+            getNPC().getNavigation().stop();
             return true;
         }
         return false;

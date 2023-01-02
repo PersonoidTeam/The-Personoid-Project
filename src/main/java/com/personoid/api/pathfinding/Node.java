@@ -35,6 +35,7 @@ public class Node implements Comparable<Node> {
 
     public void getReachableLocations() {
         for (int x = -1; x <= 1; x++) {
+            loop:
             for (int z = -1; z <= 1; z++) {
                 // check is current node location or diagonal
                 if (x == 0 && z == 0 || (!context.getConfig().canUseDiagonalMovement() && x * z != 0)) continue;
@@ -57,6 +58,13 @@ public class Node implements Comparable<Node> {
 
                 // movement
                 if (LocationUtils.canStandAt(loc)) {
+                    // check if blocks are in the way of loc and this loc
+/*                    for (int y = 1; y <= 2; y++) {
+                        Location loc2 = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() + y, loc.getBlockZ());
+                        if (LocationUtils.isSolid(loc2)) {
+                            continue loop;
+                        }
+                    }*/
                     if (x * z != 0) { // if diagonal movement
                         reachNode(loc, expense + context.getConfig().getDiagonalMovementCost());
                     } else {

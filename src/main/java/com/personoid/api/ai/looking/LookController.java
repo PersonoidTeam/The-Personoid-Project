@@ -3,7 +3,6 @@ package com.personoid.api.ai.looking;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.utils.bukkit.BlockPos;
 import com.personoid.api.utils.packet.Packets;
-import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
@@ -13,21 +12,14 @@ import java.util.Map;
 public class LookController {
     private final NPC npc;
     private final Map<String, Target> targets = new HashMap<>();
-    private boolean canLookAhead = false;
+    private boolean lookAhead = false;
 
     public LookController(NPC npc) {
         this.npc = npc;
     }
 
     public void tick() {
-        if (canLookAhead) {
-            Vector vel = npc.getMoveController().getVelocity();
-            vel.setY(0);
-            Location defaultTarget = npc.getLocation().clone().add(vel.multiply(5));
-            if (Math.abs(vel.getX()) > 0.01 || Math.abs(vel.getZ()) > 0.01) targets.put("default", new Target(defaultTarget, Priority.LOWEST));
-            else targets.remove("default");
-        }
-        if (targets.isEmpty()) return;
+        if (targets.isEmpty() || lookAhead) return;
         Location facing = getFacing(getHighestPriorityTarget().getLocation());
         Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
         npc.setRotation(facing.getYaw(), facing.getPitch());
@@ -91,8 +83,8 @@ public class LookController {
         this.targets.clear();
     }
 
-    public void setCanLookAhead(boolean value) {
-        this.canLookAhead = value;
+    public void setLookAhead(boolean value) {
+        this.lookAhead = value;
     }
 
     public Map<String, Target> getTargets() {
