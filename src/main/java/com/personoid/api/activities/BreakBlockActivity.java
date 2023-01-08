@@ -36,9 +36,7 @@ public class BreakBlockActivity extends Activity {
 
     @Override
     public void onStop(StopType stopType) {
-        if (stopType == StopType.FAILURE) {
-            getNPC().getBlockBreaker().stop();
-        }
+        getNPC().getBlockBreaker().stop();
     }
 
     @Override

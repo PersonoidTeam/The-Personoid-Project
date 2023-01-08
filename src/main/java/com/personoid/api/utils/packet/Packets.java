@@ -9,9 +9,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.personoid.api.utils.packet.ReflectionUtils.*;
 
@@ -25,18 +23,14 @@ public class Packets {
 
     public static Packet addPlayer(Player player) {
         Class<?> playerInfoPacketAction = findClass(Packages.PACKETS.plus("game"),
-                "PacketPlayOutPlayerInfo$EnumPlayerInfoAction");
+                "ClientboundPlayerInfoUpdatePacket$a");
         Parameter actionParam = new Parameter(playerInfoPacketAction, getEnum(playerInfoPacketAction, "ADD_PLAYER")); // ADD_PLAYER
-        Parameter playerParam = new Parameter(CACHE.getClass("entity_player"), getEntityPlayer(player));
-        Class<?> dataWatcherClass = findClass(Packages.NETWORK.plus("syncher"), "DataWatcher");
-        Object entityData = invoke(getEntityPlayer(player), "ai"); // getEntityData
+        Parameter playerParam = new Parameter(Collection.class, Collections.singletonList(getEntityPlayer(player)));
         try {
-            Packet infoPacket = createPacket("PacketPlayOutPlayerInfo", actionParam, playerParam.array());
+            Packet infoPacket = createPacket("ClientboundPlayerInfoUpdatePacket", actionParam.enumSet(), playerParam);
             Parameter playerParam2 = new Parameter(findClass(Packages.PLAYER, "EntityHuman"), getEntityPlayer(player));
             Packet addPlayerPacket = createPacket("PacketPlayOutNamedEntitySpawn", playerParam2);
-            Packet setEntityDataPacket = createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, player.getEntityId()),
-                    new Parameter(dataWatcherClass, entityData), new Parameter(boolean.class, false));
-            return Packet.mergePackets(infoPacket, addPlayerPacket, setEntityDataPacket);
+            return Packet.mergePackets(infoPacket, addPlayerPacket, updateEntityData(player));
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -44,36 +38,38 @@ public class Packets {
 
     public static Packet showPlayer(Player player) {
         Class<?> playerInfoPacketAction = findClass(Packages.PACKETS.plus("game"),
-                "PacketPlayOutPlayerInfo$EnumPlayerInfoAction");
+                "ClientboundPlayerInfoUpdatePacket$a");
         Parameter actionParam = new Parameter(playerInfoPacketAction, getEnum(playerInfoPacketAction, "ADD_PLAYER")); // ADD_PLAYER
-        Parameter playerParam = new Parameter(CACHE.getClass("entity_player"), getEntityPlayer(player));
+        Parameter playerParam = new Parameter(Collections.class, Collections.singletonList(getEntityPlayer(player)));
         try {
-            return createPacket("PacketPlayOutPlayerInfo", actionParam, playerParam.array());
+            return createPacket("ClientboundPlayerInfoUpdatePacket", actionParam.enumSet(), playerParam);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static Packet hidePlayer(Player player) {
-        Class<?> playerInfoPacketAction = findClass(Packages.PACKETS.plus("game"),
-                "PacketPlayOutPlayerInfo$EnumPlayerInfoAction");
-        Parameter actionParam = new Parameter(playerInfoPacketAction, getEnum(playerInfoPacketAction, "REMOVE_PLAYER")); // REMOVE_PLAYER
-        Parameter playerParam = new Parameter(CACHE.getClass("entity_player"), getEntityPlayer(player));
+/*        Class<?> playerInfoPacketAction = findClass(Packages.PACKETS.plus("game"),
+                "ClientboundPlayerInfoRemovePacket$a");
+        Parameter actionParam = new Parameter(playerInfoPacketAction, getEnum(playerInfoPacketAction, "REMOVE_PLAYER")); // REMOVE_PLAYER*/
+        //Parameter playerParam = new Parameter(CACHE.getClass("entity_player"), getEntityPlayer(player));
+        Parameter playerParam = new Parameter(UUID.class, player.getUniqueId());
         try {
-            return createPacket("PacketPlayOutPlayerInfo", actionParam, playerParam.array());
+            return createPacket("ClientboundPlayerInfoRemovePacket", playerParam.list());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static Packet removePlayer(Player player) {
-        Class<?> playerInfoPacketAction = findClass(Packages.PACKETS.plus("game"),
-                "PacketPlayOutPlayerInfo$EnumPlayerInfoAction");
-        Parameter actionParam = new Parameter(playerInfoPacketAction, getEnum(playerInfoPacketAction, "REMOVE_PLAYER")); // REMOVE_PLAYER
-        Parameter playerParam = new Parameter(CACHE.getClass("entity_player"), getEntityPlayer(player));
+/*        Class<?> playerInfoPacketAction = findClass(Packages.PACKETS.plus("game"),
+                "ClientboundPlayerInfoRemovePacket$a");
+        Parameter actionParam = new Parameter(playerInfoPacketAction, getEnum(playerInfoPacketAction, "REMOVE_PLAYER")); // REMOVE_PLAYER*/
+        //Parameter playerParam = new Parameter(CACHE.getClass("entity_player"), getEntityPlayer(player));
+        Parameter playerParam = new Parameter(UUID.class, player.getUniqueId());
         Parameter playerIdParam = new Parameter(int.class, player.getEntityId());
         try {
-            Packet infoPacket = createPacket("PacketPlayOutPlayerInfo", actionParam, playerParam.array());
+            Packet infoPacket = createPacket("ClientboundPlayerInfoRemovePacket", playerParam.list());
             Packet removeEntityPacket = createPacket("PacketPlayOutEntityDestroy", playerIdParam.array());
             return Packet.mergePackets(infoPacket, removeEntityPacket);
         } catch (ClassNotFoundException e) {
@@ -116,8 +112,8 @@ public class Packets {
     }
 
     public static Packet updateEntityData(Entity entity) {
-        try {
-            Object entityData = invoke(getNMSEntity(entity), "ai"); // getEntityData
+/*        try {
+            Object entityData = invoke(getNMSEntity(entity), "al"); // getEntityData
             Class<?> dataWatcherClass = findClass(Packages.NETWORK.plus("syncher"), "DataWatcher");
             if (ReflectionUtils.getVersionInt() >= 19 && ReflectionUtils.getSubVersionInt() <= 2) {
                 return createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, entity.getEntityId()),
@@ -129,7 +125,13 @@ public class Packets {
             }
         } catch (ClassNotFoundException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
-        }
+        }*/
+        return new Packet() {
+            @Override
+            protected void send(Player to) {
+
+            }
+        };
     }
 
     public static Packet entityEquipment(int entityId, Map<EquipmentSlot, ItemStack> equipment) {

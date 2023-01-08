@@ -39,7 +39,7 @@ public class NPCOverrides implements Listener {
     String[] getMethods() {
         // TRANSLATIONS: tick
         return new String[] {
-            "k"
+            "l"
         };
     }
 
@@ -144,12 +144,12 @@ public class NPCOverrides implements Listener {
     private int itemUsingTicks;
     private final Set<UUID> playersInRange = new HashSet<>();
 
-    public void k() { // tick
+    public void l() { // tick
         loadChunks();
         aliveTicks++;
-        if (!invoke(Boolean.class, "bo")) return; // isAlive
+        if (!invoke(Boolean.class, "br")) return; // isAlive
         invoke("aq"); // baseTick
-        double yPos = invoke(double.class, "dh"); // getY
+        double yPos = invoke(double.class, "dm"); // getY
         if (aliveTicks == 1) {
             lastYIncrease = yPos;
         }
@@ -159,12 +159,12 @@ public class NPCOverrides implements Listener {
                 groundTicks++;
             }
         } else groundTicks = 0;
-        float health = invoke(float.class, "ef"); // getHealth
-        float maxHealth = invoke(float.class, "et"); // getMaxHealth
+        float health = invoke(float.class, "ek"); // getHealth
+        float maxHealth = invoke(float.class, "ez"); // getMaxHealth
         float amount = health < maxHealth - 0.05F ? health + 0.05F : maxHealth; // 0.1F = natual regen speed (full saturation)
         getEntity().setHealth(amount);
         //invoke("c", amount); // setHealth, FIXME: method not found?!?!?
-        if (yPos < -64) invoke("av"); // outOfWorld
+        if (yPos < -64) invoke("ay"); // outOfWorld
         fallDamageCheck();
         // FIXME: swimming not working
 /*        if (inWater() && targetLoc.getY() - 1F < getLocation().getY()) {
@@ -215,7 +215,7 @@ public class NPCOverrides implements Listener {
 
     private void fallDamageCheck() {
         // FIXME: still a little broken
-        double yPos = invoke(double.class, "dh"); // getY
+        double yPos = invoke(double.class, "dm"); // getY
         if (npc.isOnGround()) { // onGround
             float damage = (float) (lastYIncrease - yPos - 3F);
             if (damage > 0) {
@@ -313,11 +313,11 @@ public class NPCOverrides implements Listener {
     }
 
     public boolean isUsingItem() {
-        return invoke(boolean.class, "eT");
+        return invoke(boolean.class, "eZ");
     }
 
     public void stopUsingItem() {
-        invoke("eZ");
+        invoke("ff");
         handUsing = -1;
         itemUsingTicks = 0;
     }
@@ -366,8 +366,8 @@ public class NPCOverrides implements Listener {
 
     public void setRotation(float yaw, float pitch) {
         try {
-            base.getClass().getMethod("p", float.class).invoke(base, pitch); // setXRot/pitch
-            base.getClass().getMethod("o", float.class).invoke(base, yaw); // setYRot/yaw
+            base.getClass().getMethod("q", float.class).invoke(base, pitch); // setXRot/pitch
+            base.getClass().getMethod("p", float.class).invoke(base, yaw); // setYRot/yaw
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -375,7 +375,7 @@ public class NPCOverrides implements Listener {
 
     public void setYaw(float yaw) {
         try {
-            base.getClass().getMethod("o", float.class).invoke(base, yaw); // setYRot/yaw
+            base.getClass().getMethod("p", float.class).invoke(base, yaw); // setYRot/yaw
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -383,7 +383,7 @@ public class NPCOverrides implements Listener {
 
     public void setPitch(float pitch) {
         try {
-            base.getClass().getMethod("p", float.class).invoke(base, pitch); // setXRot/pitch
+            base.getClass().getMethod("q", float.class).invoke(base, pitch); // setXRot/pitch
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -391,7 +391,7 @@ public class NPCOverrides implements Listener {
 
     public void updateSkin() {
         Skin skin = npc.getProfile().getSkin();
-        Object profile = ReflectionUtils.invoke(base, "fy"); // getGameProfile()
+        Object profile = ReflectionUtils.invoke(base, "fD"); // getGameProfile()
         Object properties = ReflectionUtils.invoke(profile, "getProperties");
         Class<?> propertyClass = ReflectionUtils.findClass("com.mojang.authlib.properties", "Property");
         try {
@@ -405,49 +405,20 @@ public class NPCOverrides implements Listener {
         NMSBridge.setEntityData(npc, 17, "byte", (byte)0xFF);
     }
 
-    public void setZza(float zza) {
-/*        ServerPlayer sp = (ServerPlayer)base;
-        sp.setSpeed(zza);
-        Bukkit.broadcastMessage("forward: " + sp.getForward());
-        Bukkit.broadcastMessage("current zza: " + sp.zza);
-        Bukkit.broadcastMessage("target zza: " + zza);
-        Bukkit.broadcastMessage("-------------------------------");
-        sp.zza = zza;*/
-/*        try {
-            Field field = base.getClass().getField("bq"); // zza
-            field.setAccessible(true);
-            field.set(base, zza);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }*/
-    }
-
-    public float getZza() {
+    public void setJumping(boolean jumping) {
         try {
-            Field field = base.getClass().getField("bq"); // zza
-            field.setAccessible(true);
-            return (float) field.get(base);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
+            base.getClass().getMethod("q", boolean.class).invoke(base, jumping); // setJumping
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void setXxa(float xxa) {
+    public boolean isJumping() {
         try {
-            Field field = base.getClass().getField("bo"); // xxa
+            Field field = base.getClass().getField("bn"); // jumping
             field.setAccessible(true);
-            field.set(base, xxa);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public float getXxa() {
-        try {
-            Field field = base.getClass().getField("bo"); // xxa
-            field.setAccessible(true);
-            return (float) field.get(base);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
+            return (boolean) field.get(base);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }

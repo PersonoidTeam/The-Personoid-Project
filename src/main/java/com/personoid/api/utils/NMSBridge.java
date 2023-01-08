@@ -69,7 +69,7 @@ public class NMSBridge {
             });
             Object data = objectConstructor.newInstance(key, ReflectionUtils.getField(registry, type));
             Object entityData = NPC_CACHE.getOrPut("entityData." + npc.getEntityId(), () -> {
-                return ReflectionUtils.invoke(toNMSPlayer(npc), "ai"); // getEntityData
+                return ReflectionUtils.invoke(toNMSPlayer(npc), "al"); // getEntityData
             });
             entityData.getClass().getMethod("b", data.getClass(), Object.class).invoke(entityData, data, value);
             //ReflectionUtils.invoke(entityData, "b", data, value); // set
@@ -83,7 +83,7 @@ public class NMSBridge {
     }
 
     public static void respawn(NPC npc) {
-        ReflectionUtils.invoke(toNMSPlayer(npc), "fw"); // respawn
+        ReflectionUtils.invoke(toNMSPlayer(npc), "fC"); // respawn
     }
 
     public static void setArrowCount(NPC npc, int count) {

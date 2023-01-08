@@ -13,7 +13,6 @@ import org.bukkit.util.Vector;
 
 public class MoveController {
     private final NPC npc;
-    private MovementType movementType = MovementType.SPRINTING;
 
     private int jumpTicks;
     private int timeoutTicks;
@@ -77,10 +76,9 @@ public class MoveController {
         moveStrafing = input.x;
     }
 
-    public void moveTo(double x, double z, MovementType movementType) {
+    public void moveTo(double x, double z) {
         targetX = x;
         targetZ = z;
-        this.movementType = movementType;
     }
 
     private void moveEntityWithHeading(double forward, double strafe) {
@@ -130,13 +128,13 @@ public class MoveController {
 
     public float getLandMovementFactor() {
         float base = getMovementFactor();
-        if (movementType.name().contains("SPRINT")) base *= 1.3F;
+        if (npc.isSprinting()) base *= 1.3F;
         return base;
     }
 
     public float getAirMovementFactor() {
         float base = getMovementFactor() / 5F;
-        if (movementType.name().contains("SPRINT")) base *= 1.3F;
+        if (npc.isSprinting()) base *= 1.3F;
         return base;
     }
 
@@ -149,7 +147,7 @@ public class MoveController {
                 this.motionY += (npc.getEntity().getPotionEffect(PotionEffectType.JUMP).getAmplifier() + 1) * 0.1F;
             }
             // apply sprint jump boost
-            if (movementType == MovementType.SPRINT_JUMPING) {
+            if (npc.isSprinting() && npc.isJumping()) {
                 moveForward *= 1.5;
                 moveStrafing *= 1.5;
             }

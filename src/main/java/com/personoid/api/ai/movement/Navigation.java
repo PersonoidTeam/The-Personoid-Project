@@ -32,7 +32,14 @@ public class Navigation {
         if (isDone()) return;
         if (canUpdatePath()) {
             followPath();
-        }
+        }/* else if (path != null && !path.isDone()) {
+            Vector tempNPCPos = getTempNPCPos();
+            Vector nextNPCPos = path.getNextNPCPos(npc);
+            if (tempNPCPos.getY() > nextNPCPos.getY() && !npc.isOnGround() && Math.floor(tempNPCPos.getX()) == Math.floor(nextNPCPos.getX()) &&
+                    Math.floor(tempNPCPos.getZ()) == Math.floor(nextNPCPos.getZ())) {
+                path.advance();
+            }
+        }*/
 
         // movement
         Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
@@ -80,17 +87,16 @@ public class Navigation {
                 break;
             }
         }
-        if (options.movementType == MovementType.SPRINT_JUMPING) {
+        if (npc.isSprinting() && npc.isJumping()) {
             if (blockadeDist == 3) return false;
             else if (blockadeDist > 3) return true;
         }
         if (npc.isOnGround() && groundTicks >= 4) {
-            if (options.movementType.name().contains("SPRINT")) {
+            if (npc.isSprinting()) {
                 return blockadeDist <= 2;
-            } else if (options.movementType == MovementType.WALKING) {
+            } else {
                 return blockadeDist <= 1;
             }
-            return true;
         }
         return false;
     }
@@ -99,33 +105,34 @@ public class Navigation {
         return pathfinder;
     }
 
-    public Block moveTo(Location location, MovementType movementType) {
-        options.movementType = movementType;
+    public Block moveTo(Location location) {
         Location groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         goal = location.clone();
         if ((!options.straightLineInWater || !npc.isInWater()) && !options.straightLine) {
             path = pathfinder.getPath(npcGroundLoc, groundLoc);
-            //path.clean();
+            path.clean();
         } else path = null;
-        Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNodePos();
-        npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ(), options.movementType);
+        if (!isDone()) {
+            Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
+            npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ());
+        }
         return groundLoc.getBlock();
     }
 
     private void followPath() {
         Vector tempNPCPos = getTempNPCPos();
-        double maxDistToWaypoint = 0.52;
+        double maxDistToWaypoint = 0.45; // 0.52
         Vector blockPos = path.getNextNodePos();
         Block block = new Location(npc.getLocation().getWorld(), blockPos.getX(), blockPos.getY(), blockPos.getZ()).getBlock();
         double x = Math.abs(npc.getLocation().getX() - blockPos.getX() + 0.5);
         double y = Math.abs(npc.getLocation().getY() - blockPos.getY());
         double z = Math.abs(npc.getLocation().getZ() - blockPos.getZ() + 0.5);
-        boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < 1D); //y < 1D
+        boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < 1D);
         if (withinMaxDist || (canCutCorner(block.getType()) && shouldTargetNextNode(tempNPCPos))) {
             this.path.advance();
-            Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNodePos();
-            npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ(), options.movementType);
+            Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
+            npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ());
         }
         //doStuckDetection();
     }
@@ -177,7 +184,7 @@ public class Navigation {
     }
 
     private boolean isDone() {
-        return (path == null || path.isDone());
+        return path == null || path.isDone();
     }
 
     public void stop() {
@@ -190,7 +197,6 @@ public class Navigation {
 
     public static class Options {
         private float maxStepHeight = 0.3F;
-        private MovementType movementType;
         private boolean straightLineInWater = true;
         private boolean straightLine;
         private int stuckTime = 20;
@@ -201,14 +207,6 @@ public class Navigation {
 
         public void setMaxStepHeight(float maxStepHeight) {
             this.maxStepHeight = maxStepHeight;
-        }
-
-        public MovementType getMovementType() {
-            return movementType;
-        }
-
-        public void setMovementType(MovementType movementType) {
-            this.movementType = movementType;
         }
 
         public boolean isStraightLineInWater() {

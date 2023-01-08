@@ -64,12 +64,9 @@ public class NPCBuilder {
                                 new com.mojang.authlib.GameProfile(UUID.randomUUID(), profile.getName())
                         );
             }
-/*            for (Method method : base.getClass().getDeclaredMethods()) {
-                Bukkit.broadcastMessage(method.getName());
-            }*/
             npc.getOverrides().setBase(base);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
         return npc;
     }

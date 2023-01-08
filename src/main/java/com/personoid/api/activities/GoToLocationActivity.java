@@ -3,7 +3,7 @@ package com.personoid.api.activities;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
-import com.personoid.api.ai.movement.MovementType;
+import com.personoid.api.npc.Pose;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.Priority;
@@ -28,6 +28,20 @@ public class GoToLocationActivity extends Activity {
     public void onStart(StartType startType) {
         blockLoc = location.getBlock();
         if (finishCheck()) return;
+        getNPC().setSprinting(movementType.name().contains("SPRINT"));
+        switch (movementType) {
+            case WALK:
+            case SPRINT:
+            case SPRINT_JUMP:
+                getNPC().setPose(Pose.STANDING);
+                break;
+            case SNEAK:
+                getNPC().setPose(Pose.SNEAKING);
+                break;
+            case FLY:
+                getNPC().setPose(Pose.FLYING);
+                break;
+        }
         updateLocation();
         Profiler.ACTIVITIES.push("going to location: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
     }
@@ -39,7 +53,7 @@ public class GoToLocationActivity extends Activity {
     }
 
     private void updateLocation() {
-        blockLoc = getNPC().getNavigation().moveTo(location, movementType);
+        blockLoc = getNPC().getNavigation().moveTo(location);
         if (options.canFaceLocation()) getNPC().getLookController().addTarget("travel_location", new Target(location, Priority.NORMAL));
     }
 
@@ -94,5 +108,13 @@ public class GoToLocationActivity extends Activity {
         public void setFaceLocation(boolean faceLocation) {
             this.faceLocation = faceLocation;
         }
+    }
+
+    public enum MovementType {
+        WALK,
+        SNEAK,
+        SPRINT,
+        SPRINT_JUMP,
+        FLY
     }
 }

@@ -18,7 +18,6 @@ import java.util.Objects;
 
 public class ReflectionUtils {
     private static final CacheManager CACHE = new CacheManager("reflection_utils");
-    private static String version;
 
     public static Class<?> findClass(Packages packageType, String className) {
         return findClass(packageType.getPackageName(), className);
@@ -216,29 +215,24 @@ public class ReflectionUtils {
     }
 
     public static String getVersion() {
-        if (version != null) return version;
         try {
-            return version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
+            return Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
         }
     }
 
     public static int getVersionInt() {
-        if (version != null) return Integer.parseInt(version.split("_")[1]);
         try {
-            String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-            return Integer.parseInt(version.split("_")[1]);
+            return Integer.parseInt(Bukkit.getBukkitVersion().split("\\.")[1]);
         } catch (ArrayIndexOutOfBoundsException e) {
             return -1;
         }
     }
 
     public static int getSubVersionInt() {
-        if (version != null) return Integer.parseInt(version.split("_")[2].replace("R", ""));
         try {
-            String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-            return Integer.parseInt(version.split("_")[2].replace("R", ""));
+            return Integer.parseInt(Bukkit.getBukkitVersion().split("\\.")[2].charAt(0) + "");
         } catch (ArrayIndexOutOfBoundsException e) {
             return -1;
         }

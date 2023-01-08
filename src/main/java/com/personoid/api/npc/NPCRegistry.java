@@ -85,6 +85,7 @@ public class NPCRegistry {
     }
 
     public void removeNPC(NPC npc) {
+        npc.remove();
         despawnNPC(npc);
         NMSBridge.removeCachedData(npc);
         NPCs.remove(npc);

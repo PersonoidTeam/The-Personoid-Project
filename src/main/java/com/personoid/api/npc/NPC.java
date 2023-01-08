@@ -25,7 +25,6 @@ public class NPC {
     private final List<Feature> features = new ArrayList<>();
     private final GameProfile profile;
 
-    private final InputEmulator inputEmulator = new InputEmulator(this);
     private final Navigation navigation = new Navigation(this);
     private final MoveController moveController = new MoveController(this);
     private final LookController lookController = new LookController(this);
@@ -62,12 +61,15 @@ public class NPC {
         injector.callHook("respawn");
     }
 
+    public void remove() {
+        blockBreaker.stop();
+    }
+
     void tick() {
         moveController.tick();
         lookController.tick();
         if (hasAI) {
             brain.tick();
-            inputEmulator.tick();
             navigation.tick();
             blockBreaker.tick();
             inventory.tick();
@@ -160,10 +162,6 @@ public class NPC {
         return profile;
     }
 
-    public InputEmulator getInputEmulator() {
-        return inputEmulator;
-    }
-
     public Navigation getNavigation() {
         return navigation;
     }
@@ -224,13 +222,13 @@ public class NPC {
         return getEntity().getWorld();
     }
 
-    public Pose getPose() {
-        return pose;
-    }
-
     public void setPose(Pose pose) {
         this.pose = pose;
         // internal update
+    }
+
+    public Pose getPose() {
+        return pose;
     }
 
     public Player getEntity() {
@@ -295,6 +293,22 @@ public class NPC {
 
     public boolean isSpawned() {
         return getEntity() != null;
+    }
+
+    public void setSprinting(boolean sprinting) {
+        entity.setSprinting(true);
+    }
+
+    public boolean isSprinting() {
+        return entity.isSprinting();
+    }
+
+    public void setJumping(boolean jumping) {
+        getOverrides().setJumping(jumping);
+    }
+
+    public boolean isJumping() {
+        return getOverrides().isJumping();
     }
 
     // endregion

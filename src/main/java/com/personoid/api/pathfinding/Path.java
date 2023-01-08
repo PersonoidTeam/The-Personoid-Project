@@ -60,7 +60,7 @@ public class Path {
     }
 
     public boolean isDone() {
-        return this.nextNodeIndex >= this.nodes.length;
+        return this.nextNodeIndex >= this.nodes.length || this.nodes.length == 0;
     }
 
     public void replaceNode(int index, Node node) {
