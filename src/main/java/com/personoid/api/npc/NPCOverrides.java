@@ -422,4 +422,57 @@ public class NPCOverrides implements Listener {
             throw new RuntimeException(e);
         }
     }
+
+    public void setPose(Pose pose) {
+        String nmsName = "";
+        switch (pose) {
+            case STANDING:
+                nmsName = "STANDING";
+                break;
+            case SNEAKING:
+                nmsName = "CROUCHING";
+                break;
+            case SLEEPING:
+                nmsName = "SLEEPING";
+                break;
+            case SWIMMING:
+                nmsName = "SWIMMING";
+                break;
+            case FLYING:
+                nmsName = "FALL_FLYING";
+                break;
+            case SPINNING:
+                nmsName = "SPIN_ATTACK";
+                break;
+            case DYING:
+                nmsName = "DYING";
+                break;
+        }
+        Class<?> entityPose = ReflectionUtils.findClass(Packages.ENTITY, "EntityPose");
+        Object nmsEnum = ReflectionUtils.getEnum(entityPose, nmsName);
+        invoke("b", nmsEnum); // setPose
+    }
+
+    public Pose getPose() {
+        Class<?> entityPose = ReflectionUtils.findClass(Packages.ENTITY, "EntityPose");
+        Object pose = invoke(entityPose, "an"); // getPose
+        String nmsName = pose.toString();
+        switch (nmsName) {
+            case "STANDING":
+                return Pose.STANDING;
+            case "CROUCHING":
+                return Pose.SNEAKING;
+            case "SLEEPING":
+                return Pose.SLEEPING;
+            case "SWIMMING":
+                return Pose.SWIMMING;
+            case "FALL_FLYING":
+                return Pose.FLYING;
+            case "SPIN_ATTACK":
+                return Pose.SPINNING;
+            case "DYING":
+                return Pose.DYING;
+        }
+        return Pose.STANDING;
+    }
 }

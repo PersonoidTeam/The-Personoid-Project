@@ -224,11 +224,11 @@ public class NPC {
 
     public void setPose(Pose pose) {
         this.pose = pose;
-        // internal update
+        overrides.setPose(pose);
     }
 
     public Pose getPose() {
-        return pose;
+        return overrides.getPose();
     }
 
     public Player getEntity() {

@@ -27,7 +27,7 @@ public class GoToLocationActivity extends Activity {
     @Override
     public void onStart(StartType startType) {
         blockLoc = location.getBlock();
-        if (finishCheck()) return;
+        //if (finishCheck()) return;
         getNPC().setSprinting(movementType.name().contains("SPRINT"));
         switch (movementType) {
             case WALK:
@@ -60,7 +60,6 @@ public class GoToLocationActivity extends Activity {
     private boolean finishCheck() {
         if (blockLoc.getLocation().distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
             markAsFinished(new Result<>(Result.Type.SUCCESS));
-            getNPC().getNavigation().stop();
             return true;
         }
         return false;

@@ -33,7 +33,6 @@ public class BlockBreaker {
             playBreakSound();
             stop();
         } else if (tick % 20 == 0) playHitSound();
-
         //Bukkit.broadcastMessage("Break speed: "+block.getBreakSpeed(npc.getBukkitEntity()));
         //Bukkit.broadcastMessage(hardnessOfBlock*currentProgress+"/"+hardnessOfBlock+"%");
         //Bukkit.broadcastMessage("Mapped value: " + getProgress()+"/9");
