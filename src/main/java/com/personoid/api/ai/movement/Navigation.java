@@ -18,8 +18,6 @@ public class Navigation {
     private final Options options = new Options();
     private Path path;
     private Location goal;
-    private int stuckTicks;
-    private Location lastLocation;
 
     private int groundTicks;
 
@@ -30,7 +28,9 @@ public class Navigation {
     public void tick() {
         if (npc.isOnGround() && groundTicks < Integer.MAX_VALUE) groundTicks++;
         if (isDone()) return;
-        if (canUpdatePath()) {
+        if (getOptions().straightLine || (getOptions().straightLineInWater && npc.isInWater())) {
+            npc.getMoveController().moveTo(goal.getX(), goal.getZ());
+        } else if (canUpdatePath()) {
             followPath();
         }/* else if (path != null && !path.isDone()) {
             Vector tempNPCPos = getTempNPCPos();
@@ -42,7 +42,7 @@ public class Navigation {
         }*/
 
         // movement
-        Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
+        //Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
 /*        if (options.straightLine) {
             Location groundLoc = LocationUtils.getBlockInDir(goal, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
             nextNPCPos = groundLoc.toVector();
@@ -58,7 +58,7 @@ public class Navigation {
             npc.getMoveController().setClimbing(false);
         }
 
-        if (path != null) {
+        if (path != null && options.showPath) {
             for (int i = 0; i < path.size(); i++) {
                 Node node = path.getNode(i);
                 Particle.DustTransition dustTransition = i == path.getNextNodeIndex() ? new Particle.DustTransition(Color.BLUE, Color.PURPLE, 0.8F) :
@@ -67,12 +67,10 @@ public class Navigation {
                         node.getLocation().clone().add(0.5F, 0, 0.5F), 3, dustTransition);
             }
         }
-
-        lastLocation = npc.getLocation().clone();
     }
 
     private boolean shouldJump() {
-        if (npc.getMoveController().isClimbing()) return false;
+        if (npc.getMoveController().isClimbing() || path == null || !npc.isJumping()) return false;
         int blockadeDist = Integer.MAX_VALUE;
         for (int i = 0; i <= 3; i++) {
             Vector lookAheadPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);
@@ -134,25 +132,6 @@ public class Navigation {
             Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
             npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ());
         }
-        //doStuckDetection();
-    }
-
-    private void doStuckDetection() {
-        if (lastLocation != null) {
-            Location tempLoc = npc.getLocation().clone();
-            tempLoc.setY(lastLocation.getY());
-            if (lastLocation.distanceSquared(tempLoc) < 0.01) {
-                stuckTicks++;
-                if (stuckTicks >= options.stuckTime && path != null) {
-                    stuckTicks = 0;
-                    stop();
-                }
-            } else {
-                stuckTicks = 0;
-            }
-        } else {
-            stuckTicks = 0;
-        }
     }
 
     private boolean canCutCorner(Material material) {
@@ -167,7 +146,7 @@ public class Navigation {
     private boolean shouldTargetNextNode(Vector tempNPCPos) {
         if (path.getNextNodeIndex() + 1 >= path.size()) return false;
         Vector center = LocationUtils.atBottomCenterOf(path.getNextNodePos());
-        if (!LocationUtils.closerThan(tempNPCPos, center, 2)) return false;
+        if (!LocationUtils.closerThan(tempNPCPos, center, 1)) return false; // was 2
         Vector nextCenter = LocationUtils.atBottomCenterOf(path.getNodePos(path.getNextNodeIndex() + 1));
         Vector nextNodeDiff = nextCenter.subtract(center);
         Vector tempPosDiff = tempNPCPos.subtract(center);
@@ -197,9 +176,9 @@ public class Navigation {
 
     public static class Options {
         private float maxStepHeight = 0.3F;
-        private boolean straightLineInWater = true;
         private boolean straightLine;
-        private int stuckTime = 20;
+        private boolean straightLineInWater = true;
+        private boolean showPath;
 
         public float getMaxStepHeight() {
             return maxStepHeight;
@@ -207,14 +186,6 @@ public class Navigation {
 
         public void setMaxStepHeight(float maxStepHeight) {
             this.maxStepHeight = maxStepHeight;
-        }
-
-        public boolean isStraightLineInWater() {
-            return straightLineInWater;
-        }
-
-        public void setStraightLineInWater(boolean straightLineInWater) {
-            this.straightLineInWater = straightLineInWater;
         }
 
         public boolean isStraightLine() {
@@ -225,12 +196,20 @@ public class Navigation {
             this.straightLine = straightLine;
         }
 
-        public int getStuckTime() {
-            return stuckTime;
+        public boolean isStraightLineInWater() {
+            return straightLineInWater;
         }
 
-        public void setStuckTime(int ticks) {
-            this.stuckTime = ticks;
+        public void setStraightLineInWater(boolean straightLineInWater) {
+            this.straightLineInWater = straightLineInWater;
+        }
+
+        public boolean isShowPath() {
+            return showPath;
+        }
+
+        public void setShowPath(boolean showPath) {
+            this.showPath = showPath;
         }
     }
 }

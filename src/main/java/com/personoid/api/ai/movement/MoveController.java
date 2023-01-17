@@ -7,6 +7,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
@@ -44,8 +45,6 @@ public class MoveController {
             initTick = true;
         }
 
-        moveForward *= 0.98;
-        moveStrafing *= 0.98;
         if (Math.abs(motionY) < 0.005D || npc.isOnGround()) motionY = 0.0D;
         calculateMovement();
         moveEntityWithHeading(moveForward, moveStrafing);
@@ -57,8 +56,8 @@ public class MoveController {
 
         // stop moving if close enough to target
         if (Math.abs(dX) < 0.05 && Math.abs(dZ) < 0.05) {
-            moveForward = 0;
-            moveStrafing = 0;
+            moveForward *= getSlipperiness();
+            moveStrafing *= getSlipperiness();
             motionX *= 0.8;
             motionZ *= 0.8;
             return;
@@ -71,7 +70,11 @@ public class MoveController {
         npc.setPitch(0F);
 
         // calculate movement based on yaw
-        Vec3 input = movementInputToVelocity(new Vec3(0, 0, 1), getSlipperiness(), yaw);
+        ItemStack mainHand = npc.getInventory().getSelectedItem();
+        ItemStack offHand = npc.getInventory().getOffhandItem();
+        boolean hasShield = mainHand.getType() == Material.SHIELD || offHand.getType() == Material.SHIELD;
+        double speed = npc.getItemUsingTicks() > 0 && hasShield ? 0.3 : 1;
+        Vec3 input = movementInputToVelocity(new Vec3(0, 0, speed), getSlipperiness(), yaw);
         moveForward = input.z;
         moveStrafing = input.x;
     }
@@ -79,6 +82,11 @@ public class MoveController {
     public void moveTo(double x, double z) {
         targetX = x;
         targetZ = z;
+    }
+
+    public void stop() {
+        targetX = npc.getLocation().getX();
+        targetZ = npc.getLocation().getZ();
     }
 
     private void moveEntityWithHeading(double forward, double strafe) {

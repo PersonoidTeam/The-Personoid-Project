@@ -40,6 +40,8 @@ public class NPC {
     private boolean hasGravity = true;
     private boolean isInvulnerable;
     private boolean isPushable = true;
+    private boolean isJumping;
+    private boolean canSprint = true;
 
 
     public NPC(GameProfile profile) {
@@ -134,10 +136,22 @@ public class NPC {
 
     public void startUsingItem(HandEnum hand) {
         overrides.startUsingItem(hand);
+        if (hand == HandEnum.LEFT) {
+            if (inventory.getOffhandItem().getType() == Material.SHIELD) {
+                canSprint = false;
+                setSprinting(false);
+            }
+        } else {
+            if (inventory.getSelectedItem().getType() == Material.SHIELD) {
+                canSprint = false;
+                setSprinting(false);
+            }
+        }
     }
 
     public void stopUsingItem() {
         overrides.stopUsingItem();
+        canSprint = true;
     }
 
     public int getItemCooldown(Material material) {
@@ -304,11 +318,15 @@ public class NPC {
     }
 
     public void setJumping(boolean jumping) {
-        getOverrides().setJumping(jumping);
+        isJumping = jumping;
     }
 
     public boolean isJumping() {
-        return getOverrides().isJumping();
+        return isJumping;
+    }
+
+    public boolean canSprint() {
+        return canSprint;
     }
 
     // endregion
