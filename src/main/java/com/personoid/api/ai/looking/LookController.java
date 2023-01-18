@@ -53,11 +53,22 @@ public class LookController {
     public Target getHighestPriorityTarget() {
         Target highest = null;
         for (Target target : targets.values()) {
-            if (highest == null || target.getPriority().getValue() > highest.getPriority().getValue()) {
+            if (highest == null || target.getPriority().isHigherThan(highest.getPriority())) {
                 highest = target;
             }
         }
         return highest;
+    }
+
+    public String getCurrentTarget() {
+        String identifier = null;
+        for (Map.Entry<String, Target> entry : targets.entrySet()) {
+            if (entry.getValue().getPriority() == getHighestPriorityTarget().getPriority()) {
+                identifier = entry.getKey();
+                break;
+            }
+        }
+        return identifier;
     }
 
     public boolean hasTarget(String identifier) {
@@ -65,8 +76,9 @@ public class LookController {
     }
 
     public boolean addTarget(String identifier, Target target) {
+        boolean exists = targets.containsKey(identifier);
         this.targets.put(identifier, target);
-        return !targets.containsKey(identifier);
+        return !exists;
     }
 
     public boolean removeTarget(String identifier) {
@@ -89,5 +101,9 @@ public class LookController {
 
     public Map<String, Target> getTargets() {
         return targets;
+    }
+
+    public Target getTarget(String identifier) {
+        return targets.get(identifier);
     }
 }

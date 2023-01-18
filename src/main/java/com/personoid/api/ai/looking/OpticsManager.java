@@ -26,8 +26,9 @@ public class OpticsManager {
         return blocks.get(0).equals(block);
     }
 
-    public boolean isOccluded(Entity entity) {
-        Location eyeLoc = npc.getLocation().add(0, npc.getEntity().getEyeHeight(), 0);
+    public boolean hasLineOfSight(Entity entity) {
+        return npc.getEntity().hasLineOfSight(entity);
+/*        Location eyeLoc = npc.getLocation().add(0, npc.getEntity().getEyeHeight(), 0);
         BlockIterator iterator = new BlockIterator(npc.getWorld(), eyeLoc.toVector(), eyeLoc.getDirection(), 0.0D, 48);
         while (iterator.hasNext()) {
             Block block = iterator.next();
@@ -37,7 +38,7 @@ public class OpticsManager {
                 }
             }
         }
-        return false;
+        return false;*/
     }
 
     public List<Block> raycast(int range) {

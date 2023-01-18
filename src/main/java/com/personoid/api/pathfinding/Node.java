@@ -66,6 +66,12 @@ public class Node implements Comparable<Node> {
                         }
                     }*/
                     if (x * z != 0) { // if diagonal movement
+                        int xDelta = loc.getBlockX() - this.x;
+                        int zDelta = loc.getBlockZ() - this.z;
+                        Location potentialWall = new Location(loc.getWorld(), xDelta + x, this.y, this.z);
+                        if (LocationUtils.isSolid(potentialWall)) continue;
+                        potentialWall = new Location(loc.getWorld(), this.x, this.y, zDelta + z);
+                        if (LocationUtils.isSolid(potentialWall)) continue;
                         reachNode(loc, expense + context.getConfig().getDiagonalMovementCost());
                     } else {
                         reachNode(loc, expense + 1);

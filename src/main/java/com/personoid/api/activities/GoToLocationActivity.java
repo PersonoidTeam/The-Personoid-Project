@@ -4,14 +4,17 @@ import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
 import com.personoid.api.npc.Pose;
+import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
+    private final Location groundLoc;
     private final MovementType movementType;
     private final Options options;
     private Block blockLoc;
@@ -24,6 +27,7 @@ public class GoToLocationActivity extends Activity {
     public GoToLocationActivity(Location location, MovementType movementType) {
         super(ActivityType.LOCATION);
         this.location = location;
+        groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         this.movementType = movementType;
         options = new Options();
     }
@@ -82,11 +86,14 @@ public class GoToLocationActivity extends Activity {
 
     private void updateLocation() {
         blockLoc = getNPC().getNavigation().moveTo(location);
-        if (options.canFaceLocation()) getNPC().getLookController().addTarget("travel_location", new Target(location, Priority.NORMAL));
+        if (options.canFaceLocation()) {
+            Location lookLoc = groundLoc.clone().add(0F, 2F, 0F);
+            getNPC().getLookController().addTarget("travel_location", new Target(lookLoc, options.facePriority));
+        }
     }
 
     private boolean finishCheck() {
-        if (location.distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
+        if (groundLoc.distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
             markAsFinished(new Result<>(Result.Type.SUCCESS));
             return true;
         }
@@ -133,6 +140,7 @@ public class GoToLocationActivity extends Activity {
     public static class Options {
         public double stoppingDistance = 0.5;
         public boolean faceLocation = true;
+        public Priority facePriority = Priority.NORMAL;
         public int stuckTime = 20;
         public double stuckDelta = 0.01;
         public StuckAction stuckAction = StuckAction.STOP;
@@ -151,8 +159,13 @@ public class GoToLocationActivity extends Activity {
             return faceLocation;
         }
 
-        public void setFaceLocation(boolean faceLocation) {
+        public void setFaceLocation(boolean faceLocation, Priority priority) {
             this.faceLocation = faceLocation;
+            facePriority = priority;
+        }
+
+        public Priority getFacePriority() {
+            return facePriority;
         }
 
         public int getStuckTime() {
