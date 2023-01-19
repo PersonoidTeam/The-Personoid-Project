@@ -1,7 +1,7 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.utils.packet.Packets;
+import com.personoid.nms.packet.Packets;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;

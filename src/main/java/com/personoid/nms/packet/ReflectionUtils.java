@@ -1,4 +1,4 @@
-package com.personoid.api.utils.packet;
+package com.personoid.nms.packet;
 
 import com.personoid.api.utils.CacheManager;
 import com.personoid.api.utils.Parameter;
@@ -216,7 +216,7 @@ public class ReflectionUtils {
 
     public static String getVersion() {
         try {
-            return Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
+            return Bukkit.getBukkitVersion().split("-")[0].replace(".", "_");
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
         }

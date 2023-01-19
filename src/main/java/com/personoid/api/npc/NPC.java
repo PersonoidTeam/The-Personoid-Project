@@ -9,6 +9,7 @@ import com.personoid.api.npc.injection.Injector;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.bukkit.BlockPos;
 import com.personoid.api.utils.types.HandEnum;
+import com.personoid.nms.NPCOverrides;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -67,7 +68,7 @@ public class NPC {
         blockBreaker.stop();
     }
 
-    void tick() {
+    public void tick() {
         moveController.tick();
         lookController.tick();
         if (hasAI) {

@@ -2,7 +2,7 @@ package com.personoid.api.npc;
 
 import com.personoid.api.ai.looking.Target;
 import com.personoid.api.utils.math.MathUtils;
-import com.personoid.api.utils.packet.Packets;
+import com.personoid.nms.packet.Packets;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;

@@ -1,8 +1,9 @@
 package com.personoid.api.npc;
 
-import com.personoid.api.utils.NMSBridge;
-import com.personoid.api.utils.packet.Packages;
-import com.personoid.api.utils.packet.Packets;
+import com.personoid.nms.NMSBridge;
+import com.personoid.nms.packet.Packages;
+import com.personoid.nms.packet.Packets;
+import com.personoid.nms.NPCBuilder;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodCall;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.personoid.api.utils.packet.ReflectionUtils.*;
+import static com.personoid.nms.packet.ReflectionUtils.*;
 
 public class NPCRegistry {
     private static final List<NPC> NPCs = new ArrayList<>();

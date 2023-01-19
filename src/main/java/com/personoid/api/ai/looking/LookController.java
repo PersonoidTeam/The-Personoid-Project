@@ -2,7 +2,7 @@ package com.personoid.api.ai.looking;
 
 import com.personoid.api.npc.NPC;
 import com.personoid.api.utils.bukkit.BlockPos;
-import com.personoid.api.utils.packet.Packets;
+import com.personoid.nms.packet.Packets;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 

@@ -1,7 +1,7 @@
 package com.personoid.api.npc;
 
 import com.personoid.api.events.NPCPickupItemEvent;
-import com.personoid.api.utils.packet.Packets;
+import com.personoid.nms.packet.Packets;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;

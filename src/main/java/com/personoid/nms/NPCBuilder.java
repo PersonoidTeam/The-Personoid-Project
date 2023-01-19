@@ -1,8 +1,10 @@
-package com.personoid.api.npc;
+package com.personoid.nms;
 
+import com.personoid.api.npc.GameProfile;
+import com.personoid.api.npc.NPC;
 import com.personoid.api.utils.CacheManager;
-import com.personoid.api.utils.packet.Packages;
-import com.personoid.api.utils.packet.ReflectionUtils;
+import com.personoid.nms.packet.Packages;
+import com.personoid.nms.packet.ReflectionUtils;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
@@ -37,7 +39,7 @@ public class NPCBuilder {
                 builder = builder.method(ElementMatchers.isMethod()
                         .and(ElementMatchers.named(method))
                         .and(ElementMatchers.returns(TypeDescription.VOID))
-                        .and(ElementMatchers.takesNoArguments())
+                        //.and(ElementMatchers.takesNoArguments())
                 ).intercept(MethodCall.invokeSuper().andThen(MethodCall.invoke(NPCOverrides.class.getMethod(method)).on(npc.getOverrides())));
             }
             Class<?> loaded = builder.make().load(NPCBuilder.class.getClassLoader(), ClassLoadingStrategy.Default.WRAPPER).getLoaded();

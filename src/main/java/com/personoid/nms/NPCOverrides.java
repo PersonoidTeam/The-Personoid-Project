@@ -1,14 +1,19 @@
-package com.personoid.api.npc;
+package com.personoid.nms;
 
 import com.google.common.collect.ForwardingMultimap;
+import com.personoid.api.npc.NPC;
+import com.personoid.api.npc.Pose;
+import com.personoid.api.npc.Skin;
 import com.personoid.api.npc.injection.CallbackInfo;
 import com.personoid.api.npc.injection.InjectionInfo;
-import com.personoid.api.utils.NMSBridge;
-import com.personoid.api.utils.packet.Packages;
-import com.personoid.api.utils.packet.Packets;
-import com.personoid.api.utils.packet.ReflectionUtils;
+import com.personoid.nms.packet.Packages;
+import com.personoid.nms.packet.Packets;
+import com.personoid.nms.packet.ReflectionUtils;
 import com.personoid.api.utils.types.HandEnum;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import org.bukkit.*;
+import org.bukkit.craftbukkit.v1_19_R2.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -39,7 +44,7 @@ public class NPCOverrides implements Listener {
     String[] getMethods() {
         // TRANSLATIONS: tick
         return new String[] {
-            "l"
+            "l", "g"
         };
     }
 
@@ -229,10 +234,12 @@ public class NPCOverrides implements Listener {
         if (npc.getMoveController().getVelocity().getY() > 0) lastYIncrease = yPos;
     }
 
-/*    private void push(Entity entity) {
-        if (!this.isPassengerOfSameVehicle(entity) && !entity.noPhysics && !this.noPhysics) {
-            double d0 = entity.getX() - this.getX();
-            double d1 = entity.getX() - this.getZ();
+    private void g(Entity entity) { // push
+        ServerPlayer player = (ServerPlayer) base;
+        net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
+        if (!player.isPassengerOfSameVehicle(nmsEntity) && !nmsEntity.noPhysics && !player.noPhysics) {
+            double d0 = nmsEntity.getX() - nmsEntity.getX();
+            double d1 = nmsEntity.getX() - nmsEntity.getZ();
             double d2 = Mth.absMax(d0, d1);
             if (d2 >= 0.009999999776482582D) {
                 d2 = Math.sqrt(d2);
@@ -246,15 +253,15 @@ public class NPCOverrides implements Listener {
                 d1 *= d3;
                 d0 *= 0.05000000074505806D;
                 d1 *= 0.05000000074505806D;
-                if (!base.isVehicle()) {
-                    //moveController.addVelocity(new Vector(-d0, 0D, -d1));
+                if (!player.isVehicle()) {
+                    npc.getMoveController().addVelocity(new Vector(-d0, 0D, -d1));
                 }
-                if (!entity.isVehicle()) {
-                    entity.push(d0, 0D, d1);
+                if (!nmsEntity.isVehicle()) {
+                    nmsEntity.push(d0, 0D, d1);
                 }
             }
         }
-    }*/
+    }
 
     @EventHandler
     private void damage(EntityDamageByEntityEvent event) {

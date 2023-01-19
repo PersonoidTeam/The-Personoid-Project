@@ -1,8 +1,9 @@
-package com.personoid.api.utils;
+package com.personoid.nms;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.utils.packet.Packages;
-import com.personoid.api.utils.packet.ReflectionUtils;
+import com.personoid.api.utils.CacheManager;
+import com.personoid.nms.packet.Packages;
+import com.personoid.nms.packet.ReflectionUtils;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 

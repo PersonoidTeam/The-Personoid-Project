@@ -1,4 +1,4 @@
-package com.personoid.api.utils.packet;
+package com.personoid.nms.packet;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

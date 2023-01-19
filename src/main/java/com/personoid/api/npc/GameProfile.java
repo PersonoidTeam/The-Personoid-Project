@@ -1,6 +1,6 @@
 package com.personoid.api.npc;
 
-import com.personoid.api.utils.packet.Packets;
+import com.personoid.nms.packet.Packets;
 import org.apache.commons.lang.Validate;
 
 import java.util.UUID;
