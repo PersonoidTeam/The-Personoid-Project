@@ -70,7 +70,7 @@ public class Navigation {
     }
 
     private boolean shouldJump() {
-        if (npc.getMoveController().isClimbing() || path == null || !npc.isJumping()) return false;
+        if (npc.getMoveController().isClimbing() || path == null) return false;
         int blockadeDist = Integer.MAX_VALUE;
         for (int i = 0; i <= 3; i++) {
             Vector lookAheadPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);
@@ -86,14 +86,14 @@ public class Navigation {
             }
         }
         if (npc.isSprinting() && npc.isJumping()) {
-            if (blockadeDist == 3) return false;
-            else if (blockadeDist > 3) return true;
+            if (blockadeDist == 2) return false; // ONE LESS THAN SPRINTING JUMP DISTANCE
+            else if (blockadeDist > 2 && npc.isJumping()) return true; // ONE LESS THAN SPRINTING JUMP DISTANCE
         }
         if (npc.isOnGround() && groundTicks >= 4) {
             if (npc.isSprinting()) {
-                return blockadeDist <= 2;
+                return blockadeDist <= 1; // SPRINTING JUMP DISTANCE
             } else {
-                return blockadeDist <= 1;
+                return blockadeDist <= 1; // WALKING JUMP DISTANCE
             }
         }
         return false;

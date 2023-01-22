@@ -20,9 +20,10 @@ public class LookController {
 
     public void tick() {
         if (targets.isEmpty() || lookAhead) return;
-        Location facing = getFacing(getHighestPriorityTarget().getLocation());
-        Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
-        npc.setRotation(facing.getYaw(), facing.getPitch());
+        face(getHighestPriorityTarget().getLocation());
+        //Location facing = getFacing(getHighestPriorityTarget().getLocation());
+        //Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
+        //npc.setRotation(facing.getYaw(), facing.getPitch());
     }
 
     public void face(BlockPos blockPos) {
@@ -31,18 +32,25 @@ public class LookController {
 
     public void face(Location location) {
         Location facing = getFacing(location);
-        // if target facing is greater than 45 degrees away from the direction of player's velocity, clamp to 45 degrees looking towards target
+        // try and look at the target location
+        // if the target location is more than 45 degrees away from the moveTarget location, clamp the yaw to 45 degrees
+        double moveTargetX = npc.getMoveController().getTargetX();
+        double moveTargetZ = npc.getMoveController().getTargetZ();
+        Location moveTarget = new Location(npc.getWorld(), moveTargetX, npc.getLocation().getY(), moveTargetZ);
+        float yaw = facing.getYaw();
+        float moveYaw = getFacing(moveTarget).getYaw();
+        // if the moveYaw is more than 45 degrees away from the current yaw, don't update the yaw
         Vector vel = npc.getMoveController().getVelocity();
-        if (vel.lengthSquared() > 0.01) {
-            Vector facingVec = facing.toVector().subtract(npc.getLocation().toVector());
-            double angle = facingVec.angle(vel);
-            if (angle > Math.toRadians(45)) {
-                facingVec = facingVec.normalize().multiply(vel.length());
-                facing = npc.getLocation().clone().add(facingVec);
+        if (Math.abs(vel.getX()) > 0.005F || Math.abs(vel.getZ()) > 0.05F) {
+            if (Math.abs(yaw - moveYaw) > 45) return;
+            double yawDiff = Math.abs(yaw - moveYaw);
+            if (yawDiff > 45) {
+                yaw = moveYaw + (yaw > moveYaw ? 45 : -45);
             }
         }
+        facing.setYaw(yaw);
         Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
-        //npc.setRotation(facingTarget.getYaw(), facingTarget.getPitch());
+        npc.setRotation(facing.getYaw(), facing.getPitch());
     }
 
     private Location getFacing(Location target) {

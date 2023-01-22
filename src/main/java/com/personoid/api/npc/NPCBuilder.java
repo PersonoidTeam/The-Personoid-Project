@@ -1,7 +1,5 @@
-package com.personoid.nms;
+package com.personoid.api.npc;
 
-import com.personoid.api.npc.GameProfile;
-import com.personoid.api.npc.NPC;
 import com.personoid.api.utils.CacheManager;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.ReflectionUtils;
@@ -30,6 +28,7 @@ public class NPCBuilder {
     }
 
     public static NPC create(GameProfile profile) {
+        //Mappings mappings = Mappings.get(MinecraftVersion.get());
         NPC npc = new NPC(profile);
         if (builder == null) {
             builder = new ByteBuddy().subclass(CACHE.getClass("entity_player"), ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC);
@@ -39,7 +38,7 @@ public class NPCBuilder {
                 builder = builder.method(ElementMatchers.isMethod()
                         .and(ElementMatchers.named(method))
                         .and(ElementMatchers.returns(TypeDescription.VOID))
-                        //.and(ElementMatchers.takesNoArguments())
+                        .and(ElementMatchers.takesNoArguments())
                 ).intercept(MethodCall.invokeSuper().andThen(MethodCall.invoke(NPCOverrides.class.getMethod(method)).on(npc.getOverrides())));
             }
             Class<?> loaded = builder.make().load(NPCBuilder.class.getClassLoader(), ClassLoadingStrategy.Default.WRAPPER).getLoaded();

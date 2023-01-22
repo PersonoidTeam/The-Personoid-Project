@@ -9,7 +9,6 @@ import com.personoid.api.npc.injection.Injector;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.bukkit.BlockPos;
 import com.personoid.api.utils.types.HandEnum;
-import com.personoid.nms.NPCOverrides;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -43,6 +42,7 @@ public class NPC {
     private boolean isPushable = true;
     private boolean isJumping;
     private boolean canSprint = true;
+    private boolean isSprinting;
 
 
     public NPC(GameProfile profile) {
@@ -311,11 +311,11 @@ public class NPC {
     }
 
     public void setSprinting(boolean sprinting) {
-        entity.setSprinting(true);
+        isSprinting = sprinting;
     }
 
     public boolean isSprinting() {
-        return entity.isSprinting();
+        return isSprinting;
     }
 
     public void setJumping(boolean jumping) {

@@ -1,14 +1,17 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.nms.packet.Packets;
+import com.personoid.api.utils.LocationUtils;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.BlockFace;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.BlockIterator;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
@@ -51,32 +54,74 @@ public class MoveController {
     }
 
     private void calculateMovement() {
+        // if boundingbox of npc collides with blocks in front of it, stop moving
+        BoundingBox bb = npc.getEntity().getBoundingBox().clone().expand(0.5D, 0.0D, 0.5D);
+        Block block1 = getBlockAtDistance(1, false);
+        Block block2 = block1.getRelative(0, 1, 0);
+        BoundingBox bb1 = block1.getBoundingBox();
+        BoundingBox bb2 = block2.getBoundingBox();
+        Bukkit.broadcastMessage("block1Loc: " + LocationUtils.toString(block1.getLocation()));
+        Bukkit.broadcastMessage("block1: " + block1.getType().name() + ", isSolid: " + block1.getType().isSolid());
+        Bukkit.broadcastMessage("block2: " + block2.getType().name() + ", isSolid: " + block2.getType().isSolid());
+        if ((block1.getType().isSolid() && bb.overlaps(bb1)) || (block2.getType().isSolid() && bb.overlaps(bb2))) {
+            motionX = 0.0D;
+            motionZ = 0.0D;
+            Bukkit.broadcastMessage("collided");
+        }
+
         double dX = targetX - npc.getLocation().getX();
         double dZ = targetZ - npc.getLocation().getZ();
 
         // stop moving if close enough to target
-        if (Math.abs(dX) < 0.05 && Math.abs(dZ) < 0.05) {
-            moveForward *= getSlipperiness();
-            moveStrafing *= getSlipperiness();
-            motionX *= 0.8;
-            motionZ *= 0.8;
+        if (Math.abs(dX) < 0.08 && Math.abs(dZ) < 0.08) {
+            moveForward = 0.0D;
+            moveStrafing = 0.0D;
             return;
         }
 
         // look towards target location
-        float yaw = (float) (Math.toDegrees(Math.atan2(dZ, dX)) - 90F) % 360F;
+/*        float yaw = (float) (Math.toDegrees(Math.atan2(dZ, dX)) - 90F) % 360F;
         Packets.rotateEntity(npc.getEntity(), yaw, 0F).send();
         npc.setYaw(yaw);
-        npc.setPitch(0F);
+        npc.setPitch(0F);*/
+
+        npc.getEntity().setSprinting(npc.isSprinting() && moveForward > 0.0D);
 
         // calculate movement based on yaw
         ItemStack mainHand = npc.getInventory().getSelectedItem();
         ItemStack offHand = npc.getInventory().getOffhandItem();
-        boolean hasShield = mainHand.getType() == Material.SHIELD || offHand.getType() == Material.SHIELD;
+        boolean hasShield = (mainHand != null && mainHand.getType() == Material.SHIELD) || (offHand != null && offHand.getType() == Material.SHIELD);
         double speed = npc.getItemUsingTicks() > 0 && hasShield ? 0.3 : 1;
-        Vec3 input = movementInputToVelocity(new Vec3(0, 0, speed), getSlipperiness(), yaw);
-        moveForward = input.z;
-        moveStrafing = input.x;
+
+        Vec3 direction = new Vec3(dX, 0, dZ).normalize().multiply(speed, speed, speed);
+        Vec3 input = movementInputToVelocity(direction, getSlipperiness(), npc.getYaw());
+/*        moveForward = input.z;
+        moveStrafing = input.x;*/
+    }
+
+    private Block getBlockAtDistance(int range, boolean stopAtSolid) {
+        Location loc = npc.getLocation().clone().subtract(0, 2, 0);
+        loc.setPitch(0F);
+        BlockIterator iterator = new BlockIterator(loc, range + 1);
+        int i = 0;
+        if (iterator.hasNext()) iterator.next();
+        while (iterator.hasNext()) {
+            i++;
+            Block block = iterator.next();
+            if (iterator.hasNext()) {
+                if (stopAtSolid) {
+                    if (block.getType().isSolid()) {
+                        return block;
+                    }
+                } else {
+                    return block;
+                }
+            } else {
+                return block;
+            }
+            if (i > range) break;
+        }
+        return null;
     }
 
     public void moveTo(double x, double z) {
@@ -131,7 +176,7 @@ public class MoveController {
     }
 
     public float getMovementFactor() {
-        return 0.2F;
+        return 0.1F;
     }
 
     public float getLandMovementFactor() {
@@ -141,7 +186,7 @@ public class MoveController {
     }
 
     public float getAirMovementFactor() {
-        float base = getMovementFactor() / 5F;
+        float base = getMovementFactor() * 0.2F;
         if (npc.isSprinting()) base *= 1.3F;
         return base;
     }
@@ -156,8 +201,9 @@ public class MoveController {
             }
             // apply sprint jump boost
             if (npc.isSprinting() && npc.isJumping()) {
-                moveForward *= 1.5;
-                moveStrafing *= 1.5;
+                float f = npc.getYaw() * 0.017453292F;
+                moveForward -= Math.sin(f) * 0.2F;
+                moveStrafing += Math.cos(f) * 0.2F;
             }
         }
     }
@@ -175,7 +221,9 @@ public class MoveController {
     }
 
     private float getSlipperiness() {
-        return npc.getLocation().getBlock().getRelative(BlockFace.DOWN).getType().getSlipperiness();
+        double minYBounds = npc.getEntity().getBoundingBox().getMinY();
+        Block groundBlock = new Location(npc.getWorld(), npc.getX(), minYBounds - 0.5F, npc.getZ()).getBlock();
+        return npc.isOnGround() ? groundBlock.getType().getSlipperiness() : 1F;
     }
 
     public void applyKnockback(Location source) {
@@ -214,6 +262,14 @@ public class MoveController {
 
     public Vector getVelocity() {
         return new Vector(motionX, motionY, motionZ);
+    }
+
+    public double getTargetX() {
+        return targetX;
+    }
+
+    public double getTargetZ() {
+        return targetZ;
     }
 
     public void setClimbing(boolean climbing) {

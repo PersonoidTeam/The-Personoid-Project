@@ -7,10 +7,10 @@ public class PathingConfig {
     private boolean useDiagonalMovement = true;
     private boolean useChunking = true;
 
-    private double diagonalMovementCost = 1;
+    private double diagonalMovementCost = 0.99;
     private double fallingCost = 0.7;
     private double climbingCost = 1.4;
-    private double jumpingCost = 0.95;
+    private double jumpingCost = 1.1;
     private double stairsCost = 0.8;
     private int chunkSize = 25;
     private int chunkSizeYMod = 3;

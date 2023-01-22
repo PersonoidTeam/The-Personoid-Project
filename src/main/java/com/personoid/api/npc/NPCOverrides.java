@@ -1,15 +1,13 @@
-package com.personoid.nms;
+package com.personoid.api.npc;
 
 import com.google.common.collect.ForwardingMultimap;
-import com.personoid.api.npc.NPC;
-import com.personoid.api.npc.Pose;
-import com.personoid.api.npc.Skin;
 import com.personoid.api.npc.injection.CallbackInfo;
 import com.personoid.api.npc.injection.InjectionInfo;
+import com.personoid.api.utils.types.HandEnum;
+import com.personoid.nms.NMSBridge;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.Packets;
 import com.personoid.nms.packet.ReflectionUtils;
-import com.personoid.api.utils.types.HandEnum;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import org.bukkit.*;
@@ -44,7 +42,7 @@ public class NPCOverrides implements Listener {
     String[] getMethods() {
         // TRANSLATIONS: tick
         return new String[] {
-            "l", "g"
+            "l"
         };
     }
 
@@ -230,6 +228,7 @@ public class NPCOverrides implements Listener {
                 //Object fall = ReflectionUtils.getField(damageSourceClass, "k"); // FALL
                 //if (damage > 0D) invoke("a", fall, damage); // hurt FIXME: method not found?!?!?
             }
+            lastYIncrease = yPos;
         }
         if (npc.getMoveController().getVelocity().getY() > 0) lastYIncrease = yPos;
     }
@@ -277,7 +276,7 @@ public class NPCOverrides implements Listener {
                 if (getItemCooldown(Material.SHIELD) <= 0 && isUsingItem()) {
                     // check if angle is within 120 degrees
                     Vector direction = attacker.getLocation().getDirection();
-                    Vector npcDirection = getLocation().getDirection();
+                    Vector npcDirection = npc.getLocation().getDirection();
                     double angle = direction.angle(npcDirection);
                     if (angle < 2.0943951023931953D && itemUsingTicks >= 5) {
                         // shield block
@@ -361,10 +360,6 @@ public class NPCOverrides implements Listener {
         Class<?> moverType = ReflectionUtils.findClass(Packages.MOVER_TYPE, "EnumMoveType");
         Object selfMoverType = ReflectionUtils.getEnum(moverType, "SELF"); // SELF (a)
         invoke("a", selfMoverType, NMSBridge.toVec3(vector)); // move
-    }
-
-    public Location getLocation() {
-        return getEntity().getLocation();
     }
 
     public void setLocation(Location location) {

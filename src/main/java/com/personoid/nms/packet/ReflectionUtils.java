@@ -216,7 +216,8 @@ public class ReflectionUtils {
 
     public static String getVersion() {
         try {
-            return Bukkit.getBukkitVersion().split("-")[0].replace(".", "_");
+            //return Bukkit.getBukkitVersion().split("-")[0].replace(".", "_");
+            return Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
         }

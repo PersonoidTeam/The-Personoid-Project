@@ -3,7 +3,6 @@ package com.personoid.api.npc;
 import com.personoid.nms.NMSBridge;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.Packets;
-import com.personoid.nms.NPCBuilder;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodCall;
