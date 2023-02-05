@@ -4,6 +4,7 @@ import com.personoid.api.npc.NPC;
 import com.personoid.api.utils.bukkit.BlockPos;
 import com.personoid.nms.packet.Packets;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
@@ -20,37 +21,45 @@ public class LookController {
 
     public void tick() {
         if (targets.isEmpty() || lookAhead) return;
-        face(getHighestPriorityTarget().getLocation());
-        //Location facing = getFacing(getHighestPriorityTarget().getLocation());
-        //Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
-        //npc.setRotation(facing.getYaw(), facing.getPitch());
+        Target target = getHighestPriorityTarget();
+        if (target != null) {
+            tryFace(target.getLocation());
+/*            Location facing = getFacing(getHighestPriorityTarget().getLocation());
+            ((CraftPlayer) npc.getEntity()).getHandle().setYHeadRot(facing.getYaw());
+            ((CraftPlayer) npc.getEntity()).getHandle().setYBodyRot(facing.getYaw());
+            Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
+            npc.setRotation(facing.getYaw(), facing.getPitch());*/
+        }
     }
 
-    public void face(BlockPos blockPos) {
-        face(blockPos.toLocation(npc.getWorld()));
+    public void tryFace(BlockPos blockPos) {
+        tryFace(blockPos.toLocation(npc.getWorld()));
     }
 
-    public void face(Location location) {
+    public void tryFace(Location location) {
         Location facing = getFacing(location);
+        float yaw = facing.getYaw();
+
         // try and look at the target location
-        // if the target location is more than 45 degrees away from the moveTarget location, clamp the yaw to 45 degrees
+        // if the target location is more than 45 degrees away from the moveTarget location and the npc is moving, clamp the yaw to 45 degrees
+
         double moveTargetX = npc.getMoveController().getTargetX();
         double moveTargetZ = npc.getMoveController().getTargetZ();
         Location moveTarget = new Location(npc.getWorld(), moveTargetX, npc.getLocation().getY(), moveTargetZ);
-        float yaw = facing.getYaw();
-        float moveYaw = getFacing(moveTarget).getYaw();
-        // if the moveYaw is more than 45 degrees away from the current yaw, don't update the yaw
+        float moveTargetYaw = getFacing(moveTarget).getYaw();
+
         Vector vel = npc.getMoveController().getVelocity();
         if (Math.abs(vel.getX()) > 0.005F || Math.abs(vel.getZ()) > 0.05F) {
-            if (Math.abs(yaw - moveYaw) > 45) return;
-            double yawDiff = Math.abs(yaw - moveYaw);
-            if (yawDiff > 45) {
-                yaw = moveYaw + (yaw > moveYaw ? 45 : -45);
+            if (Math.abs(yaw - moveTargetYaw) > 45F) {
+                yaw = moveTargetYaw + (yaw > moveTargetYaw ? 45F : -45F);
             }
         }
+
         facing.setYaw(yaw);
-        Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
-        npc.setRotation(facing.getYaw(), facing.getPitch());
+        ((CraftPlayer) npc.getEntity()).getHandle().setYHeadRot(yaw);
+        ((CraftPlayer) npc.getEntity()).getHandle().setYBodyRot(yaw);
+        Packets.rotateEntity(npc.getEntity(), yaw, facing.getPitch()).send();
+        npc.setRotation(yaw, facing.getPitch());
     }
 
     private Location getFacing(Location target) {
@@ -68,7 +77,7 @@ public class LookController {
         return highest;
     }
 
-    public String getCurrentTarget() {
+    public String getLastTarget() {
         String identifier = null;
         for (Map.Entry<String, Target> entry : targets.entrySet()) {
             if (entry.getValue().getPriority() == getHighestPriorityTarget().getPriority()) {

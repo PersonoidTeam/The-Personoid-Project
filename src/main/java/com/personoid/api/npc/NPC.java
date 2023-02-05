@@ -9,6 +9,7 @@ import com.personoid.api.npc.injection.Injector;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.bukkit.BlockPos;
 import com.personoid.api.utils.types.HandEnum;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -101,6 +102,7 @@ public class NPC {
     }
 
     public boolean isOnGround() {
+        //return ((CraftPlayer) entity).getHandle().onGround;
         double vy = moveController.getVelocity().getY();
         if (vy > 0) return false;
         World world = getEntity().getWorld();
@@ -125,6 +127,19 @@ public class NPC {
             Material type = loc.getBlock().getType();
             if (type == Material.WATER || type == Material.LAVA) {
                 return true;
+            }
+            loc.add(0, 0.9, 0);
+        }
+        return false;
+    }
+
+    public boolean isMovingInWater() {
+        Location loc = getLocation().clone().add(0, -0.8F, 0);
+        for (int i = 0; i <= 2; i++) {
+            Material type = loc.getBlock().getType();
+            if (type == Material.WATER || type == Material.LAVA) {
+                Vector vel = moveController.getVelocity();
+                return vel.getX() != 0 || vel.getZ() != 0;
             }
             loc.add(0, 0.9, 0);
         }
@@ -299,11 +314,11 @@ public class NPC {
     }
 
     public float getYaw() {
-        return getEntity().getLocation().getYaw();
+        return getLocation().getYaw();
     }
 
     public float getPitch() {
-        return getEntity().getLocation().getPitch();
+        return getLocation().getPitch();
     }
 
     public boolean isSpawned() {
@@ -328,6 +343,10 @@ public class NPC {
 
     public boolean canSprint() {
         return canSprint;
+    }
+
+    public void chat(String message) {
+        Bukkit.broadcastMessage("<" + getProfile().getName() + "> " + message);
     }
 
     // endregion

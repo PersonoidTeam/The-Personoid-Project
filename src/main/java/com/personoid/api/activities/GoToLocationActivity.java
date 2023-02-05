@@ -120,6 +120,7 @@ public class GoToLocationActivity extends Activity {
     public void onStuck() {
         if (options.getStuckAction() == StuckAction.STOP) {
             getNPC().getNavigation().stop();
+            markAsFinished(new Result<>(Result.Type.FAILURE));
         } else if (options.getStuckAction() == StuckAction.RESTART) {
             getNPC().getNavigation().stop();
             getNPC().getNavigation().moveTo(location);
@@ -127,9 +128,10 @@ public class GoToLocationActivity extends Activity {
             getNPC().getNavigation().stop();
             getNPC().getNavigation().moveTo(startingLocation);
         } else if (options.getStuckAction() == StuckAction.TELEPORT) {
+            getNPC().getNavigation().stop();
             getNPC().teleport(startingLocation);
         } else if (options.getStuckAction() == StuckAction.IGNORE) {
-            markAsFinished(new Result<>(Result.Type.FAILURE));
+            // do nothing
         }
     }
 

@@ -151,7 +151,7 @@ public class NPCOverrides implements Listener {
         loadChunks();
         aliveTicks++;
         if (!invoke(Boolean.class, "br")) return; // isAlive
-        invoke("aq"); // baseTick
+        //invoke("m"); // baseTick
         double yPos = invoke(double.class, "dm"); // getY
         if (aliveTicks == 1) {
             lastYIncrease = yPos;
@@ -219,7 +219,7 @@ public class NPCOverrides implements Listener {
     private void fallDamageCheck() {
         // FIXME: still a little broken
         double yPos = invoke(double.class, "dm"); // getY
-        if (npc.isOnGround()) { // onGround
+        if (npc.isOnGround() && !npc.isInWater()) { // onGround
             float damage = (float) (lastYIncrease - yPos - 3F);
             if (damage > 0) {
                 getEntity().setLastDamageCause(new EntityDamageEvent(getEntity(), EntityDamageEvent.DamageCause.FALL, damage));
@@ -386,6 +386,22 @@ public class NPCOverrides implements Listener {
     public void setPitch(float pitch) {
         try {
             base.getClass().getMethod("q", float.class).invoke(base, pitch); // setXRot/pitch
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public float getYaw() {
+        try {
+            return (float) base.getClass().getMethod("dv").invoke(base); // getYRot/yaw
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public float getPitch() {
+        try {
+            return (float) base.getClass().getMethod("dx").invoke(base); // getXRot/pitch
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

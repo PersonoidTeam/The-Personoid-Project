@@ -27,12 +27,12 @@ public class Navigation {
 
     public void tick() {
         if (npc.isOnGround() && groundTicks < Integer.MAX_VALUE) groundTicks++;
-        if (isDone()) return;
-        if (getOptions().straightLine || (getOptions().straightLineInWater && npc.isInWater())) {
+        if (getOptions().straightLine || (getOptions().straightLineInWater && npc.isInWater()) && goal != null) {
             npc.getMoveController().moveTo(goal.getX(), goal.getZ());
         } else if (canUpdatePath()) {
             followPath();
-        }/* else if (path != null && !path.isDone()) {
+        }
+            /* else if (path != null && !path.isDone()) {
             Vector tempNPCPos = getTempNPCPos();
             Vector nextNPCPos = path.getNextNPCPos(npc);
             if (tempNPCPos.getY() > nextNPCPos.getY() && !npc.isOnGround() && Math.floor(tempNPCPos.getX()) == Math.floor(nextNPCPos.getX()) &&
@@ -41,14 +41,9 @@ public class Navigation {
             }
         }*/
 
-        // movement
-        //Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
-/*        if (options.straightLine) {
-            Location groundLoc = LocationUtils.getBlockInDir(goal, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
-            nextNPCPos = groundLoc.toVector();
-        }*/
-
-        if (shouldJump()) npc.getMoveController().jump();
+        if (shouldJump()) {
+            npc.getMoveController().jump();
+        }
 
         if (BlockTags.CLIMBABLE.is(npc.getLocation())) {
             npc.getMoveController().setClimbing(true);
@@ -70,7 +65,7 @@ public class Navigation {
     }
 
     private boolean shouldJump() {
-        if (npc.getMoveController().isClimbing() || path == null) return false;
+        if (npc.getMoveController().isClimbing() || path == null || npc.isMovingInWater()) return false;
         int blockadeDist = Integer.MAX_VALUE;
         for (int i = 0; i <= 3; i++) {
             Vector lookAheadPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);
@@ -85,12 +80,12 @@ public class Navigation {
                 break;
             }
         }
-        if (npc.isSprinting() && npc.isJumping()) {
+        if (npc.isSprinting()) {
             if (blockadeDist == 2) return false; // ONE LESS THAN SPRINTING JUMP DISTANCE
             else if (blockadeDist > 2 && npc.isJumping()) return true; // ONE LESS THAN SPRINTING JUMP DISTANCE
         }
         if (npc.isOnGround() && groundTicks >= 4) {
-            if (npc.isSprinting()) {
+            if (npc.isSprinting() ) {
                 return blockadeDist <= 1; // SPRINTING JUMP DISTANCE
             } else {
                 return blockadeDist <= 1; // WALKING JUMP DISTANCE
@@ -109,7 +104,7 @@ public class Navigation {
         goal = location.clone();
         if ((!options.straightLineInWater || !npc.isInWater()) && !options.straightLine) {
             path = pathfinder.getPath(npcGroundLoc, groundLoc);
-            path.clean();
+            if (path != null) path.clean();
         } else path = null;
         if (!isDone()) {
             Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
@@ -128,8 +123,8 @@ public class Navigation {
         double z = Math.abs(npc.getLocation().getZ() - blockPos.getZ() + 0.5);
         boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < 1D);
         if (withinMaxDist || (canCutCorner(block.getType()) && shouldTargetNextNode(tempNPCPos))) {
-            this.path.advance();
-            Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
+            path.advance();
+            Vector nextNPCPos = path.getNextNPCPos(npc);
             npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ());
         }
     }
@@ -158,8 +153,7 @@ public class Navigation {
     }
 
     private boolean canUpdatePath() {
-        return true;
-        //return npc.isOnGround();
+        return !isDone();
     }
 
     private boolean isDone() {
