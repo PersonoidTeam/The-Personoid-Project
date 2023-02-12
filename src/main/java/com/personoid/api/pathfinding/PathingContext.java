@@ -1,45 +1,47 @@
 package com.personoid.api.pathfinding;
 
-import org.bukkit.Location;
+import org.bukkit.World;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class PathingContext {
-    private final Node startNode;
-    private Node endNode;
-    private final Set<Node> closedSet = new HashSet<>();
+    private World world;
+    private final PathingNode startNode;
+    private PathingNode endNode;
+    private final Set<PathingNode> closedSet = new HashSet<>();
     private final OpenSetHeap openSet = new OpenSetHeap(1024);
     private final PathingConfig config;
 
-    public PathingContext(Location startLocation, Location endLocation, PathingConfig config) {
-        this.startNode = new Node(startLocation, 0, null, this);
-        this.endNode = new Node(endLocation, 0, null, this);
+    public PathingContext(BlockPos startLocation, BlockPos endLocation, World world, PathingConfig config) {
+        this.startNode = new PathingNode(startLocation, 0, null, this);
+        this.endNode = new PathingNode(endLocation, 0, null, this);
+        this.world = world;
         this.config = config;
         openSet.add(startNode);
     }
 
-    public Location getStartLocation() {
+    public BlockPos getStartLocation() {
         return startNode.location;
     }
 
-    public Location getEndLocation() {
+    public BlockPos getEndLocation() {
         return endNode.location;
     }
 
-    public Node getStartNode() {
+    public PathingNode getStartNode() {
         return startNode;
     }
 
-    public Node getEndNode() {
+    public PathingNode getEndNode() {
         return endNode;
     }
 
-    public void setEndNode(Node endNode) {
+    public void setEndNode(PathingNode endNode) {
         this.endNode = endNode;
     }
 
-    public Set<Node> getClosedSet() {
+    public Set<PathingNode> getClosedSet() {
         return closedSet;
     }
 
@@ -51,12 +53,16 @@ public class PathingContext {
         return config;
     }
 
-    public Node getNode(Location location) {
-        for (Node node : closedSet) {
-            if (node.getX() == location.getBlockX() && node.getY() == location.getBlockY() && node.getZ() == location.getBlockZ()) {
+    public World getWorld() {
+        return world;
+    }
+
+    public PathingNode getNode(BlockPos location) {
+        for (PathingNode node : closedSet) {
+            if (node.getX() == location.getX() && node.getY() == location.getY() && node.getZ() == location.getZ()) {
                 return node;
             }
         }
-        return new Node(location, 0, null, this);
+        return new PathingNode(location, 0, null, this);
     }
 }

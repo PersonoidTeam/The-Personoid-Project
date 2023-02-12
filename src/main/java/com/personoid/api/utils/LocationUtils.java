@@ -1,12 +1,10 @@
 package com.personoid.api.utils;
 
+import com.personoid.api.pathfinding.BlockPos;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.math.Range;
 import com.personoid.api.utils.types.BlockTags;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.BlockIterator;
@@ -26,12 +24,25 @@ public class LocationUtils {
         relativeBlockFaces.add(BlockFace.WEST);
     }
 
+    private static Vector deltaDistance(BlockPos loc1, BlockPos loc2) {
+        double deltaX = Math.abs(loc1.getX() - loc2.getX());
+        double deltaY = Math.abs(loc1.getY() - loc2.getY());
+        double deltaZ = Math.abs(loc1.getZ() - loc2.getZ());
+        return new Vector(deltaX, deltaY, deltaZ);
+    }
+
     private static Vector deltaDistance(Location loc1, Location loc2) {
         if (loc1.getWorld() != loc2.getWorld()) return new Vector(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
         double deltaX = Math.abs(loc1.getX() - loc2.getX());
         double deltaY = Math.abs(loc1.getY() - loc2.getY());
         double deltaZ = Math.abs(loc1.getZ() - loc2.getZ());
         return new Vector(deltaX, deltaY, deltaZ);
+    }
+
+    public static double euclideanDistance(BlockPos loc1, BlockPos loc2) {
+        Vector delta = deltaDistance(loc1, loc2);
+        double distance2d = Math.sqrt(delta.getX() * delta.getX() + delta.getZ() * delta.getZ());
+        return Math.sqrt(distance2d * distance2d + delta.getY() * delta.getY());
     }
 
     public static double euclideanDistance(Location loc1, Location loc2) {
@@ -45,9 +56,17 @@ public class LocationUtils {
         return Math.sqrt(delta.getX() + delta.getY() + delta.getZ());
     }
 
+    public static boolean canStandAt(BlockPos pos, World world) {
+        return canStandAt(pos.toLocation(world));
+    }
+
     public static boolean canStandAt(Location location) {
         return !isSolid(location) && !isSolid(location.clone().add(0, 1, 0)) &&
                 isSolid(location.clone().add(0, -1, 0));
+    }
+
+    public static boolean isSolid(BlockPos pos, World world) {
+        return isSolid(pos.toLocation(world));
     }
 
     public static boolean isSolid(Location location) {

@@ -1,13 +1,19 @@
 package com.personoid.api.utils.types;
 
+import com.personoid.api.pathfinding.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 
 public enum BlockTags {
     SOLID,
     LIQUID,
     CLIMBABLE;
+
+    public boolean is(BlockPos blockPos, World world) {
+        return is(blockPos.toLocation(world));
+    }
 
     public boolean is(Location location) {
         return is(location.getBlock());

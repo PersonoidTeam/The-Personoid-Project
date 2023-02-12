@@ -68,6 +68,7 @@ public class Path {
     }
 
     public void clean() {
+        if (nodes.length == 0) return;
         // remove first node and move all nodes along
         Node[] newNodes = new Node[nodes.length - 1];
         System.arraycopy(nodes, 1, newNodes, 0, newNodes.length);

@@ -76,6 +76,18 @@ public class ReflectionUtils {
         return Class.forName("org.bukkit.craftbukkit." + getVersion() + "." + packageName + "." + className);
     }
 
+    public static Object construct(Class<?> clazz, Object... parameters) {
+        try {
+            Class<?>[] types = new Class[parameters.length];
+            for (int i = 0; i < parameters.length; i++) {
+                types[i] = parameters[i].getClass();
+            }
+            return clazz.getConstructor(types).newInstance(parameters);
+        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Object invoke(Object obj, String methodName, Object... args) {
         try {
             List<Class<?>> argTypes = new ArrayList<>();

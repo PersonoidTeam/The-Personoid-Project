@@ -1,8 +1,6 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -96,10 +94,10 @@ public class MoveController {
         boolean hasShield = (mainHand != null && mainHand.getType() == Material.SHIELD) || (offHand != null && offHand.getType() == Material.SHIELD);
         float speed = npc.getItemUsingTicks() > 0 && hasShield ? 0.3F : 1F;
 
-        Vec3 direction = new Vec3(dX, 0, dZ).normalize().multiply(speed, speed, speed);
-        Vec3 input = worldToInputVector(direction, 1F, npc.getYaw());
-        moveForward = input.z;
-        moveStrafing = input.x;
+        Vector direction = new Vector(dX, 0, dZ).normalize().multiply(speed);
+        Vector input = worldToInputVector(direction, getSlipperiness(), npc.getYaw());
+        moveForward = input.getZ();
+        moveStrafing = input.getX();
     }
 
     private boolean handleWaterMovement() {
@@ -210,15 +208,15 @@ public class MoveController {
         }
     }
 
-    private static Vec3 worldToInputVector(Vec3 worldVector, float speed, float yaw) {
-        double d = worldVector.lengthSqr();
+    private static Vector worldToInputVector(Vector worldVector, float speed, float yaw) {
+        double d = worldVector.length() * worldVector.length();
         if (d < 1.0E-7) {
-            return Vec3.ZERO;
+            return new Vector(0, 0, 0);
         } else {
-            Vec3 vec3d = (d > 1.0 ? worldVector.normalize() : worldVector).scale(speed);
-            float f = Mth.sin(yaw * 0.017453292F);
-            float g = Mth.cos(yaw * 0.017453292F);
-            return new Vec3(vec3d.x * (double)g + vec3d.z * (double)f, vec3d.y, vec3d.z * (double)g - vec3d.x * (double)f);
+            Vector vec3d = (d > 1.0 ? worldVector.normalize() : worldVector).multiply(speed);
+            float f = (float) Math.sin(yaw * 0.017453292F);
+            float g = (float) Math.cos(yaw * 0.017453292F);
+            return new Vector(vec3d.getX() * (double)g + vec3d.getZ() * (double)f, vec3d.getY(), vec3d.getZ() * (double)g - vec3d.getX() * (double)f);
         }
     }
 

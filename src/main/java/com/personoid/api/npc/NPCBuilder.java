@@ -42,6 +42,7 @@ public class NPCBuilder {
                 ).intercept(MethodCall.invokeSuper().andThen(MethodCall.invoke(NPCOverrides.class.getMethod(method)).on(npc.getOverrides())));
             }
             Class<?> loaded = builder.make().load(NPCBuilder.class.getClassLoader(), ClassLoadingStrategy.Default.WRAPPER).getLoaded();
+            Object gameProfile = ReflectionUtils.construct(CACHE.getClass("game_profile"), UUID.randomUUID(), profile.getName());
             Object base;
             if (ReflectionUtils.getVersionInt() >= 19 && ReflectionUtils.getSubVersionInt() <= 2) {
                 base = loaded.getConstructor(
@@ -52,7 +53,7 @@ public class NPCBuilder {
                         .newInstance(
                                 ReflectionUtils.invoke(Bukkit.getServer(), "getServer"),
                                 ReflectionUtils.invoke(Bukkit.getWorlds().get(0), "getHandle"),
-                                new com.mojang.authlib.GameProfile(UUID.randomUUID(), profile.getName()), null
+                                gameProfile, null
                         );
             } else {
                 base = loaded.getConstructor(
@@ -62,7 +63,7 @@ public class NPCBuilder {
                         .newInstance(
                                 ReflectionUtils.invoke(Bukkit.getServer(), "getServer"),
                                 ReflectionUtils.invoke(Bukkit.getWorlds().get(0), "getHandle"),
-                                new com.mojang.authlib.GameProfile(UUID.randomUUID(), profile.getName())
+                                gameProfile
                         );
             }
             npc.getOverrides().setBase(base);

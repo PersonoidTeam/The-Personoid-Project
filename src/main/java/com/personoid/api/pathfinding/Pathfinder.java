@@ -3,19 +3,19 @@ package com.personoid.api.pathfinding;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.math.MathUtils;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import org.bukkit.World;
 
 public class Pathfinder {
     protected PathingConfig config = new PathingConfig();
 
-    public Path getPath(Location start, Location end) {
-        PathingContext context = new PathingContext(start, end, config);
+    public Path getPath(BlockPos start, BlockPos end, World world) {
+        PathingContext context = new PathingContext(start, end, world, config);
         boolean pathFound = config.canUseChunking();
 
         //if (!(canStandAt(start) && canStandAt(end))) return null;
 
         long nsStart = System.nanoTime();
-        Node best = null;
+        PathingNode best = null;
 
         while (context.getClosedSet().size() < config.getMaxNodeTests() && context.getOpenSet().size() > 0) {
             best = context.getOpenSet().poll();
@@ -43,13 +43,13 @@ public class Pathfinder {
 
         // get length of path to create array, 1 because of start
         int length = 1;
-        Node node = context.getEndNode();
+        PathingNode node = context.getEndNode();
         while (node.getOrigin() != null) {
             node = node.getOrigin();
             length++;
         }
 
-        Node[] nodes = new Node[length];
+        PathingNode[] nodes = new PathingNode[length];
 
         //fill Array
         node = context.getEndNode();
@@ -63,7 +63,7 @@ public class Pathfinder {
         float duration = (System.nanoTime() - nsStart) / 1000000f;
         Profiler.PATHFINDING.push("A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) +
                 duration + "ms" + ChatColor.WHITE + " to find a path.");
-        return new Path(nodes);
+        return nodes.length > 0 ? new Path(nodes) : null;
     }
 
     public PathingConfig getConfig() {

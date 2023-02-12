@@ -1,29 +1,43 @@
 package com.personoid.api.pathfinding;
 
 public class PathingConfig {
-    private int maxFallDistance = 3;
-    private boolean useClimbing = true;
-    private boolean useBlockPlacement = true;
-    private boolean useDiagonalMovement = true;
     private boolean useChunking = true;
 
-    private double diagonalMovementCost = 0.99;
+    private boolean useDiagonalMovement = true;
+    private boolean useClimbing = true;
+    private boolean useParkour = true;
+
+    private int maxNodeTests = 1000;
+    private int chunkSize = 25;
+
+    private int maxFallDistance = 3;
+    private int maxParkourLength = 4;
+
+    private double diagonalMovementCost = 1;
     private double fallingCost = 0.7;
     private double climbingCost = 1.4;
     private double jumpingCost = 1.1;
     private double stairsCost = 0.8;
-    private int chunkSize = 25;
-    private int chunkSizeYMod = 3;
-    private int maxNodeTests = 1000;
+    private double parkourCost = 0.7;
 
     //region toggle getters and setters
 
-    public int getMaxFallDistance() {
-        return maxFallDistance;
+    public boolean canUseChunking() {
+        return useChunking;
     }
 
-    public void setMaxFallDistance(int maxFallDistance) {
-        this.maxFallDistance = maxFallDistance;
+    public void setUseChunking(boolean useChunking) {
+        this.useChunking = useChunking;
+    }
+
+    // movement types
+
+    public boolean canUseDiagonalMovement() {
+        return useDiagonalMovement;
+    }
+
+    public void useDiagonalMovement(boolean useDiagonalMovement) {
+        this.useDiagonalMovement = useDiagonalMovement;
     }
 
     public boolean canUseClimbing() {
@@ -34,33 +48,53 @@ public class PathingConfig {
         this.useClimbing = useClimbing;
     }
 
-    public boolean canUseBlockPlacement() {
-        return useBlockPlacement;
+    public boolean canUseParkour() {
+        return useParkour;
     }
 
-    public void useBlockPlacement(boolean useBlockPlacement) {
-        this.useBlockPlacement = useBlockPlacement;
-    }
-
-    public boolean canUseDiagonalMovement() {
-        return useDiagonalMovement;
-    }
-
-    public void useDiagonalMovement(boolean useDiagonalMovement) {
-        this.useDiagonalMovement = useDiagonalMovement;
-    }
-
-    public boolean canUseChunking() {
-        return useChunking;
-    }
-
-    public void setUseChunking(boolean useChunking) {
-        this.useChunking = useChunking;
+    public void useParkour(boolean useParkour) {
+        this.useParkour = useParkour;
     }
 
     //endregion
 
     //region value getters and setters
+
+    public int getMaxNodeTests() {
+        return maxNodeTests;
+    }
+
+    public void setMaxNodeTests(int maxNodeTests) {
+        this.maxNodeTests = maxNodeTests;
+    }
+
+    public int getChunkSize() {
+        return chunkSize;
+    }
+
+    public void setChunkSize(int chunkSize) {
+        this.chunkSize = chunkSize;
+    }
+
+    // misc values
+
+    public int getMaxFallDistance() {
+        return maxFallDistance;
+    }
+
+    public void setMaxFallDistance(int maxFallDistance) {
+        this.maxFallDistance = maxFallDistance;
+    }
+
+    public int getMaxParkourLength() {
+        return maxParkourLength;
+    }
+
+    public void setMaxParkourLength(int maxParkourLength) {
+        this.maxParkourLength = maxParkourLength;
+    }
+
+    // costs
 
     public double getDiagonalMovementCost() {
         return diagonalMovementCost;
@@ -102,28 +136,12 @@ public class PathingConfig {
         this.stairsCost = stairsCost;
     }
 
-    public int getChunkSize() {
-        return chunkSize;
+    public double getParkourCost() {
+        return parkourCost;
     }
 
-    public void setChunkSize(int chunkSize) {
-        this.chunkSize = chunkSize;
-    }
-
-    public int getChunkSizeYMod() {
-        return chunkSizeYMod;
-    }
-
-    public void setChunkSizeYMod(int chunkSizeYMod) {
-        this.chunkSizeYMod = chunkSizeYMod;
-    }
-
-    public int getMaxNodeTests() {
-        return maxNodeTests;
-    }
-
-    public void setMaxNodeTests(int maxNodeTests) {
-        this.maxNodeTests = maxNodeTests;
+    public void setParkourCost(double parkourCost) {
+        this.parkourCost = parkourCost;
     }
 
     //endregion

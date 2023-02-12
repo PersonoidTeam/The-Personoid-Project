@@ -1,9 +1,7 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.Node;
-import com.personoid.api.pathfinding.Path;
-import com.personoid.api.pathfinding.Pathfinder;
+import com.personoid.api.pathfinding.*;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.BlockTags;
@@ -59,7 +57,7 @@ public class Navigation {
                 Particle.DustTransition dustTransition = i == path.getNextNodeIndex() ? new Particle.DustTransition(Color.BLUE, Color.PURPLE, 0.8F) :
                         new Particle.DustTransition(Color.RED, Color.ORANGE, 0.8F);
                 npc.getLocation().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION,
-                        node.getLocation().clone().add(0.5F, 0, 0.5F), 3, dustTransition);
+                        node.getBlockPos().toLocation(npc.getWorld()).clone().add(0.5F, 0, 0.5F), 3, dustTransition);
             }
         }
     }
@@ -98,16 +96,25 @@ public class Navigation {
         return pathfinder;
     }
 
+    public Path getCurrentPath() {
+        return path;
+    }
+
     public Block moveTo(Location location) {
+        return moveTo(location, null);
+    }
+
+    public Block moveTo(Location location, Path path) {
+        this.path = path;
         Location groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         goal = location.clone();
         if ((!options.straightLineInWater || !npc.isInWater()) && !options.straightLine) {
-            path = pathfinder.getPath(npcGroundLoc, groundLoc);
-            if (path != null) path.clean();
-        } else path = null;
+            if (this.path == null) this.path = pathfinder.getPath(BlockPos.fromLocation(npcGroundLoc), BlockPos.fromLocation(groundLoc), groundLoc.getWorld());
+            if (this.path != null) this.path.clean();
+        } else this.path = null;
         if (!isDone()) {
-            Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : path.getNextNPCPos(npc);
+            Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : this.path.getNextNPCPos(npc);
             npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ());
         }
         return groundLoc.getBlock();

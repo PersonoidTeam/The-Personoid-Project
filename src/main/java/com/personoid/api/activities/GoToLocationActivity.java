@@ -4,6 +4,7 @@ import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
 import com.personoid.api.npc.Pose;
+import com.personoid.api.pathfinding.Path;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
@@ -14,6 +15,7 @@ import org.bukkit.block.BlockFace;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
+    private final Path path;
     private final Location groundLoc;
     private final MovementType movementType;
     private final Options options;
@@ -27,6 +29,16 @@ public class GoToLocationActivity extends Activity {
     public GoToLocationActivity(Location location, MovementType movementType) {
         super(ActivityType.LOCATION);
         this.location = location;
+        path = null;
+        groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
+        this.movementType = movementType;
+        options = new Options();
+    }
+
+    public GoToLocationActivity(Location location, Path path, MovementType movementType) {
+        super(ActivityType.LOCATION);
+        this.location = location;
+        this.path = path;
         groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         this.movementType = movementType;
         options = new Options();
@@ -82,10 +94,11 @@ public class GoToLocationActivity extends Activity {
         } else {
             stuckTicks = 0;
         }
+        lastLocation = getNPC().getLocation().clone();
     }
 
     private void updateLocation() {
-        blockLoc = getNPC().getNavigation().moveTo(location);
+        blockLoc = getNPC().getNavigation().moveTo(location, path);
         if (options.canFaceLocation()) {
             Location lookLoc = groundLoc.clone().add(0F, 2F, 0F);
             getNPC().getLookController().addTarget("travel_location", new Target(lookLoc, options.facePriority));
@@ -129,7 +142,7 @@ public class GoToLocationActivity extends Activity {
             getNPC().getNavigation().moveTo(startingLocation);
         } else if (options.getStuckAction() == StuckAction.TELEPORT) {
             getNPC().getNavigation().stop();
-            getNPC().teleport(startingLocation);
+            getNPC().teleport(location);
         } else if (options.getStuckAction() == StuckAction.IGNORE) {
             // do nothing
         }

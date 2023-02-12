@@ -8,10 +8,7 @@ import com.personoid.nms.NMSBridge;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.Packets;
 import com.personoid.nms.packet.ReflectionUtils;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_19_R2.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -233,7 +230,7 @@ public class NPCOverrides implements Listener {
         if (npc.getMoveController().getVelocity().getY() > 0) lastYIncrease = yPos;
     }
 
-    private void g(Entity entity) { // push
+/*    private void g(Entity entity) { // push
         ServerPlayer player = (ServerPlayer) base;
         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
         if (!player.isPassengerOfSameVehicle(nmsEntity) && !nmsEntity.noPhysics && !player.noPhysics) {
@@ -260,7 +257,7 @@ public class NPCOverrides implements Listener {
                 }
             }
         }
-    }
+    }*/
 
     @EventHandler
     private void damage(EntityDamageByEntityEvent event) {
@@ -370,6 +367,9 @@ public class NPCOverrides implements Listener {
         try {
             base.getClass().getMethod("q", float.class).invoke(base, pitch); // setXRot/pitch
             base.getClass().getMethod("p", float.class).invoke(base, yaw); // setYRot/yaw
+
+            base.getClass().getMethod("l", float.class).invoke(base, yaw); // setYHeadRot/yaw
+            base.getClass().getMethod("m", float.class).invoke(base, yaw); // setYBodyRot/yaw
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -378,6 +378,8 @@ public class NPCOverrides implements Listener {
     public void setYaw(float yaw) {
         try {
             base.getClass().getMethod("p", float.class).invoke(base, yaw); // setYRot/yaw
+            base.getClass().getMethod("l", float.class).invoke(base, yaw); // setYHeadRot/yaw
+            base.getClass().getMethod("m", float.class).invoke(base, yaw); // setYBodyRot/yaw
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

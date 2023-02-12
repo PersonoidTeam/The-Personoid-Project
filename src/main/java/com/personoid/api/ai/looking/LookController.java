@@ -1,10 +1,9 @@
 package com.personoid.api.ai.looking;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.utils.bukkit.BlockPos;
+import com.personoid.api.pathfinding.BlockPos;
 import com.personoid.nms.packet.Packets;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
@@ -55,9 +54,11 @@ public class LookController {
             }
         }
 
+        if (npc.getLocation().distance(moveTarget) < 1F) {
+            return;
+        }
+
         facing.setYaw(yaw);
-        ((CraftPlayer) npc.getEntity()).getHandle().setYHeadRot(yaw);
-        ((CraftPlayer) npc.getEntity()).getHandle().setYBodyRot(yaw);
         Packets.rotateEntity(npc.getEntity(), yaw, facing.getPitch()).send();
         npc.setRotation(yaw, facing.getPitch());
     }
