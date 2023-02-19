@@ -13,6 +13,7 @@ public class PathingConfig {
     private int maxFallDistance = 3;
     private int maxParkourLength = 4;
 
+    private double forwardMovementCost = 1;
     private double diagonalMovementCost = 1;
     private double fallingCost = 0.7;
     private double climbingCost = 1.4;
@@ -95,6 +96,14 @@ public class PathingConfig {
     }
 
     // costs
+
+    public double getForwardMovementCost() {
+        return forwardMovementCost;
+    }
+
+    public void setForwardMovementCost(double forwardMovementCost) {
+        this.forwardMovementCost = forwardMovementCost;
+    }
 
     public double getDiagonalMovementCost() {
         return diagonalMovementCost;

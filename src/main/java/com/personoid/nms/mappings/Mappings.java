@@ -52,4 +52,8 @@ public class Mappings {
     public Constructor<?> getConstructor(Class<?> clazz, Class<?>... parameters) throws NoSuchMethodException {
         return clazz.getConstructor(parameters);
     }
+
+    public MinecraftVersion getVersion() {
+        return version;
+    }
 }

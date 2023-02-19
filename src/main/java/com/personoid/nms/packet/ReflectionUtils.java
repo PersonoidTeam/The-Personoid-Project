@@ -1,6 +1,6 @@
 package com.personoid.nms.packet;
 
-import com.personoid.api.utils.CacheManager;
+import com.personoid.api.utils.cache.Cache;
 import com.personoid.api.utils.Parameter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class ReflectionUtils {
-    private static final CacheManager CACHE = new CacheManager("reflection_utils");
+    private static final Cache CACHE = new Cache("reflection_utils");
 
     public static Class<?> findClass(Packages packageType, String className) {
         return findClass(packageType.getPackageName(), className);

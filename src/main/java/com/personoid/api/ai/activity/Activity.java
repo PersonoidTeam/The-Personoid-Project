@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 
 public abstract class Activity implements Comparable<Activity> {
     private ActivityManager manager;
+    private NPC npc;
     private final ActivityType type;
     private Priority priority;
     private long currentDuration;
@@ -22,6 +23,7 @@ public abstract class Activity implements Comparable<Activity> {
 
     private final Set<Consumer<Result<?>>> callbacks = new HashSet<>();
     private Activity childActivity;
+    private Activity parentActivity;
 
     public Activity(ActivityType type) {
         this.type = type;
@@ -48,10 +50,11 @@ public abstract class Activity implements Comparable<Activity> {
     // needs to be called before canStart() or onStart()
     void register(ActivityManager manager) {
         this.manager = manager;
+        npc = manager.getNPC();
     }
 
     public NPC getNPC(){
-        return manager.getNPC();
+        return npc;
     }
 
     public long getCurrentDuration() {
@@ -70,10 +73,9 @@ public abstract class Activity implements Comparable<Activity> {
     }
 
     public void internalStop(StopType stopType) {
-        if (stopType == StopType.PAUSE) {
-            if (childActivity == null) return;
-            childActivity.internalStop(StopType.PAUSE);
-            childActivity.onStop(StopType.PAUSE);
+        if (childActivity != null) {
+            childActivity.internalStop(stopType);
+            childActivity.onStop(stopType);
         }
     }
 
@@ -109,19 +111,23 @@ public abstract class Activity implements Comparable<Activity> {
     }
 
     public void run(Activity activity) {
-        activity.register(manager);
+        activity.npc = npc;
         if (activity.canStart(StartType.START)) {
             if (childActivity != null) {
                 childActivity.internalStop(StopType.STOP);
                 childActivity.onStop(StopType.STOP);
             }
             childActivity = activity;
+            activity.parentActivity = this;
             activity.internalStart(StartType.START);
             activity.onStart(StartType.START);
         }
     }
 
     protected void markAsFinished(Result<?> result) {
+        if (parentActivity != null) {
+            parentActivity.childActivity = null;
+        }
         finished = true;
         this.result = result;
         callbacks.forEach(callback -> callback.accept(result));

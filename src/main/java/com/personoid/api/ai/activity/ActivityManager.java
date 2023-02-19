@@ -89,6 +89,10 @@ public class ActivityManager {
         return new HashSet<>(registered);
     }
 
+    public Activity getCurrentActivity() {
+        return current;
+    }
+
     public void startActivity(Activity activity, Activity.StartType startType) {
         Profiler.ACTIVITIES.push("Starting activity " + activity.getClass().getSimpleName());
         activity.internalStart(startType);

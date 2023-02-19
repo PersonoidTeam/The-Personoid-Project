@@ -1,18 +1,24 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.*;
+import com.personoid.api.pathfinding.BlockPos;
+import com.personoid.api.pathfinding.Node;
+import com.personoid.api.pathfinding.Path;
+import com.personoid.api.pathfinding.PathFinder;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.BlockTags;
-import org.bukkit.*;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
 
 public class Navigation {
     private final NPC npc;
-    private final Pathfinder pathfinder = new Pathfinder();
+    private final PathFinder pathfinder = new PathFinder();
     private final Options options = new Options();
     private Path path;
     private Location goal;
@@ -92,7 +98,7 @@ public class Navigation {
         return false;
     }
 
-    public Pathfinder getPathfinder() {
+    public PathFinder getPathfinder() {
         return pathfinder;
     }
 

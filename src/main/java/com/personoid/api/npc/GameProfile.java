@@ -37,6 +37,13 @@ public class GameProfile {
 
     public void setName(String name) {
         this.name = name;
+/*        npc.getEntity().setDisplayName(name);
+        ((CraftPlayer)npc.getEntity()).getHandle().displayName = name;
+        ((CraftPlayer)npc.getEntity()).getHandle().listName = Component.literal(name);
+        Packets.removePlayer(npc.getEntity()).send();
+        Bukkit.getScheduler().runTaskLater(JavaPlugin.getProvidingPlugin(GameProfile.class), () -> {
+            Packets.addPlayer(npc.getEntity(), true).send();
+        }, 1);*/
     }
 
     public Skin getSkin() {
@@ -54,11 +61,7 @@ public class GameProfile {
 
     public void setTabVisibility(boolean visible) {
         if (!npc.isSpawned()) return;
-        if (visible && !visibleInTab) {
-            Packets.showPlayer(npc.getEntity()).send();
-        } else if (!visible && visibleInTab) {
-            Packets.hidePlayer(npc.getEntity()).send();
-        }
+        Packets.showPlayer(npc.getEntity(), visible).send();
         this.visibleInTab = visible;
     }
 

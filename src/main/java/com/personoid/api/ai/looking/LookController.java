@@ -22,12 +22,10 @@ public class LookController {
         if (targets.isEmpty() || lookAhead) return;
         Target target = getHighestPriorityTarget();
         if (target != null) {
-            tryFace(target.getLocation());
-/*            Location facing = getFacing(getHighestPriorityTarget().getLocation());
-            ((CraftPlayer) npc.getEntity()).getHandle().setYHeadRot(facing.getYaw());
-            ((CraftPlayer) npc.getEntity()).getHandle().setYBodyRot(facing.getYaw());
+            //tryFace(target.getLocation());
+            Location facing = getFacing(getHighestPriorityTarget().getLocation());
             Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
-            npc.setRotation(facing.getYaw(), facing.getPitch());*/
+            npc.setRotation(facing.getYaw(), facing.getPitch());
         }
     }
 

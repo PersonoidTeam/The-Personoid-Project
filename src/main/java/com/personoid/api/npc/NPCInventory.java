@@ -3,6 +3,7 @@ package com.personoid.api.npc;
 import com.personoid.api.events.NPCPickupItemEvent;
 import com.personoid.nms.packet.Packets;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
@@ -205,6 +206,24 @@ public class NPCInventory {
             }
         }
         return false;
+    }
+
+    public boolean contains(Material material) {
+        for (ItemStack item : hotbar) {
+            if (item != null && item.getType() == material) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public ItemStack getFirst(Material material) {
+        for (ItemStack item : hotbar) {
+            if (item != null && item.getType() == material) {
+                return item;
+            }
+        }
+        return null;
     }
 
     private boolean equals(ItemStack a, ItemStack b) {

@@ -141,7 +141,7 @@ public class MoveController {
 
         npc.move(new Vector(motionX, motionY, motionZ));
 
-        if (!climbing && npc.hasGravity() && !handleWaterMovement()) {
+        if (!climbing && npc.hasGravity()) {
             this.motionY -= 0.08D;
             this.motionY *= 0.98D;
         }
@@ -200,11 +200,11 @@ public class MoveController {
             }
             //((CraftPlayer) npc.getEntity()).getHandle().jumpFromGround();
             // apply sprint jump boost
-/*            if (npc.isSprinting() && npc.isJumping()) {
+            if (npc.isSprinting() && npc.isJumping()) {
                 float f = npc.getYaw() * 0.017453292F;
                 moveForward -= Math.sin(f) * 0.2F;
                 moveStrafing += Math.cos(f) * 0.2F;
-            }*/
+            }
         }
     }
 

@@ -2,7 +2,7 @@ package com.personoid.api.npc;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.personoid.api.utils.CacheManager;
+import com.personoid.api.utils.cache.Cache;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -25,15 +25,20 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
 
-public class Skin {
-    private static final CacheManager CACHE = new CacheManager("skins");
+public class Skin implements Serializable {
+    private static final Cache CACHE = new Cache("skins");
     private static final Dotenv env = Dotenv.load();
     private final String texture;
     private final String signature;
 
+    static {
+        CACHE.load("skins");
+    }
+
     private Skin(String texture, String signature) {
         this.texture = texture;
         this.signature = signature;
+        cache();
     }
 
     public String getTexture() {
@@ -148,5 +153,9 @@ public class Skin {
 
     public static Skin alex() {
         return new Skin(env.get("SKIN_ALEX_TEXTURE"), env.get("SKIN_ALEX_SIGNATURE"));
+    }
+
+    public static void cache() {
+        CACHE.save("skins");
     }
 }

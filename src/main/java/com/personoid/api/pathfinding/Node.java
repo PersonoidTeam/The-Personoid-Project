@@ -1,14 +1,18 @@
 package com.personoid.api.pathfinding;
 
-public class Node implements Cloneable {
-    protected BlockPos location;
-    protected int x, y, z;
+public class Node {
+    protected final int x;
+    protected final int y;
+    protected final int z;
 
-    public Node(BlockPos blockPos) {
-        this.location = blockPos;
-        x = blockPos.getX();
-        y = blockPos.getY();
-        z = blockPos.getZ();
+    public Node(BlockPos pos) {
+        this(pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    public Node(int x, int y, int z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
     }
 
     public int getX() {
@@ -24,21 +28,23 @@ public class Node implements Cloneable {
     }
 
     public BlockPos getBlockPos() {
-        return location;
+        return new BlockPos(x, y, z);
     }
 
-    public boolean matchLocation(Node node) {
-        return node.x == x && node.y == y && node.z == z;
+    public boolean equals(Node node) {
+        return equals(node.x, node.y, node.z);
+    }
+
+    public boolean equals(BlockPos pos) {
+        return equals(pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    public boolean equals(int x, int y, int z) {
+        return this.x == x && this.y == y && this.z == z;
     }
 
     @Override
-    public Node clone() {
-        try {
-            Node clone = (Node) super.clone();
-            clone.location = new BlockPos(x, y, z);
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
+    public String toString() {
+        return String.format("Node{x=%s, y=%s, z=%s}", x, y, z);
     }
 }

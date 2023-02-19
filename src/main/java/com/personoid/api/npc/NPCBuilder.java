@@ -1,6 +1,6 @@
 package com.personoid.api.npc;
 
-import com.personoid.api.utils.CacheManager;
+import com.personoid.api.utils.cache.Cache;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.ReflectionUtils;
 import net.bytebuddy.ByteBuddy;
@@ -13,10 +13,9 @@ import net.bytebuddy.matcher.ElementMatchers;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.UUID;
 
 public class NPCBuilder {
-    private static final CacheManager CACHE = new CacheManager("npc_builder");
+    private static final Cache CACHE = new Cache("npc_builder");
     private static DynamicType.Builder<?> builder;
 
     static {
@@ -42,7 +41,7 @@ public class NPCBuilder {
                 ).intercept(MethodCall.invokeSuper().andThen(MethodCall.invoke(NPCOverrides.class.getMethod(method)).on(npc.getOverrides())));
             }
             Class<?> loaded = builder.make().load(NPCBuilder.class.getClassLoader(), ClassLoadingStrategy.Default.WRAPPER).getLoaded();
-            Object gameProfile = ReflectionUtils.construct(CACHE.getClass("game_profile"), UUID.randomUUID(), profile.getName());
+            Object gameProfile = ReflectionUtils.construct(CACHE.getClass("game_profile"), profile.getId(), profile.getName());
             Object base;
             if (ReflectionUtils.getVersionInt() >= 19 && ReflectionUtils.getSubVersionInt() <= 2) {
                 base = loaded.getConstructor(

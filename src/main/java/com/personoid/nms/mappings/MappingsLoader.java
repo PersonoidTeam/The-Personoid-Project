@@ -56,7 +56,7 @@ public class MappingsLoader {
                 client.execute(request, response -> {
                     if (response.getStatusLine().getStatusCode() == 200) {
                         String tempDir = System.getProperty("java.io.tmpdir");
-                        Path path = Paths.get(tempDir + "/mojang mappings/" + version.getName());
+                        Path path = Paths.get(tempDir + "/personoid/mojang mappings/" + version.getName());
                         if (!path.toFile().exists()) {
                             Files.createDirectories(path);
                         }

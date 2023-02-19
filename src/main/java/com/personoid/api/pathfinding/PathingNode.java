@@ -19,7 +19,7 @@ public class PathingNode extends Node implements Comparable<PathingNode> {
     }
 
     public double getFinalExpense() {
-        if (expenseLeft == -1) expenseLeft = LocationUtils.euclideanDistance(location, context.getEndLocation());
+        if (expenseLeft == -1) expenseLeft = LocationUtils.euclideanDistance(getBlockPos(), context.getEndLocation());
         return expense + 1.1 * expenseLeft;
     }
 
@@ -28,7 +28,7 @@ public class PathingNode extends Node implements Comparable<PathingNode> {
             for (int z = -1; z <= 1; z++) {
                 // check is current node location or diagonal
                 if (x == 0 && z == 0 || (!context.getConfig().canUseDiagonalMovement() && x * z != 0)) continue;
-                BlockPos loc = location.add(x, 0, z);
+                BlockPos loc = getBlockPos().add(x, 0, z);
 
                 // check if outside of pathfinder chunk
                 int chunkSize = context.getConfig().getChunkSize();
@@ -48,7 +48,7 @@ public class PathingNode extends Node implements Comparable<PathingNode> {
                         if (LocationUtils.isSolid(potentialWall, context.getWorld())) continue;
                         addNode(loc, expense + context.getConfig().getDiagonalMovementCost());
                     } else {
-                        addNode(loc, expense + 1);
+                        addNode(loc, expense + context.getConfig().getForwardMovementCost());
                     }
                 }
 
@@ -94,7 +94,7 @@ public class PathingNode extends Node implements Comparable<PathingNode> {
 
                 // parkour
                 // furthest jump possible: 4 blocks long and 1 block higher
-                if (context.getConfig().canUseParkour()) {
+/*                if (context.getConfig().canUseParkour()) {
                     BlockPos nLoc = loc.above();
                     if (LocationUtils.canStandAt(nLoc, context.getWorld())) {
                         int jumpLength = 1;
@@ -106,7 +106,7 @@ public class PathingNode extends Node implements Comparable<PathingNode> {
                             addNode(nLoc, expense + (jumpLength * context.getConfig().getParkourCost()));
                         }
                     }
-                }
+                }*/
             }
         }
     }

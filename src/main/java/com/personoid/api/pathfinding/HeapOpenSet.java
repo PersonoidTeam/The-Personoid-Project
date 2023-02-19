@@ -3,11 +3,11 @@ package com.personoid.api.pathfinding;
 import java.util.Arrays;
 
 // ALL CREDIT FOR THIS CLASS GOES TO THE MAPLE PATHFINDING PROJECT
-public class OpenSetHeap {
+public class HeapOpenSet {
     private PathingNode[] nodes;
     private int size;
 
-    public OpenSetHeap(int maxHeapSize) {
+    public HeapOpenSet(int maxHeapSize) {
         this.nodes = new PathingNode[maxHeapSize];
     }
 

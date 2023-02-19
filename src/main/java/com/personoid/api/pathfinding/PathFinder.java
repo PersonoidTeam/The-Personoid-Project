@@ -5,7 +5,7 @@ import com.personoid.api.utils.math.MathUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 
-public class Pathfinder {
+public class PathFinder {
     protected PathingConfig config = new PathingConfig();
 
     public Path getPath(BlockPos start, BlockPos end, World world) {

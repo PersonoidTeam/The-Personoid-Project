@@ -6,13 +6,10 @@ import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
 import com.personoid.api.npc.injection.Feature;
 import com.personoid.api.npc.injection.Injector;
-import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.pathfinding.BlockPos;
+import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.types.HandEnum;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
@@ -258,7 +255,7 @@ public class NPC {
     }
 
     public Pose getPose() {
-        return overrides.getPose();
+        return pose;
     }
 
     public Player getEntity() {
@@ -347,6 +344,21 @@ public class NPC {
 
     public void chat(String message) {
         Bukkit.broadcastMessage("<" + getProfile().getName() + "> " + message);
+    }
+
+    public void placeBlock(Location location, Material material) {
+        if (!material.isBlock() && !material.isAir()) {
+            throw new IllegalArgumentException("Material must be a block");
+        }
+        if (location.getWorld() != getWorld()) {
+            throw new IllegalArgumentException("Location must be in the same world as the NPC");
+        }
+        if (location.distance(getLocation()) > 5) {
+            throw new IllegalArgumentException("Location must be within 5 blocks of the NPC");
+        }
+        location.getBlock().setType(material);
+        Sound placeSound = material.createBlockData().getSoundGroup().getPlaceSound();
+        getWorld().playSound(location, placeSound, 1, 1);
     }
 
     // endregion

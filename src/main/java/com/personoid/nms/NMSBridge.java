@@ -1,7 +1,7 @@
 package com.personoid.nms;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.utils.CacheManager;
+import com.personoid.api.utils.cache.Cache;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.ReflectionUtils;
 import org.bukkit.World;
@@ -11,8 +11,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class NMSBridge {
-    private static final CacheManager CACHE = new CacheManager("NMSBridge");
-    private static final CacheManager NPC_CACHE = new CacheManager("NMSBridge_NPC");
+    private static final Cache CACHE = new Cache("NMSBridge");
+    private static final Cache NPC_CACHE = new Cache("NMSBridge_NPC");
 
     static {
         CACHE.put("entity_player", ReflectionUtils.findClass(Packages.SERVER_LEVEL, "EntityPlayer"));

@@ -6,11 +6,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class PathingContext {
-    private World world;
+    private final World world;
     private final PathingNode startNode;
     private PathingNode endNode;
     private final Set<PathingNode> closedSet = new HashSet<>();
-    private final OpenSetHeap openSet = new OpenSetHeap(1024);
+    private final HeapOpenSet openSet = new HeapOpenSet(1024);
     private final PathingConfig config;
 
     public PathingContext(BlockPos startLocation, BlockPos endLocation, World world, PathingConfig config) {
@@ -22,11 +22,11 @@ public class PathingContext {
     }
 
     public BlockPos getStartLocation() {
-        return startNode.location;
+        return startNode.getBlockPos();
     }
 
     public BlockPos getEndLocation() {
-        return endNode.location;
+        return endNode.getBlockPos();
     }
 
     public PathingNode getStartNode() {
@@ -45,7 +45,7 @@ public class PathingContext {
         return closedSet;
     }
 
-    public OpenSetHeap getOpenSet() {
+    public HeapOpenSet getOpenSet() {
         return openSet;
     }
 

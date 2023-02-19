@@ -46,8 +46,8 @@ public class NPCOverrides implements Listener {
     public void setBase(Object base) {
         this.base = base;
         npc.entity = getEntity();
-        npc.init();
         init();
+        npc.init();
     }
 
     public Object getBase() {
@@ -123,16 +123,13 @@ public class NPCOverrides implements Listener {
     // endregion
 
     public void onSpawn() {
-        if (!npc.getProfile().isVisibleInTab()) {
-            Bukkit.getScheduler().runTaskLater(JavaPlugin.getProvidingPlugin(NPCOverrides.class), () ->
-                    Packets.hidePlayer(npc.getEntity()).send(), 1);
-        }
+
     }
 
     public void init() {
+        updateSkin();
         npc.getInventory().updateVisuals();
         Packets.updateEntityData(getEntity()).send();
-        updateSkin();
     }
 
     // NPC METHODS + VARIABLES
@@ -179,13 +176,13 @@ public class NPCOverrides implements Listener {
         }
         if (handUsing != -1) itemUsingTicks++;
         // TODO: hacky workaround (fixes npc spawning invisible when a player is out of view of where it spawned)
-        Bukkit.getOnlinePlayers().forEach(player -> {
+/*        Bukkit.getOnlinePlayers().forEach(player -> {
             if (player.getLocation().distance(npc.getLocation()) <= 48F) {
                 if (!playersInRange.contains(player.getUniqueId())) {
                     player.showPlayer(JavaPlugin.getProvidingPlugin(NPCOverrides.class), getEntity());
                     if (!npc.getProfile().isVisibleInTab()) {
                         Bukkit.getScheduler().runTaskLater(JavaPlugin.getProvidingPlugin(NPCOverrides.class), () ->
-                                Packets.hidePlayer(npc.getEntity()).send(player), 1);
+                                Packets.hidePlayer(npc.getEntity()).send(player), 2);
                     }
                     playersInRange.add(player.getUniqueId());
                 }
@@ -195,7 +192,7 @@ public class NPCOverrides implements Listener {
                     playersInRange.remove(player.getUniqueId());
                 }
             }
-        });
+        });*/
         Packets.updateEntityData(getEntity()).send();
         npc.tick();
     }
@@ -292,6 +289,7 @@ public class NPCOverrides implements Listener {
         }
         event.setDamage(damage);
         npc.getMoveController().applyKnockback(attacker.getLocation());
+        //npc.getProfile().setName("Bread and Bacon"); // TESTING
     }
 
     @EventHandler
@@ -343,7 +341,7 @@ public class NPCOverrides implements Listener {
 
     public void setVisibilityTo(Player player, boolean visible) {
         if (visible) {
-            Packets.showPlayer(npc.getEntity()).send(player);
+            Packets.showPlayer(npc.getEntity(), npc.getProfile().isVisibleInTab()).send(player);
         } else {
             Packets.hidePlayer(npc.getEntity()).send(player);
         }

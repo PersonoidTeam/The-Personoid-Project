@@ -47,13 +47,13 @@ public class NPCRegistry {
         //sp.unsetRemoved();
         NMSBridge.setArrowCount(npc, 0);
         Packets.removePlayer(npc.getEntity()).send();
-        Packets.addPlayer(npc.getEntity()).send();
+        Packets.addPlayer(npc.getEntity(), npc.getProfile().isVisibleInTab()).send();
         npc.respawn();
     }
 
     public void spawnNPC(NPC npc, Location location) {
         NMSBridge.setPos(npc, new Vector(location.getX(), location.getY(), location.getZ()));
-        Packets.addPlayer(npc.getEntity()).send();
+        Packets.addPlayer(npc.getEntity(), npc.getProfile().isVisibleInTab()).send();
         try {
             Class<?> serverPlayerClass = findClass(Packages.SERVER_LEVEL, "EntityPlayer");
             Object serverPlayer = getEntityPlayer(npc.getEntity());
