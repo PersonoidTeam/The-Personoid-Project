@@ -115,3 +115,4 @@ run/
 #custom
 resources/config.json
 script.sh
+src/main/resources/.env
