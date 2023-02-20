@@ -10,16 +10,14 @@ import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
-    private final Path path;
+    private Path path;
     private final Location groundLoc;
     private final MovementType movementType;
     private final Options options;
-    private Block blockLoc;
     private int tick;
 
     private Location lastLocation;
@@ -47,7 +45,6 @@ public class GoToLocationActivity extends Activity {
     @Override
     public void onStart(StartType startType) {
         startingLocation = getNPC().getLocation().clone();
-        blockLoc = location.getBlock();
         getNPC().setJumping(movementType.name().contains("JUMP"));
         switch (movementType) {
             case WALK:
@@ -98,15 +95,20 @@ public class GoToLocationActivity extends Activity {
     }
 
     private void updateLocation() {
-        blockLoc = getNPC().getNavigation().moveTo(location, path);
+        path = getNPC().getNavigation().moveTo(location, path);
         if (options.canFaceLocation()) {
-            Location lookLoc = groundLoc.clone().add(0F, 2F, 0F);
+            Location lookLoc = groundLoc.clone().add(0F, 0F, 0F);
             getNPC().getLookController().addTarget("travel_location", new Target(lookLoc, options.facePriority));
         }
     }
 
     private boolean finishCheck() {
-        if (groundLoc.distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
+        if (options.getStoppingDistance() <= 0F) {
+            if (path != null && path.isDone()) {
+                markAsFinished(new Result<>(Result.Type.SUCCESS));
+                return true;
+            }
+        } else if (groundLoc.distanceSquared(getNPC().getLocation()) <= options.getStoppingDistance()) {
             markAsFinished(new Result<>(Result.Type.SUCCESS));
             return true;
         }

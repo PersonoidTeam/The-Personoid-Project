@@ -36,7 +36,7 @@ public class MathUtils {
         }
         if (places == 0) return Math.round(value);
         BigDecimal bd = BigDecimal.valueOf(value);
-        bd = bd.setScale(places + 1, RoundingMode.HALF_UP);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
         return bd.doubleValue();
     }
 

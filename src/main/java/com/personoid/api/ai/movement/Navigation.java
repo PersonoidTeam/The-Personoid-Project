@@ -106,11 +106,11 @@ public class Navigation {
         return path;
     }
 
-    public Block moveTo(Location location) {
+    public Path moveTo(Location location) {
         return moveTo(location, null);
     }
 
-    public Block moveTo(Location location, Path path) {
+    public Path moveTo(Location location, Path path) {
         this.path = path;
         Location groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
@@ -123,7 +123,7 @@ public class Navigation {
             Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : this.path.getNextNPCPos(npc);
             npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ());
         }
-        return groundLoc.getBlock();
+        return this.path;
     }
 
     private void followPath() {

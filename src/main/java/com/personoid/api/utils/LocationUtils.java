@@ -111,7 +111,13 @@ public class LocationUtils {
     }
 
     public static String toString(Location location) {
-        return location.getBlockX() + ", " + location.getBlockY() + ", " + location.getZ();
+        return location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ();
+    }
+
+    public static String toStringAcc(Location location) {
+        return MathUtils.round(location.getX(), 2) + ", " +
+                MathUtils.round(location.getY(), 2) + ", " +
+                MathUtils.round(location.getZ(), 2);
     }
 
     public static Block rayTraceBlocks(Location from, Location to, int maxDistance, boolean stopOnLiquid){

@@ -76,9 +76,8 @@ public class MoveController {
         double dZ = targetZ - npc.getLocation().getZ();
 
         // stop moving if close enough to target
-        if (Math.abs(dX) < 0.08 && Math.abs(dZ) < 0.08) {
-            moveForward = 0.0D;
-            moveStrafing = 0.0D;
+        if (Math.abs(dX) < 0.05 && Math.abs(dZ) < 0.05) {
+            stop();
             return;
         }
 
@@ -257,6 +256,8 @@ public class MoveController {
     }
 
     public void stop() {
+        moveForward = 0.0D;
+        moveStrafing = 0.0D;
         targetX = npc.getLocation().getX();
         targetZ = npc.getLocation().getZ();
     }
