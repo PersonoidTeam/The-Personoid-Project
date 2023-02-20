@@ -154,7 +154,7 @@ public class Navigation {
     private boolean shouldTargetNextNode(Vector tempNPCPos) {
         if (path.getNextNodeIndex() + 1 >= path.size()) return false;
         Vector center = LocationUtils.atBottomCenterOf(path.getNextNodePos());
-        if (!LocationUtils.closerThan(tempNPCPos, center, 1)) return false; // was 2
+        if (!LocationUtils.closerThan(tempNPCPos, center, 2)) return false; // was 2
         Vector nextCenter = LocationUtils.atBottomCenterOf(path.getNodePos(path.getNextNodeIndex() + 1));
         Vector nextNodeDiff = nextCenter.subtract(center);
         Vector tempPosDiff = tempNPCPos.subtract(center);

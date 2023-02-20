@@ -1,9 +1,9 @@
 package com.personoid.api.ai.activity;
 
 import com.personoid.api.npc.NPC;
+import com.personoid.api.utils.Result;
 import com.personoid.api.utils.types.Priority;
 import com.personoid.api.utils.debug.Profiler;
-import com.personoid.api.utils.Result;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;

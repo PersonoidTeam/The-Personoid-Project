@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class NPCInventory {
     private static final int MAX_SIZE = 36;
@@ -22,6 +23,7 @@ public class NPCInventory {
     private final ItemStack[] hotbar = new ItemStack[9];
     private ItemStack offhand;
     private int selectedSlot = 0;
+    private final Map<String, Consumer<ItemStack>> itemPickupListeners = new HashMap<>();
 
     public NPCInventory(NPC npc) {
         this.npc = npc;
@@ -56,9 +58,20 @@ public class NPCInventory {
                             item.getItemStack().setAmount(item.getItemStack().getAmount() - diff);
                         }
                     }
+                    for (Consumer<ItemStack> listener : itemPickupListeners.values()) {
+                        listener.accept(item.getItemStack());
+                    }
                 }
             }
         }
+    }
+
+    public void addPickupListener(String id, Consumer<ItemStack> listener) {
+        itemPickupListeners.put(id, listener);
+    }
+
+    public void removePickupListener(String id) {
+        itemPickupListeners.remove(id);
     }
 
     public void updateVisuals() {

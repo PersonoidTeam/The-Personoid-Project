@@ -70,7 +70,9 @@ public class LocationUtils {
     }
 
     public static boolean isSolid(Location location) {
-        return location.getBlock().getType().isSolid() && !location.getBlock().getType().name().contains("TRAPDOOR");
+        Material type = location.getBlock().getType();
+        if (type.name().contains("LEAVES")) return true;
+        return type.isSolid() && !type.name().contains("TRAPDOOR");
     }
 
     public static Vector atBottomCenterOf(Vector vector) {
