@@ -6,7 +6,7 @@ import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
 import com.personoid.api.npc.injection.Feature;
 import com.personoid.api.npc.injection.Injector;
-import com.personoid.api.pathfinding.BlockPos;
+import com.personoid.api.pathfinding.utils.BlockPos;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.types.HandEnum;
 import org.bukkit.*;

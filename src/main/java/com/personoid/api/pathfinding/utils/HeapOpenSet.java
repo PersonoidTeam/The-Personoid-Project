@@ -1,17 +1,19 @@
-package com.personoid.api.pathfinding;
+package com.personoid.api.pathfinding.utils;
+
+import com.personoid.api.pathfinding.node.OldNode;
 
 import java.util.Arrays;
 
 // ALL CREDIT FOR THIS CLASS GOES TO THE MAPLE PATHFINDING PROJECT
 public class HeapOpenSet {
-    private PathingNode[] nodes;
+    private OldNode[] nodes;
     private int size;
 
     public HeapOpenSet(int maxHeapSize) {
-        this.nodes = new PathingNode[maxHeapSize];
+        this.nodes = new OldNode[maxHeapSize];
     }
 
-    public void add(PathingNode node) {
+    public void add(OldNode node) {
         if (isFull()) {
             int length = nodes.length << 1;
             nodes = Arrays.copyOf(nodes, length);
@@ -22,11 +24,11 @@ public class HeapOpenSet {
         update(node);
     }
 
-    public void update(PathingNode n) {
+    public void update(OldNode n) {
         int index = n.getHeapIndex();
         double cost = n.getFinalExpense();
         int parentIndex = index >>> 1;
-        PathingNode parent = nodes[parentIndex];
+        OldNode parent = nodes[parentIndex];
         while (index > 1 && parent.getFinalExpense() > cost) {
             nodes[index] = parent;
             nodes[parentIndex] = n;
@@ -38,9 +40,9 @@ public class HeapOpenSet {
         }
     }
 
-    public PathingNode poll() {
-        PathingNode node = nodes[1];
-        PathingNode lastNode = nodes[size];
+    public OldNode poll() {
+        OldNode node = nodes[1];
+        OldNode lastNode = nodes[size];
         nodes[1] = lastNode;
         nodes[size] = null;
         lastNode.setHeapIndex(1);
@@ -51,10 +53,10 @@ public class HeapOpenSet {
         int childIndex = 2;
         double cost = lastNode.getFinalExpense();
         while (true) {
-            PathingNode child = nodes[childIndex];
+            OldNode child = nodes[childIndex];
             double childCost = child.getFinalExpense();
             if (childIndex < size) {
-                PathingNode rightChild = nodes[childIndex + 1];
+                OldNode rightChild = nodes[childIndex + 1];
                 double rightChildCost = rightChild.getFinalExpense();
                 if (childCost > rightChildCost) {
                     childIndex++;

@@ -1,6 +1,7 @@
 package com.personoid.api.pathfinding;
 
 import com.personoid.api.npc.NPC;
+import com.personoid.api.pathfinding.node.Node;
 import org.bukkit.util.Vector;
 
 public class Path {

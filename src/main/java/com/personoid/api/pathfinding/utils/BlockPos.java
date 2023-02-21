@@ -1,4 +1,4 @@
-package com.personoid.api.pathfinding;
+package com.personoid.api.pathfinding.utils;
 
 import com.personoid.api.utils.math.MathUtils;
 import org.bukkit.Location;

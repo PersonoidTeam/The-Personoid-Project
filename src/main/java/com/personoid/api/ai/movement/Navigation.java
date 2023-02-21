@@ -1,8 +1,8 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.BlockPos;
-import com.personoid.api.pathfinding.Node;
+import com.personoid.api.pathfinding.utils.BlockPos;
+import com.personoid.api.pathfinding.node.Node;
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.PathFinder;
 import com.personoid.api.utils.LocationUtils;
@@ -63,7 +63,7 @@ public class Navigation {
                 Particle.DustTransition dustTransition = i == path.getNextNodeIndex() ? new Particle.DustTransition(Color.BLUE, Color.PURPLE, 0.8F) :
                         new Particle.DustTransition(Color.RED, Color.ORANGE, 0.8F);
                 npc.getLocation().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION,
-                        node.getBlockPos().toLocation(npc.getWorld()).clone().add(0.5F, 0, 0.5F), 3, dustTransition);
+                        node.getPosition().toLocation(npc.getWorld()).clone().add(0.5F, 0, 0.5F), 3, dustTransition);
             }
         }
     }

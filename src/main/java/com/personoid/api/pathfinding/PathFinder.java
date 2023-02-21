@@ -1,76 +1,65 @@
 package com.personoid.api.pathfinding;
 
-import com.personoid.api.utils.debug.Profiler;
-import com.personoid.api.utils.math.MathUtils;
-import org.bukkit.ChatColor;
+import com.personoid.api.pathfinding.node.Node;
+import com.personoid.api.pathfinding.utils.BlockPos;
 import org.bukkit.World;
 
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+
 public class PathFinder {
-    protected PathingConfig config = new PathingConfig();
+    private final PathingConfig config = new PathingConfig();
 
-    public Path getPath(BlockPos start, BlockPos end, World world) {
-        PathingContext context = new PathingContext(start, end, world, config);
-        boolean pathFound = config.canUseChunking();
+    public static Path findPath(BlockPos start, BlockPos end, World world) {
+        NodeContext context = new NodeContext(start, end, world);
+        Node startNode = new Node(start, null, context);
+        Node endNode = new Node(end, null, context);
+        context.setEndNode(endNode);
 
-        //if (!(canStandAt(start) && canStandAt(end))) return null;
+        Set<Node> openSet = new HashSet<>();
+        Set<Node> closedSet = new HashSet<>();
 
-        long nsStart = System.nanoTime();
-        PathingNode best = null;
+        openSet.add(startNode);
 
-        while (context.getClosedSet().size() < config.getMaxNodeTests() && context.getOpenSet().size() > 0) {
-            best = context.getOpenSet().poll();
-            if (best.getExpenseLeft() < 1) {
-                pathFound = true;
-                context.setEndNode(best);
-                Profiler.PATHFINDING.push("Unchecked: " + context.getOpenSet().size() + ", Checked: " +
-                        context.getClosedSet().size() + ", Expense: " + MathUtils.round(best.getExpense(), 2) +
-                        ", Final Expense: " + MathUtils.round(best.getFinalExpense(), 2));
-                break;
+        while (!openSet.isEmpty()) {
+            Node currentNode = openSet.stream().min(Comparator.comparing(Node::getFinalExpense)).get();
+
+            if (currentNode.getPosition().equals(endNode.getPosition())) {
+                // Reconstruct the path
+                Node[] nodes = new Node[currentNode.getPathLength()];
+                Node node = currentNode;
+                for (int i = nodes.length - 1; i >= 0; i--) {
+                    nodes[i] = node;
+                    node = node.getParent();
+                }
+                return new Path(nodes);
             }
-            best.getReachableLocations();
-            context.getClosedSet().add(best);
+
+            openSet.remove(currentNode);
+            closedSet.add(currentNode);
+
+            for (Node neighbor : currentNode.getNeighbors()) {
+                if (closedSet.contains(neighbor)) {
+                    continue;
+                }
+
+                double cost = (neighbor.isDiagonal() ? Cost.DIAGONAL : Cost.STRAIGHT);
+                double tentativeExpense = currentNode.getExpense() + cost;
+
+                if (tentativeExpense < neighbor.getExpense()) {
+                    neighbor.setParent(currentNode);
+                    neighbor.setFinalExpense(tentativeExpense + neighbor.getExpenseLeft());
+                    openSet.add(neighbor);
+                }
+            }
         }
 
-        if (config.canUseChunking() && best != null) context.setEndNode(best);
-
-        // returning if no path has been found
-        if (!pathFound) {
-            float duration = (System.nanoTime() - nsStart) / 1000000f;
-            Profiler.PATHFINDING.push("A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) +
-                    duration + "ms" + ChatColor.WHITE + " to not find a path.");
-            return null;
-        }
-
-        // get length of path to create array, 1 because of start
-        int length = 1;
-        PathingNode node = context.getEndNode();
-        while (node.getOrigin() != null) {
-            node = node.getOrigin();
-            length++;
-        }
-
-        PathingNode[] nodes = new PathingNode[length];
-
-        //fill Array
-        node = context.getEndNode();
-        for (int i = length - 1; i >= 0; i--) {
-            nodes[i] = node;
-            node = node.getOrigin();
-        }
-        //nodes[0] = context.getStartNode();
-
-        // outputting benchmark result
-        float duration = (System.nanoTime() - nsStart) / 1000000f;
-        Profiler.PATHFINDING.push("A* took " + (duration > 50 ? ChatColor.RED : ChatColor.WHITE) +
-                duration + "ms" + ChatColor.WHITE + " to find a path.");
-        return nodes.length > 0 ? new Path(nodes) : null;
+        // No path found
+        return null;
     }
 
     public PathingConfig getConfig() {
         return config;
-    }
-
-    public void setConfig(PathingConfig config) {
-        this.config = config;
     }
 }
