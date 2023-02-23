@@ -27,9 +27,9 @@ public class Path {
     public Vector getNPCPosAtNode(NPC npc, int index) {
         try {
             Node node = getNode(index);
-            double x = node.getX() + 0.5D;
-            double y = node.getZ() + 0.5D;
-            return new Vector(x, node.getY(), y);
+            double x = node.getPos().getX() + 0.5D;
+            double y = node.getPos().getZ() + 0.5D;
+            return new Vector(x, node.getPos().getY(), y);
         } catch (IndexOutOfBoundsException e) {
             return npc.getLocation().toVector();
         }
@@ -49,7 +49,7 @@ public class Path {
 
     public Vector getNodePos(int index) {
         Node node = getNode(index);
-        return new Vector(node.getX(), node.getY(), node.getZ());
+        return new Vector(node.getPos().getX(), node.getPos().getY(), node.getPos().getZ());
     }
 
     public void advance() {

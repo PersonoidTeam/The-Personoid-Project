@@ -1,19 +1,25 @@
 package com.personoid.api.pathfinding.utils;
 
-import com.personoid.api.pathfinding.node.OldNode;
+import com.personoid.api.pathfinding.node.Node;
 
 import java.util.Arrays;
 
 // ALL CREDIT FOR THIS CLASS GOES TO THE MAPLE PATHFINDING PROJECT
 public class HeapOpenSet {
-    private OldNode[] nodes;
+    private static final int DEFAULT_CAPACITY = 1024;
+
+    private Node[] nodes;
     private int size;
 
-    public HeapOpenSet(int maxHeapSize) {
-        this.nodes = new OldNode[maxHeapSize];
+    public HeapOpenSet() {
+        this(DEFAULT_CAPACITY);
     }
 
-    public void add(OldNode node) {
+    public HeapOpenSet(int maxHeapSize) {
+        this.nodes = new Node[maxHeapSize];
+    }
+
+    public void add(Node node) {
         if (isFull()) {
             int length = nodes.length << 1;
             nodes = Arrays.copyOf(nodes, length);
@@ -24,12 +30,12 @@ public class HeapOpenSet {
         update(node);
     }
 
-    public void update(OldNode n) {
+    public void update(Node n) {
         int index = n.getHeapIndex();
-        double cost = n.getFinalExpense();
+        double cost = n.getFCost();
         int parentIndex = index >>> 1;
-        OldNode parent = nodes[parentIndex];
-        while (index > 1 && parent.getFinalExpense() > cost) {
+        Node parent = nodes[parentIndex];
+        while (index > 1 && parent.getFCost() > cost) {
             nodes[index] = parent;
             nodes[parentIndex] = n;
             n.setHeapIndex(parentIndex);
@@ -40,9 +46,9 @@ public class HeapOpenSet {
         }
     }
 
-    public OldNode poll() {
-        OldNode node = nodes[1];
-        OldNode lastNode = nodes[size];
+    public Node poll() {
+        Node node = nodes[1];
+        Node lastNode = nodes[size];
         nodes[1] = lastNode;
         nodes[size] = null;
         lastNode.setHeapIndex(1);
@@ -51,13 +57,13 @@ public class HeapOpenSet {
         if (size < 2) return node;
         int index = 1;
         int childIndex = 2;
-        double cost = lastNode.getFinalExpense();
+        double cost = lastNode.getFCost();
         while (true) {
-            OldNode child = nodes[childIndex];
-            double childCost = child.getFinalExpense();
+            Node child = nodes[childIndex];
+            double childCost = child.getFCost();
             if (childIndex < size) {
-                OldNode rightChild = nodes[childIndex + 1];
-                double rightChildCost = rightChild.getFinalExpense();
+                Node rightChild = nodes[childIndex + 1];
+                double rightChildCost = rightChild.getFCost();
                 if (childCost > rightChildCost) {
                     childIndex++;
                     child = rightChild;

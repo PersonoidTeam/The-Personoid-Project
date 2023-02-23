@@ -1,117 +1,143 @@
 package com.personoid.api.pathfinding;
 
+import com.personoid.api.pathfinding.goal.Goal;
 import com.personoid.api.pathfinding.node.Node;
-import com.personoid.api.pathfinding.node.OldNode;
+import com.personoid.api.pathfinding.node.evaluator.NodeEvaluator;
 import com.personoid.api.pathfinding.utils.BlockPos;
-import com.personoid.api.pathfinding.utils.Heuristics;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class JumpPointSearch {
     public static Node[] getNeighbors(Node node, NodeContext context) {
-        List<OldNode> neighbors = new ArrayList<>();
-        for (BlockPos neighborPos : node.getNeighborPositions()) {
-            Node neighborNode = new Node(neighborPos, context.getEnd(), context);
-            if (neighborNode.isObstacle()) {
-                continue;
-            }
-
-            Node jumpPoint = jump(node, neighborPos);
-            if (jumpPoint != null) {
-                Node jumpNode = new Node(jumpPoint, context.getEndPos(), context);
+        List<Node> neighbors = new ArrayList<>();
+        for (Node neighbor : findNeighbors(node, context)) {
+            neighbors.add(neighbor);
+/*            Node jumpNode = jump(neighbor, context.getGoal(), context);
+            if (jumpNode != null) {
+                Bukkit.broadcastMessage("Found jump node " + jumpNode.getPos() + " for " + node.getPos());
                 neighbors.add(jumpNode);
+            } else {
+                Bukkit.broadcastMessage("No jump node found for " + node.getPos());
+                neighbors.add(neighbor);
+            }*/
+        }
+        return neighbors.toArray(new Node[0]);
+    }
+
+    private static Set<Node> findNeighbors(Node node, NodeContext context) {
+        Set<Node> neighbors = new HashSet<>();
+        //Bukkit.broadcastMessage("Finding neighbors for " + node.getPosition());
+        for (int x = -1 ; x <= 1 ; x++) {
+            for (int z = -1 ; z <= 1 ; z++) {
+                BlockPos to = node.getPos().add(x, 0, z);
+                if (x == 0 && z == 0) {
+                    continue;
+                }
+                for (NodeEvaluator evaluator : context.getEvaluators()) {
+                    evaluator.context(context);
+                    Node neighbor = evaluator.apply(node, to, context);
+                    if (neighbor != null) {
+                        neighbors.add(neighbor);
+                    }
+                }
             }
         }
         return neighbors;
     }
 
-    private static Node jump(Node current, BlockPos target) {
-        int dx = current.getDx();
-        int dz = current.getDz();
-        BlockPos position = current.getPosition();
-
-        BlockPos next = position.add(dx, 0, dz);
-        Node jumpNode = processSuccessor(current, next, target);
-
-        if (jumpNode != null) {
-            return jumpNode;
+/*    public static Node jump(Node current, Goal goal, NodeContext context) {
+        BlockPos currentPos = current.getPos();
+        int dx = Integer.compare(goal.getX(), currentPos.getX());
+        int dy = Integer.compare(goal.getY(), currentPos.getY());
+        int dz = Integer.compare(goal.getZ(), currentPos.getZ());
+        if (dx == 0 && dy == 0 && dz == 0) {
+            return current;
         }
-
-        if (dx != 0) {
-            next = position.add(dx, 0, -1);
-            Node jumpNodeDiagonal = processSuccessor(current, next, target);
-            if (jumpNodeDiagonal != null) {
-                return jumpNodeDiagonal;
+        if (dx != 0 && dy != 0) {
+            Node jumpNode = getJumpNode(current, currentPos.add(dx, 0, 0), goal, context);
+            if (jumpNode != null) {
+                return jump(jumpNode, goal, context);
             }
-
-            next = position.add(dx, 0, 1);
-            jumpNodeDiagonal = processSuccessor(current, next, target);
-            if (jumpNodeDiagonal != null) {
-                return jumpNodeDiagonal;
+            jumpNode = getJumpNode(current, currentPos.add(0, 0, dz), goal, context);
+            if (jumpNode != null) {
+                return jump(jumpNode, goal,
+                        context);
             }
-        }
-
-        if (dz != 0) {
-            next = position.add(-1, 0, dz);
-            Node jumpNodeDiagonal = processSuccessor(current, next, target);
-            if (jumpNodeDiagonal != null) {
-                return jumpNodeDiagonal;
+            jumpNode = getJumpNode(current, currentPos.add(dx, 0, dz), goal, context);
+            if (jumpNode != null) {
+                return jump(jumpNode, goal, context);
             }
-
-            next = position.add(1, 0, dz);
-            jumpNodeDiagonal = processSuccessor(current, next, target);
-            if (jumpNodeDiagonal != null) {
-                return jumpNodeDiagonal;
+        } else if (dx != 0) {
+            Node jumpNode = getJumpNode(current, currentPos.add(dx, 0, 0), goal, context);
+            if (jumpNode != null) {
+                return jump(jumpNode, goal, context);
+            }
+        } else {
+            Node jumpNode = getJumpNode(current, currentPos.add(0, 0, dz), goal, context);
+            if (jumpNode != null) {
+                return jump(jumpNode, goal, context);
             }
         }
+        return null;
+    }*/
 
+    public static Node getJumpNode(Node current, BlockPos next, Goal goal, NodeContext context) {
+        // Check if the next node is blocked or out of bounds
+        if (!context.isWalkable(next) || !context.isInBounds(next)) {
+            return null;
+        }
+
+        Node nextNode = context.getNode(next);
+
+        // Check if the next node is the goal
+        if (goal.isFinalNode(nextNode)) {
+            return nextNode;
+        }
+
+        BlockPos currentPos = current.getPos();
+        int dx = Integer.compare(next.getX(), currentPos.getX());
+        int dz = Integer.compare(next.getZ(), currentPos.getZ());
+
+        // Check for forced neighbors
         if (dx != 0 && dz != 0) {
-            if (jump(current.createNode(position.add(dx, 0, 0)), target) != null ||
-                    jump(current.createNode(position.add(0, 0, dz)), target) != null) {
-                return current;
+            BlockPos nextX = next.add(-dx, 0, 0);
+            BlockPos nextZ = next.add(0, 0, -dz);
+
+            boolean hasForcedX = context.isInBounds(nextX) && !context.isWalkable(nextX) && context.isWalkable(nextX.add(0, 1, 0));
+            boolean hasForcedZ = context.isInBounds(nextZ) && !context.isWalkable(nextZ) && context.isWalkable(nextZ.add(0, 1, 0));
+
+            if (hasForcedX || hasForcedZ) {
+                return nextNode;
             }
+        }
+
+        // Check for diagonal movement
+        if (dx != 0 && dz != 0) {
+            Node jumpNodeX = getJumpNode(current, next.add(dx, 0, 0), goal, context);
+            Node jumpNodeZ = getJumpNode(current, next.add(0, 0, dz), goal, context);
+
+            if (jumpNodeX != null || jumpNodeZ != null) {
+                return nextNode;
+            }
+        }
+
+        // Check for horizontal movement
+        if (dx != 0) {
+            Node jumpNodeX = getJumpNode(current, next.add(dx, 0, 0), goal, context);
+
+            if (jumpNodeX != null) {
+                return jumpNodeX;
+            }
+        }
+
+        // Check for vertical movement
+        if (dz != 0) {
+            return getJumpNode(current, next.add(0, 0, dz), goal, context);
         }
 
         return null;
-    }
-
-    private static Node processSuccessor(Node current, BlockPos next, BlockPos target) {
-        NodeContext context = current.getContext();
-
-        if (!context.isWalkable(next)) {
-            return null;
-        }
-
-        Node successor = current.createNode(next);
-        double expense = current.getExpense() + Heuristics.euclidean(current.getPosition(), next);
-
-        if (successor.getPosition().equals(target)) {
-            successor.setFinalExpense(expense);
-            return successor;
-        }
-
-        if (successor.getExpense() <= expense) {
-            return null;
-        }
-
-        successor.setExpense(expense);
-        successor.setFinalExpense(expense + Heuristics.euclidean(next, target));
-        successor.setParent(current);
-
-        if (successor.isDiagonal()) {
-            int dx = successor.getDx();
-            int dz = successor.getDz();
-            BlockPos left = next.add(-dx, 0, 0);
-            BlockPos right = next.add(0, 0, -dz);
-            Node leftJump = jump(successor.createNode(left), next);
-            Node rightJump = jump(successor.createNode(right), next);
-
-            if (leftJump != null || rightJump != null) {
-                successor.setJumpNode(leftJump != null ? leftJump : rightJump);
-            }
-        }
-
-        return successor;
     }
 }

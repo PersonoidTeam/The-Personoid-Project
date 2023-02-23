@@ -3,6 +3,7 @@ package com.personoid.api.pathfinding.utils;
 import com.personoid.api.utils.math.MathUtils;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 
 public class BlockPos implements Cloneable {
     private int x;
@@ -27,6 +28,10 @@ public class BlockPos implements Cloneable {
 
     public Location toLocation(World world) {
         return new Location(world, x, y, z);
+    }
+
+    public Block toBlock(World world) {
+        return world.getBlockAt(x, y, z);
     }
 
     public int getX() {
@@ -113,6 +118,21 @@ public class BlockPos implements Cloneable {
         return Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2) + Math.pow(z - pos.z, 2));
     }
 
+    public long asLong() {
+        return ((long) x & 0x3FFFFFF) << 38 | ((long) y & 0xFFF) << 26 | ((long) z & 0x3FFFFFF);
+    }
+
+    public boolean equals(BlockPos pos) {
+        return x == pos.x && y == pos.y && z == pos.z;
+    }
+
+    public static BlockPos fromLong(long pos) {
+        int x = (int) (pos << 64 - 38 - 26 >> 64 - 26);
+        int y = (int) (pos << 64 - 12 >> 64 - 12);
+        int z = (int) (pos << 38 >> 38);
+        return new BlockPos(x, y, z);
+    }
+
     @Override
     public BlockPos clone() {
         try {
@@ -124,5 +144,10 @@ public class BlockPos implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
+    }
+
+    @Override
+    public String toString() {
+        return "BlockPos{" + "x=" + x + ", y=" + y + ", z=" + z + "}";
     }
 }

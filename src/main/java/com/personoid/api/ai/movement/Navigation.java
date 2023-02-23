@@ -1,6 +1,7 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
+import com.personoid.api.pathfinding.goal.XZGoal;
 import com.personoid.api.pathfinding.utils.BlockPos;
 import com.personoid.api.pathfinding.node.Node;
 import com.personoid.api.pathfinding.Path;
@@ -63,7 +64,7 @@ public class Navigation {
                 Particle.DustTransition dustTransition = i == path.getNextNodeIndex() ? new Particle.DustTransition(Color.BLUE, Color.PURPLE, 0.8F) :
                         new Particle.DustTransition(Color.RED, Color.ORANGE, 0.8F);
                 npc.getLocation().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION,
-                        node.getPosition().toLocation(npc.getWorld()).clone().add(0.5F, 0, 0.5F), 3, dustTransition);
+                        node.getPos().toLocation(npc.getWorld()).clone().add(0.5F, 0, 0.5F), 3, dustTransition);
             }
         }
     }
@@ -116,7 +117,10 @@ public class Navigation {
         Location npcGroundLoc = LocationUtils.getBlockInDir(npc.getLocation(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         goal = location.clone();
         if ((!options.straightLineInWater || !npc.isInWater()) && !options.straightLine) {
-            if (this.path == null) this.path = pathfinder.getPath(BlockPos.fromLocation(npcGroundLoc), BlockPos.fromLocation(groundLoc), groundLoc.getWorld());
+            if (this.path == null) {
+                this.path = pathfinder.findPath(BlockPos.fromLocation(npcGroundLoc),
+                        new XZGoal(groundLoc.getBlockX(), groundLoc.getBlockZ()), groundLoc.getWorld());
+            }
             if (this.path != null) this.path.clean();
         } else this.path = null;
         if (!isDone()) {

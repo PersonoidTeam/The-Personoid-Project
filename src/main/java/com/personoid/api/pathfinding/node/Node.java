@@ -1,54 +1,31 @@
 package com.personoid.api.pathfinding.node;
 
-import com.personoid.api.pathfinding.*;
+import com.personoid.api.pathfinding.JumpPointSearch;
+import com.personoid.api.pathfinding.NodeContext;
+import com.personoid.api.pathfinding.goal.Goal;
 import com.personoid.api.pathfinding.utils.BlockPos;
 import com.personoid.api.pathfinding.utils.Heuristics;
-import com.personoid.api.pathfinding.utils.PathUtils;
 
 public class Node implements Comparable<Node> {
+    private static final double MIN_COST_IMPROVEMENT = 0.01;
+
     private final BlockPos position;
+    private final NodeContext context;
     private Node parent;
 
-    private final double expense;
-    private final double expenseLeft;
-    private double finalExpense;
+    private double gCost;
+    private double hCost;
+    private double fCost;
+    private double cost;
 
-    private final NodeContext context;
+    private int heapIndex = -1;
 
-    private final int dx;
-    private final int dz;
-    private final Node[] neighbors;
-
-    private final double distanceFromStart;
-    private final double distanceToEnd;
-    private final double heuristicCost;
-    private final boolean isWalkable;
-
-    public Node(BlockPos position, Node parent, NodeContext context) {
+    public Node(BlockPos position, NodeContext context) {
         this.position = position;
-        this.parent = parent;
         this.context = context;
-        this.distanceFromStart = Heuristics.euclidean(position, context.getStartPos());
-        this.distanceToEnd = Heuristics.euclidean(position, context.getEndPos());
-        this.heuristicCost = distanceFromStart + distanceToEnd;
-        this.isWalkable = PathUtils.isWalkable(position, context);
-
-        this.expense = Double.POSITIVE_INFINITY;
-        this.expenseLeft = Heuristics.euclidean(position, context.getEndPos());
-        this.finalExpense = Double.POSITIVE_INFINITY;
-
-        if (parent != null) {
-            this.dx = position.getX() - parent.position.getX();
-            this.dz = position.getZ() - parent.position.getZ();
-            this.neighbors = JumpPointSearch.getNeighbors(this, context);
-        } else {
-            this.dx = 0;
-            this.dz = 0;
-            this.neighbors = new Node[0];
-        }
     }
 
-    public BlockPos getPosition() {
+    public BlockPos getPos() {
         return position;
     }
 
@@ -56,75 +33,90 @@ public class Node implements Comparable<Node> {
         return parent;
     }
 
-    public double getExpense() {
-        return expense;
+    public double getGCost() {
+        return gCost;
     }
 
-    public double getExpenseLeft() {
-        return expenseLeft;
+    public double getHCost() {
+        return hCost;
     }
 
-    public double getFinalExpense() {
-        return finalExpense;
+    public double getFCost() {
+        return fCost;
     }
 
-    public void setFinalExpense(double finalExpense) {
-        this.finalExpense = finalExpense;
+    public void updateFinalCost() {
+        this.fCost = gCost + hCost;
+    }
+
+    public double getPartialCost(float coefficient) {
+        return hCost + gCost / coefficient;
+    }
+
+    public void updateHeuristic(Goal goal) {
+        this.hCost = goal.heuristic(this);
+        updateFinalCost();
+    }
+
+    public void setCost(double cost) {
+        this.cost = cost;
+    }
+
+    public double getCost() {
+        return cost;
+    }
+
+    public int squaredDistanceTo(Node node) {
+        return Heuristics.squaredEuclidean(position, node.getPos());
     }
 
     public Node[] getNeighbors() {
-        return neighbors;
+        return JumpPointSearch.getNeighbors(this, context);
+    }
+
+    public void setParent(Node parent, double cost) {
+        this.parent = parent;
+        gCost = parent.getGCost() + cost;
+        updateFinalCost();
+    }
+
+    public boolean updateParent(Node parent, double cost) {
+        double distance = parent.getGCost() + cost;
+        double improvement = gCost - distance;
+        if (improvement > MIN_COST_IMPROVEMENT) {
+            setParent(parent, cost);
+            return true;
+        }
+        return false;
+    }
+
+    public int getHeapIndex() {
+        return heapIndex;
+    }
+
+    public void setHeapIndex(int heapIndex) {
+        this.heapIndex = heapIndex;
+    }
+
+    public boolean isOpen() {
+        return heapIndex != -1;
+    }
+
+    public double getCostTo(Node node) {
+        return Heuristics.euclidean(position, node.position);
     }
 
     public NodeContext getContext() {
         return context;
     }
 
-    public int getDx() {
-        return dx;
-    }
-
-    public int getDz() {
-        return dz;
-    }
-
-    public boolean isDiagonal() {
-        return dx * dz != 0;
-    }
-
-    public double getDistanceFromStart() {
-        return distanceFromStart;
-    }
-
-    public double getDistanceToEnd() {
-        return distanceToEnd;
-    }
-
-    public double getHeuristicCost() {
-        return heuristicCost;
-    }
-
-    public boolean isWalkable() {
-        return isWalkable;
-    }
-
-    public void setParent(Node parent) {
-        this.parent = parent;
-    }
-
-    public int getPathLength() {
-        int length = 0;
-        Node node = this;
-        while (node.getParent() != null) {
-            length++;
-            node = node.getParent();
-        }
-        return length;
+    public boolean equals(Node other) {
+        return position.equals(other.position);
     }
 
     @Override
     public int compareTo(Node other) {
-        return Double.compare(finalExpense, other.finalExpense);
+        return Double.compare(fCost, other.fCost);
     }
 
     @Override
