@@ -1,5 +1,6 @@
 package com.personoid.api.pathfinding.node.evaluator;
 
+import com.personoid.api.pathfinding.Cost;
 import com.personoid.api.pathfinding.NodeContext;
 import com.personoid.api.pathfinding.node.Node;
 import com.personoid.api.pathfinding.utils.BlockPos;
@@ -15,7 +16,7 @@ public class ClimbNodeEvaluator extends NodeEvaluator {
             climbDistance++;
         }
         if (climbDistance > 0) {
-            return createNode(climb, climbDistance);
+            return createNode(climb, Cost.CLIMB * climbDistance);
         }
         return null;
     }

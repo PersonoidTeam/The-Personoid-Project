@@ -4,6 +4,7 @@ import com.personoid.api.pathfinding.goal.Goal;
 import com.personoid.api.pathfinding.node.Node;
 import com.personoid.api.pathfinding.node.evaluator.NodeEvaluator;
 import com.personoid.api.pathfinding.utils.BlockPos;
+import com.personoid.api.utils.types.BlockTags;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.bukkit.World;
 
@@ -41,9 +42,9 @@ public class NodeContext {
     }
 
     public boolean isWalkable(BlockPos pos) {
-        return world.getBlockAt(pos.getX(), pos.getY() - 1, pos.getZ()).getType().isSolid()
-                && !world.getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getType().isSolid()
-                && !world.getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getType().isSolid();
+        return BlockTags.SOLID.is(pos.below().toBlock(world)) &&
+                !BlockTags.SOLID.is(pos.toBlock(world)) &&
+                !BlockTags.SOLID.is(pos.above().toBlock(world));
     }
 
     public boolean isDiagonal(BlockPos from, BlockPos to) {

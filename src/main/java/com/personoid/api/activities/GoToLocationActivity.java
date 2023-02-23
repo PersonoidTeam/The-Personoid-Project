@@ -5,12 +5,16 @@ import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
 import com.personoid.api.npc.Pose;
 import com.personoid.api.pathfinding.Path;
+import com.personoid.api.pathfinding.node.Node;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.Priority;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
@@ -23,23 +27,15 @@ public class GoToLocationActivity extends Activity {
     private Location lastLocation;
     private int stuckTicks;
     private Location startingLocation;
+    private final Long2ObjectOpenHashMap<BlockState> pathCache;
 
     public GoToLocationActivity(Location location, MovementType movementType) {
         super(ActivityType.LOCATION);
         this.location = location;
-        path = null;
-        groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
+        this.pathCache = new Long2ObjectOpenHashMap<>();
+        this.groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         this.movementType = movementType;
-        options = new Options();
-    }
-
-    public GoToLocationActivity(Location location, Path path, MovementType movementType) {
-        super(ActivityType.LOCATION);
-        this.location = location;
-        this.path = path;
-        groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
-        this.movementType = movementType;
-        options = new Options();
+        this.options = new Options();
     }
 
     @Override
@@ -59,7 +55,7 @@ public class GoToLocationActivity extends Activity {
                 getNPC().setPose(Pose.FLYING);
                 break;
         }
-        updateLocation();
+        tryUpdatePath();
         Profiler.ACTIVITIES.push("going to location: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
     }
 
@@ -69,7 +65,7 @@ public class GoToLocationActivity extends Activity {
             getNPC().setSprinting(movementType.name().contains("SPRINT"));
         }
         if (++tick % 10 == 0) {
-            updateLocation();
+            tryUpdatePath();
         }
         doStuckDetection();
         finishCheck();
@@ -94,12 +90,37 @@ public class GoToLocationActivity extends Activity {
         lastLocation = getNPC().getLocation().clone();
     }
 
-    private void updateLocation() {
-        path = getNPC().getNavigation().moveTo(location, path);
+    private void tryUpdatePath() {
+        if (path == null || hasPathChanged()) {
+            path = getNPC().getNavigation().moveTo(location);
+            for (int i = 0; i < path.size(); i++) {
+                Node node = path.getNode(i);
+                long key = node.getPos().asLong();
+                if (!pathCache.containsKey(key)) {
+                    Block block = node.getPos().toBlock(getNPC().getWorld());
+                    pathCache.put(key, block.getState());
+                }
+            }
+        }
         if (options.canFaceLocation()) {
             Location lookLoc = groundLoc.clone().add(0F, 0F, 0F);
             getNPC().getLookController().addTarget("travel_location", new Target(lookLoc, options.facePriority));
         }
+    }
+
+    private boolean hasPathChanged() {
+        for (int i = 0; i < path.size(); i++) {
+            Node node = path.getNode(i);
+            long key = node.getPos().asLong();
+            if (!pathCache.containsKey(key)) {
+                return true;
+            }
+            Block block = node.getPos().toBlock(getNPC().getWorld());
+            if (!block.getState().equals(pathCache.get(key))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean finishCheck() {

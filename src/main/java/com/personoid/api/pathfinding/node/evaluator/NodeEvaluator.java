@@ -4,6 +4,9 @@ import com.personoid.api.pathfinding.NodeContext;
 import com.personoid.api.pathfinding.node.Node;
 import com.personoid.api.pathfinding.utils.BlockPos;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class NodeEvaluator {
     protected NodeContext context;
 
@@ -17,5 +20,9 @@ public abstract class NodeEvaluator {
 
     public void context(NodeContext context) {
         this.context = context;
+    }
+
+    public List<NodeEvaluator> getDependencies() {
+        return new ArrayList<>();
     }
 }

@@ -94,7 +94,7 @@ public class MoveController {
         float speed = npc.getItemUsingTicks() > 0 && hasShield ? 0.3F : 1F;
 
         Vector direction = new Vector(dX, 0, dZ).normalize().multiply(speed);
-        Vector input = worldToInputVector(direction, getSlipperiness(), npc.getYaw());
+        Vector input = worldToInputVector(direction, 1F, npc.getYaw());
         moveForward = input.getZ();
         moveStrafing = input.getX();
     }

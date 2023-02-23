@@ -5,13 +5,12 @@ import com.personoid.api.pathfinding.node.Node;
 import com.personoid.api.pathfinding.node.evaluator.NodeEvaluator;
 import com.personoid.api.pathfinding.utils.BlockPos;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class JumpPointSearch {
-    public static Node[] getNeighbors(Node node, NodeContext context) {
+    private final Map<String, Boolean> cache = new HashMap<>();
+
+    public Node[] getNeighbors(Node node, NodeContext context) {
         List<Node> neighbors = new ArrayList<>();
         for (Node neighbor : findNeighbors(node, context)) {
             neighbors.add(neighbor);
@@ -27,7 +26,7 @@ public class JumpPointSearch {
         return neighbors.toArray(new Node[0]);
     }
 
-    private static Set<Node> findNeighbors(Node node, NodeContext context) {
+    private Set<Node> findNeighbors(Node node, NodeContext context) {
         Set<Node> neighbors = new HashSet<>();
         //Bukkit.broadcastMessage("Finding neighbors for " + node.getPosition());
         for (int x = -1 ; x <= 1 ; x++) {
@@ -36,19 +35,41 @@ public class JumpPointSearch {
                 if (x == 0 && z == 0) {
                     continue;
                 }
+                cache.clear();
                 for (NodeEvaluator evaluator : context.getEvaluators()) {
-                    evaluator.context(context);
-                    Node neighbor = evaluator.apply(node, to, context);
+                    if (cache.containsKey(evaluator.getClass().getSimpleName())) {
+                        continue;
+                    }
+                    Node neighbor = apply(evaluator, node, to, context);
                     if (neighbor != null) {
                         neighbors.add(neighbor);
                     }
+                    cache.put(evaluator.getClass().getSimpleName(), neighbor != null);
                 }
             }
         }
         return neighbors;
     }
 
-/*    public static Node jump(Node current, Goal goal, NodeContext context) {
+    private Node apply(NodeEvaluator evaluator, Node node, BlockPos to, NodeContext context) {
+        for (NodeEvaluator dependency : evaluator.getDependencies()) {
+            String className = dependency.getClass().getSimpleName();
+            boolean neighbor;
+            if (cache.containsKey(className)) {
+                neighbor = cache.get(className);
+            } else {
+                neighbor = apply(dependency, node, to, context) != null;
+                cache.put(className, neighbor);
+            }
+            if (!neighbor) {
+                return null;
+            }
+        }
+        evaluator.context(context);
+        return evaluator.apply(node, to, context);
+    }
+
+/*    public Node jump(Node current, Goal goal, NodeContext context) {
         BlockPos currentPos = current.getPos();
         int dx = Integer.compare(goal.getX(), currentPos.getX());
         int dy = Integer.compare(goal.getY(), currentPos.getY());
@@ -84,7 +105,7 @@ public class JumpPointSearch {
         return null;
     }*/
 
-    public static Node getJumpNode(Node current, BlockPos next, Goal goal, NodeContext context) {
+    public Node getJumpNode(Node current, BlockPos next, Goal goal, NodeContext context) {
         // Check if the next node is blocked or out of bounds
         if (!context.isWalkable(next) || !context.isInBounds(next)) {
             return null;

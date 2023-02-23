@@ -71,7 +71,7 @@ public class Node implements Comparable<Node> {
     }
 
     public Node[] getNeighbors() {
-        return JumpPointSearch.getNeighbors(this, context);
+        return new JumpPointSearch().getNeighbors(this, context);
     }
 
     public void setParent(Node parent, double cost) {

@@ -38,7 +38,7 @@ public class PathFinder {
     }
 
     private void registerEvaluators() {
-        this.evaluators.add(new MoveNodeEvaluator());
+        this.evaluators.add(new WalkNodeEvaluator());
         this.evaluators.add(new JumpNodeEvaluator());
         this.evaluators.add(new FallNodeEvaluator());
         this.evaluators.add(new ClimbNodeEvaluator());
@@ -129,12 +129,13 @@ public class PathFinder {
         }
     }
 
-    private static Path reconstructPath(Node node) {
+    private Path reconstructPath(Node node) {
         List<Node> nodes = new ArrayList<>();
         while (node.getParent() != null) {
             nodes.add(0, node);
             node = node.getParent();
         }
+        nodes.add(0, startNode);
         return new Path(nodes.toArray(new Node[0]));
     }
 }
