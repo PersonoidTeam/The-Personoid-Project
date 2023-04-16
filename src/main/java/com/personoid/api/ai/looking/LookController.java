@@ -22,7 +22,7 @@ public class LookController {
         if (targets.isEmpty() || lookAhead) return;
         Target target = getHighestPriorityTarget();
         if (target != null) {
-            //tryFace(target.getLocation());
+            tryFace(target.getLocation());
 /*            Location facing = getFacing(getHighestPriorityTarget().getLocation());
             Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
             npc.setRotation(facing.getYaw(), facing.getPitch());*/
@@ -33,6 +33,7 @@ public class LookController {
         tryFace(blockPos.toLocation(npc.getWorld()));
     }
 
+    // FIXME
     public void tryFace(Location location) {
         Location facing = getFacing(location);
         float yaw = facing.getYaw();

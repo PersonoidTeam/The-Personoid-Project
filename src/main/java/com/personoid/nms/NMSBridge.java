@@ -72,7 +72,7 @@ public class NMSBridge {
             Object entityData = NPC_CACHE.getOrPut("entityData." + npc.getEntityId(), () -> {
                 return ReflectionUtils.invoke(toNMSPlayer(npc), "aj"); // getEntityData
             });
-            entityData.getClass().getMethod("b", data.getClass(), Object.class).invoke(entityData, data, value);
+            entityData.getClass().getMethod("b", data.getClass(), Object.class).invoke(entityData, data, value); // set
             //ReflectionUtils.invoke(entityData, "b", data, value); // set
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);

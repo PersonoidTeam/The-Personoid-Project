@@ -7,7 +7,6 @@ import com.personoid.api.npc.Pose;
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.types.Priority;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 
 public class FollowPathActivity extends Activity {
@@ -29,7 +28,6 @@ public class FollowPathActivity extends Activity {
 
     @Override
     public void onStart(StartType startType) {
-        Bukkit.broadcastMessage("started following path");
         getNPC().setJumping(movementType.name().contains("JUMP"));
         switch (movementType) {
             case WALK:

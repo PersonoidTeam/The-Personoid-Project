@@ -182,4 +182,15 @@ public class ActivityManager {
         }
         return null;
     }
+
+    public void refresh() {
+        if (current != null) {
+            current.internalStop(Activity.StopType.STOP);
+            current.onStop(Activity.StopType.STOP);
+            current = null;
+        }
+        queue.clear();
+        paused.clear();
+        boredTasks.clear();
+    }
 }

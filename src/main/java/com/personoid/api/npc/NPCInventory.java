@@ -274,6 +274,17 @@ public class NPCInventory {
         return hotbar;
     }
 
+    public ItemStack[] getArmorContents() {
+        return armorContents;
+    }
+
+    public ItemStack[] getInventoryContents() {
+        ItemStack[] inventoryContents = new ItemStack[hotbar.length + contents.length];
+        System.arraycopy(hotbar, 0, inventoryContents, 0, hotbar.length);
+        System.arraycopy(contents, 0, inventoryContents, hotbar.length, contents.length);
+        return inventoryContents;
+    }
+
     public enum SlotIndex {
         HELMET(0),
         CHESTPLATE(1),

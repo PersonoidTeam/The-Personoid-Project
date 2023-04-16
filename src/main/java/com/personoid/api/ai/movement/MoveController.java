@@ -1,7 +1,6 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.nms.packet.Packets;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -84,13 +83,13 @@ public class MoveController {
             travelling = false;
             return;
         }
-        if (Math.abs(dX) > 0.01 || Math.abs(dZ) > 0.01) {
+/*        if (Math.abs(dX) > 0.01 || Math.abs(dZ) > 0.01) {
             // look towards target location
             float yaw = (float) (Math.toDegrees(Math.atan2(dZ, dX)) - 90F) % 360F;
             Packets.rotateEntity(npc.getEntity(), yaw, 0F).send();
             npc.setYaw(yaw);
             npc.setPitch(0F);
-        }
+        }*/
 
         // calculate movement based on yaw
         ItemStack mainHand = npc.getInventory().getSelectedItem();
@@ -145,9 +144,14 @@ public class MoveController {
 
         npc.move(new Vector(motionX, motionY, motionZ));
 
-        if (!climbing && npc.hasGravity()) {
-            this.motionY -= 0.08D;
-            this.motionY *= 0.98D;
+        if (isInWater(-0.5F)) {
+            motionY += 0.02D;
+            motionY = Math.min(motionY, 0.15D);
+        } else {
+            if (!climbing && npc.hasGravity()) {
+                this.motionY -= 0.08D;
+                this.motionY *= 0.98D;
+            }
         }
 
         this.motionX *= mult;
@@ -173,7 +177,7 @@ public class MoveController {
     }
 
     private float getMovementFactor() {
-        return 0.1F;
+        return 0.12F;
     }
 
     private float getLandMovementFactor() {

@@ -30,7 +30,7 @@ public class Navigation {
 
     public void tick() {
         if (npc.isOnGround() && groundTicks < Integer.MAX_VALUE) groundTicks++;
-        if (getOptions().straightLine || (getOptions().straightLineInWater && npc.isInWater()) && goal != null) {
+        if (getOptions().straightLine || (getOptions().straightLineInWater && isInWater(1)) && goal != null) {
             npc.getMoveController().moveTo(goal.getX(), goal.getZ());
         } else if (canUpdatePath()) {
             followPath();
@@ -65,6 +65,16 @@ public class Navigation {
                         node.getPos().toLocation(npc.getWorld()).clone().add(0.5F, 0, 0.5F), 3, dustTransition);
             }
         }
+    }
+
+    private boolean isInWater(int depth) {
+        for (int i = 0; i < depth; i++) {
+            Block block = npc.getLocation().clone().subtract(0, i, 0).getBlock();
+            if (block.getType() == Material.WATER) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean shouldJump() {

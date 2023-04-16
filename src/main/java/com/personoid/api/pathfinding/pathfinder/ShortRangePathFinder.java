@@ -21,11 +21,11 @@ public class ShortRangePathFinder extends PathFinder {
 
     @Override
     protected int getChunkingRadius() {
-        return -1;
+        return 25;
     }
 
     @Override
     protected boolean shouldSoftFail() {
-        return false;
+        return true;
     }
 }

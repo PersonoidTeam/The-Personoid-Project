@@ -69,7 +69,16 @@ public class NPCOverrides implements Listener {
     public void invoke(String methodName, Object... args) {
         try {
             List<Class<?>> argTypes = new ArrayList<>();
-            for (Object arg : args) argTypes.add(arg.getClass());
+            for (Object arg : args) {
+                if (arg.getClass().equals(Float.class)) argTypes.add(float.class);
+                else if (arg.getClass().equals(Boolean.class)) argTypes.add(boolean.class);
+                else if (arg.getClass().equals(Integer.class)) argTypes.add(int.class);
+                else if (arg.getClass().equals(Double.class)) argTypes.add(double.class);
+                else if (arg.getClass().equals(Long.class)) argTypes.add(long.class);
+                else if (arg.getClass().equals(Short.class)) argTypes.add(short.class);
+                else if (arg.getClass().equals(Byte.class)) argTypes.add(byte.class);
+                else argTypes.add(arg.getClass());
+            }
             Method method = base.getClass().getMethod(methodName, argTypes.toArray(new Class[0]));
             method.setAccessible(true);
             method.invoke(base, args);
@@ -159,8 +168,7 @@ public class NPCOverrides implements Listener {
         float health = invoke(float.class, "eo"); // getHealth
         float maxHealth = invoke(float.class, "eE"); // getMaxHealth
         float amount = health < maxHealth - 0.05F ? health + 0.05F : maxHealth; // 0.1F = natual regen speed (full saturation)
-        getEntity().setHealth(amount);
-        //invoke("c", amount); // setHealth, FIXME: method not found?!?!?
+        invoke("c", amount); // setHealth
         if (yPos < -64) invoke("aw"); // outOfWorld
         fallDamageCheck();
         // FIXME: swimming not working

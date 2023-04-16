@@ -59,6 +59,7 @@ public class NPC {
     public void respawn() {
         overrides.onSpawn();
         overrides.init();
+        brain.getActivityManager().refresh();
         injector.callHook("respawn");
     }
 

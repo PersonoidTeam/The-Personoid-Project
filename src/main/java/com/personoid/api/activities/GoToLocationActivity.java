@@ -126,7 +126,7 @@ public class GoToLocationActivity extends Activity {
     }
 
     private boolean finishCheck() {
-        if (options.getStoppingDistance() <= 0F) {
+        if (options.getStoppingDistance() <= 0F && path != null && path.size() > 0) {
             Location lastNodeLoc = path.getNode(path.size() - 1).getPos().toLocation(getNPC().getWorld()).add(0.5, 0, 0.5);
             if (lastNodeLoc.distance(getNPC().getLocation()) <= 0.3F) {
                 markAsFinished(new Result<>(Result.Type.SUCCESS));
