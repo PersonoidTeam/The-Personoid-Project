@@ -1,25 +1,23 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.goal.XZGoal;
-import com.personoid.api.pathfinding.utils.BlockPos;
-import com.personoid.api.pathfinding.node.Node;
 import com.personoid.api.pathfinding.Path;
-import com.personoid.api.pathfinding.PathFinder;
+import com.personoid.api.pathfinding.pathfinder.NavigationPathFinder;
+import com.personoid.api.pathfinding.pathfinder.PathFinder;
+import com.personoid.api.pathfinding.goal.BlockGoal;
+import com.personoid.api.pathfinding.node.Node;
+import com.personoid.api.pathfinding.utils.BlockPos;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.BlockTags;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
 
 public class Navigation {
     private final NPC npc;
-    private final PathFinder pathfinder = new PathFinder();
+    private final PathFinder pathfinder = new NavigationPathFinder();
     private final Options options = new Options();
     private Path path;
     private Location goal;
@@ -71,7 +69,7 @@ public class Navigation {
 
     private boolean shouldJump() {
         if (npc.getMoveController().isClimbing() || path == null || npc.isMovingInWater()) return false;
-        int blockadeDist = Integer.MAX_VALUE;
+        double blockadeDist = Integer.MAX_VALUE;
         for (int i = 0; i <= 3; i++) {
             Vector lookAheadPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);
             if (lookAheadPos.getY() < npc.getLocation().getY() - 2) {
@@ -81,7 +79,7 @@ public class Navigation {
                 return false; // don't want to jump on stairs
             }
             if (lookAheadPos.getY() > npc.getLocation().getY() + options.maxStepHeight) {
-                blockadeDist = i;
+                blockadeDist = getTempNPCPos().distance(lookAheadPos);
                 break;
             }
         }
@@ -91,9 +89,9 @@ public class Navigation {
         }
         if (npc.isOnGround() && groundTicks >= 4) {
             if (npc.isSprinting() ) {
-                return blockadeDist <= 1; // SPRINTING JUMP DISTANCE
+                return blockadeDist <= 1.5F; // SPRINTING JUMP DISTANCE
             } else {
-                return blockadeDist <= 1; // WALKING JUMP DISTANCE
+                return blockadeDist <= 1.25F; // WALKING JUMP DISTANCE
             }
         }
         return false;
@@ -119,29 +117,32 @@ public class Navigation {
         if ((!options.straightLineInWater || !npc.isInWater()) && !options.straightLine) {
             if (this.path == null) {
                 this.path = pathfinder.findPath(BlockPos.fromLocation(npcGroundLoc),
-                        new XZGoal(groundLoc.getBlockX(), groundLoc.getBlockZ()), groundLoc.getWorld());
+                        new BlockGoal(BlockPos.fromLocation(groundLoc)), npc.getWorld());
             }
             if (this.path != null) this.path.clean();
         } else this.path = null;
         if (!isDone()) {
             Vector nextNPCPos = npc.isInWater() && options.straightLineInWater ? goal.toVector() : this.path.getNextNPCPos(npc);
             npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ());
+            //Bukkit.broadcastMessage("Navigating to node " + (path.getNextNodeIndex() + 1) + "/" + path.size());
         }
         return this.path;
     }
 
     private void followPath() {
         Vector tempNPCPos = getTempNPCPos();
-        double maxDistToWaypoint = 0.45; // 0.52
+        double width = npc.getEntity().getWidth();
+        double maxDistToWaypoint = width > 0.75F ? width / 2F : 0.75F - width / 2F;
         Vector blockPos = path.getNextNodePos();
         Block block = new Location(npc.getLocation().getWorld(), blockPos.getX(), blockPos.getY(), blockPos.getZ()).getBlock();
-        double x = Math.abs(npc.getLocation().getX() - blockPos.getX() + 0.5);
+        double x = Math.abs(npc.getLocation().getX() - (blockPos.getX() + 0.5));
         double y = Math.abs(npc.getLocation().getY() - blockPos.getY());
-        double z = Math.abs(npc.getLocation().getZ() - blockPos.getZ() + 0.5);
+        double z = Math.abs(npc.getLocation().getZ() - (blockPos.getZ() + 0.5));
         boolean withinMaxDist = (x < maxDistToWaypoint && z < maxDistToWaypoint && y < 1D);
         if (withinMaxDist || (canCutCorner(block.getType()) && shouldTargetNextNode(tempNPCPos))) {
             path.advance();
             Vector nextNPCPos = path.getNextNPCPos(npc);
+            //Bukkit.broadcastMessage("Navigating to node " + (path.getNextNodeIndex() + 1) + "/" + path.size());
             npc.getMoveController().moveTo(nextNPCPos.getX(), nextNPCPos.getZ());
         }
     }
@@ -158,7 +159,7 @@ public class Navigation {
     private boolean shouldTargetNextNode(Vector tempNPCPos) {
         if (path.getNextNodeIndex() + 1 >= path.size()) return false;
         Vector center = LocationUtils.atBottomCenterOf(path.getNextNodePos());
-        if (!LocationUtils.closerThan(tempNPCPos, center, 2)) return false; // was 2
+        if (!LocationUtils.closerThan(tempNPCPos, center, 2)) return false;
         Vector nextCenter = LocationUtils.atBottomCenterOf(path.getNodePos(path.getNextNodeIndex() + 1));
         Vector nextNodeDiff = nextCenter.subtract(center);
         Vector tempPosDiff = tempNPCPos.subtract(center);

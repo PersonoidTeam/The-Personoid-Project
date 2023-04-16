@@ -8,11 +8,16 @@ import com.personoid.api.pathfinding.utils.BlockPos;
 import java.util.*;
 
 public class JumpPointSearch {
+    private final NodeContext context;
     private final Map<String, Boolean> cache = new HashMap<>();
 
-    public Node[] getNeighbors(Node node, NodeContext context) {
+    public JumpPointSearch(NodeContext context) {
+        this.context = context;
+    }
+
+    public Node[] getNeighbors(Node node) {
         List<Node> neighbors = new ArrayList<>();
-        for (Node neighbor : findNeighbors(node, context)) {
+        for (Node neighbor : findNeighbors(node)) {
             neighbors.add(neighbor);
 /*            Node jumpNode = jump(neighbor, context.getGoal(), context);
             if (jumpNode != null) {
@@ -26,39 +31,52 @@ public class JumpPointSearch {
         return neighbors.toArray(new Node[0]);
     }
 
-    private Set<Node> findNeighbors(Node node, NodeContext context) {
+    private Set<Node> findNeighbors(Node node) {
         Set<Node> neighbors = new HashSet<>();
         //Bukkit.broadcastMessage("Finding neighbors for " + node.getPosition());
-        for (int x = -1 ; x <= 1 ; x++) {
-            for (int z = -1 ; z <= 1 ; z++) {
-                BlockPos to = node.getPos().add(x, 0, z);
-                if (x == 0 && z == 0) {
-                    continue;
-                }
-                cache.clear();
-                for (NodeEvaluator evaluator : context.getEvaluators()) {
-                    if (cache.containsKey(evaluator.getClass().getSimpleName())) {
-                        continue;
+        for (NodeEvaluator evaluator : context.getEvaluators()) {
+            if (cache.containsKey(evaluator.getClass().getSimpleName())) {
+                return null;
+            }
+            int xRange = Math.max(1, evaluator.getXRange());
+            int yRange = Math.max(1, evaluator.getYRange());
+            int zRange = Math.max(1, evaluator.getZRange());
+            for (int x = -xRange; x <= xRange; x++) {
+                for (int z = -zRange; z <= zRange; z++) {
+                    for (int y = -yRange; y <= yRange; y++) {
+                        int x1 = x;
+                        int z1 = z;
+                        int y1 = y;
+                        if (evaluator.getXRange() == 0) x1 = 0;
+                        if (evaluator.getZRange() == 0) z1 = 0;
+                        if (evaluator.getYRange() == 0) y1 = 0;
+                        if (x1 == 0 && y1 == 0 && z1 == 0) continue;
+                        Node neighbor = findNeighbor(node, evaluator, x1, y1, z1);
+                        if (neighbor != null) {
+                            neighbors.add(neighbor);
+                        }
                     }
-                    Node neighbor = apply(evaluator, node, to, context);
-                    if (neighbor != null) {
-                        neighbors.add(neighbor);
-                    }
-                    cache.put(evaluator.getClass().getSimpleName(), neighbor != null);
                 }
             }
         }
         return neighbors;
     }
 
-    private Node apply(NodeEvaluator evaluator, Node node, BlockPos to, NodeContext context) {
+    private Node findNeighbor(Node node, NodeEvaluator evaluator, int x, int y, int z) {
+        BlockPos to = node.getPos().add(x, y, z);
+        Node neighbor = apply(evaluator, node, to, x, y, z);
+        cache.put(evaluator.getClass().getSimpleName(), neighbor != null);
+        return neighbor;
+    }
+
+    private Node apply(NodeEvaluator evaluator, Node node, BlockPos to, int dX, int dY, int dZ) {
         for (NodeEvaluator dependency : evaluator.getDependencies()) {
             String className = dependency.getClass().getSimpleName();
             boolean neighbor;
             if (cache.containsKey(className)) {
                 neighbor = cache.get(className);
             } else {
-                neighbor = apply(dependency, node, to, context) != null;
+                neighbor = apply(dependency, node, to, dX, dY, dZ) != null;
                 cache.put(className, neighbor);
             }
             if (!neighbor) {
@@ -66,7 +84,7 @@ public class JumpPointSearch {
             }
         }
         evaluator.context(context);
-        return evaluator.apply(node, to, context);
+        return evaluator.apply(node, to, dX, dY, dZ);
     }
 
 /*    public Node jump(Node current, Goal goal, NodeContext context) {

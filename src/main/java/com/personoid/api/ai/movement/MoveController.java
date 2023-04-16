@@ -1,6 +1,7 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
+import com.personoid.nms.packet.Packets;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -29,6 +30,7 @@ public class MoveController {
     private double targetZ;
 
     private boolean climbing;
+    private boolean travelling;
 
     public MoveController(NPC npc) {
         this.npc = npc;
@@ -52,7 +54,7 @@ public class MoveController {
 
     private void calculateMovement() {
         // if boundingbox of npc collides with blocks in front of it, stop moving
-        BoundingBox bb = npc.getEntity().getBoundingBox().clone().expand(0.5D, -0.1D, 0.5D);
+        BoundingBox bb = npc.getEntity().getBoundingBox().clone().expand(0.5D, 0D, 0.5D);
         Block block1 = getBlockAtDistance(1, false);
         Block block2 = block1.getRelative(0, 1, 0);
         BoundingBox bb1 = block1.getBoundingBox();
@@ -75,17 +77,20 @@ public class MoveController {
         double dX = targetX - npc.getLocation().getX();
         double dZ = targetZ - npc.getLocation().getZ();
 
-        // stop moving if close enough to target
-        if (Math.abs(dX) < 0.05 && Math.abs(dZ) < 0.05) {
-            stop();
+        if (!travelling) return;
+        if (Math.abs(dX) < 0.001 && Math.abs(dZ) < 0.001) {
+            moveForward = 0.0D;
+            moveStrafing = 0.0D;
+            travelling = false;
             return;
         }
-
-        // look towards target location
-/*        float yaw = (float) (Math.toDegrees(Math.atan2(dZ, dX)) - 90F) % 360F;
-        Packets.rotateEntity(npc.getEntity(), yaw, 0F).send();
-        npc.setYaw(yaw);
-        npc.setPitch(0F);*/
+        if (Math.abs(dX) > 0.01 || Math.abs(dZ) > 0.01) {
+            // look towards target location
+            float yaw = (float) (Math.toDegrees(Math.atan2(dZ, dX)) - 90F) % 360F;
+            Packets.rotateEntity(npc.getEntity(), yaw, 0F).send();
+            npc.setYaw(yaw);
+            npc.setPitch(0F);
+        }
 
         // calculate movement based on yaw
         ItemStack mainHand = npc.getInventory().getSelectedItem();
@@ -167,28 +172,35 @@ public class MoveController {
         }
     }
 
-    public float getMovementFactor() {
-        return 0.14F;
+    private float getMovementFactor() {
+        return 0.1F;
     }
 
-    public float getLandMovementFactor() {
+    private float getLandMovementFactor() {
         float base = getMovementFactor();
         if (npc.isSprinting()) base *= 1.3F;
         return base;
     }
 
-    public float getAirMovementFactor() {
+    private float getAirMovementFactor() {
         float base = getMovementFactor() * 0.2F;
         if (npc.isSprinting()) base *= 1.3F;
         return base;
     }
 
-    public float getWaterMovementFactor() {
+    private float getWaterMovementFactor() {
         float base = getMovementFactor() * 0.25F;
         if (npc.isSprinting()) base *= 1.3F;
         return base;
     }
 
+    /**
+     * Makes the NPC jump using a set y velocity of 0.42.
+     * <p>This method will only be successful if {@link NPC#hasAI()} and {@link NPC#isOnGround()} are true.</p>
+     * <p>It will also not work if the NPC is in a liquid, climbing, or flying.</p>
+     * <p>Jump boost effects and sprint jumping is taken into account.</p>
+     * @see <a href="https://minecraft.gamepedia.com/Attribute#Movement">Movement Attributes</a>
+     */
     public void jump() {
         if (npc.hasAI() && npc.isOnGround() && jumpTicks == 0) {
             jumpTicks = 10;
@@ -199,11 +211,11 @@ public class MoveController {
             }
             //((CraftPlayer) npc.getEntity()).getHandle().jumpFromGround();
             // apply sprint jump boost
-            if (npc.isSprinting() && npc.isJumping()) {
+/*            if (npc.isSprinting() && npc.isJumping()) {
                 float f = npc.getYaw() * 0.017453292F;
                 moveForward -= Math.sin(f) * 0.2F;
                 moveStrafing += Math.cos(f) * 0.2F;
-            }
+            }*/
         }
     }
 
@@ -250,11 +262,22 @@ public class MoveController {
         return null;
     }
 
+    /**
+     * Sets the NPC's target coordinates to the given x and z coordinates.
+     * <p>This method will only see results if {@link NPC#hasAI()} is true.</p>
+     * @param x The x coordinate to move to
+     * @param z The z coordinate to move to
+     */
     public void moveTo(double x, double z) {
         targetX = x;
         targetZ = z;
+        travelling = true;
     }
 
+    /**
+     * Prohibits the NPC from calculating voluntary movement.
+     * <p>The method will not instantly stop all movement, as momentum and acceleration will still be taken into account.</p>
+     */
     public void stop() {
         moveForward = 0.0D;
         moveStrafing = 0.0D;
@@ -262,6 +285,10 @@ public class MoveController {
         targetZ = npc.getLocation().getZ();
     }
 
+    /**
+     * Applies a 'knockback' velocity to the NPC.
+     * <p>This method will only be successful if {@link NPC#hasAI()} is true.</p>
+     */
     public void applyKnockback(Location source) {
         if (!npc.hasAI()) return;
         Vector vel = npc.getLocation().toVector().subtract(source.toVector()).setY(0).normalize().multiply(0.4);
@@ -272,34 +299,66 @@ public class MoveController {
         motionZ += vel.getZ();
     }
 
+    /**
+     * Applies a specified force to the NPC's y velocity.
+     * <p>This method will only be successful if {@link NPC#hasAI()} is true.</p>
+     * @implNote This is only used by the {@link Navigation} class to step up blocks. It is not recommended to use this method.
+     * @param force The force to apply
+     */
     public void applyUpwardForce(double force) {
         if (npc.hasAI()) {
             motionY = force;
         }
     }
 
+    /**
+     * Applies a specified vector to the NPC's velocity.
+     * @param velocity The vector to apply
+     */
     public void addVelocity(Vector velocity) {
         this.motionX += velocity.getX();
         this.motionY += velocity.getY();
         this.motionZ += velocity.getZ();
     }
 
+    /**
+     * Gets the NPC's current velocity as a vector.
+     * @return The NPC's current velocity
+     */
     public Vector getVelocity() {
         return new Vector(motionX, motionY, motionZ);
     }
 
+    /**
+     * Gets the target x coordinate.
+     * @return The target x coordinate
+     */
     public double getTargetX() {
         return targetX;
     }
 
+    /**
+     * Gets the target z coordinate.
+     * @return The target z coordinate
+     */
     public double getTargetZ() {
         return targetZ;
     }
 
+    /**
+     * Sets the NPC's state to climbing.
+     * <p>This only adjusts how movement is calculated.</p>
+     * @implNote This method is only used by the {@link Navigation} class and is not recommended to be used.
+     * @param climbing Whether the NPC is climbing
+     */
     public void setClimbing(boolean climbing) {
         this.climbing = climbing;
     }
 
+    /**
+     * Gets whether the NPC is climbing.
+     * @return Whether the NPC is climbing
+     */
     public boolean isClimbing() {
         return climbing;
     }

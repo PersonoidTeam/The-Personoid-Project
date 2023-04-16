@@ -132,7 +132,7 @@ public class Packets {
 
     public static Packet updateEntityData(Entity entity) {
         try {
-            Object entityData = invoke(getNMSEntity(entity), "al"); // getEntityData
+            Object entityData = invoke(getNMSEntity(entity), "aj"); // getEntityData
             if (ReflectionUtils.getVersionInt() >= 19 && ReflectionUtils.getSubVersionInt() <= 2) {
                 return createPacket("PacketPlayOutEntityMetadata", new Parameter(int.class, entity.getEntityId()),
                         new Parameter(entityData.getClass(), entityData), new Parameter(boolean.class, false));

@@ -70,7 +70,7 @@ public class NMSBridge {
             });
             Object data = objectConstructor.newInstance(key, ReflectionUtils.getField(registry, type));
             Object entityData = NPC_CACHE.getOrPut("entityData." + npc.getEntityId(), () -> {
-                return ReflectionUtils.invoke(toNMSPlayer(npc), "al"); // getEntityData
+                return ReflectionUtils.invoke(toNMSPlayer(npc), "aj"); // getEntityData
             });
             entityData.getClass().getMethod("b", data.getClass(), Object.class).invoke(entityData, data, value);
             //ReflectionUtils.invoke(entityData, "b", data, value); // set
@@ -80,16 +80,16 @@ public class NMSBridge {
     }
 
     public static void setPos(NPC npc, Vector pos) {
-        ReflectionUtils.invoke(toNMSPlayer(npc), "a_", toVec3(pos)); // setPos
+        ReflectionUtils.invoke(toNMSPlayer(npc), "a", toVec3(pos)); // setPos
     }
 
     public static void respawn(NPC npc) {
-        ReflectionUtils.invoke(toNMSPlayer(npc), "fC"); // respawn
+        ReflectionUtils.invoke(toNMSPlayer(npc), "fH"); // respawn
     }
 
     public static void setArrowCount(NPC npc, int count) {
         try {
-            CACHE.getClass("entity_player").getMethod("p", int.class).invoke(toNMSPlayer(npc), count); // setArrowCount
+            CACHE.getClass("entity_player").getMethod("o", int.class).invoke(toNMSPlayer(npc), count); // setArrowCount
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

@@ -79,6 +79,10 @@ public class LocationUtils {
         return new Vector(vector.getX() + 0.5, vector.getY(), vector.getZ() + 0.5);
     }
 
+    public static boolean closerThanNoY(Vector vector1, Vector vector2, double distance) {
+        return distanceToSqrNoY(vector1, vector2) < distance * distance;
+    }
+
     public static boolean closerThan(Vector vector1, Vector vector2, double distance) {
         return distanceToSqr(vector1, vector2) < distance * distance;
     }
@@ -88,6 +92,12 @@ public class LocationUtils {
         double y = vector1.getY() - vector2.getY();
         double z = vector1.getZ() - vector2.getZ();
         return x * x + y * y + z * z;
+    }
+
+    public static double distanceToSqrNoY(Vector vector1, Vector vector2) {
+        double x = vector1.getX() - vector2.getX();
+        double z = vector1.getZ() - vector2.getZ();
+        return x * x + z * z;
     }
 
     public static Block getBlockInDir(Location location, BlockFace direction) {

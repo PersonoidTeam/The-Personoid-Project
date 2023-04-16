@@ -1,8 +1,10 @@
-package com.personoid.api.pathfinding;
+package com.personoid.api.pathfinding.pathfinder;
 
+import com.personoid.api.pathfinding.NodeContext;
+import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.goal.Goal;
 import com.personoid.api.pathfinding.node.Node;
-import com.personoid.api.pathfinding.node.evaluator.*;
+import com.personoid.api.pathfinding.node.evaluator.NodeEvaluator;
 import com.personoid.api.pathfinding.utils.BlockPos;
 import com.personoid.api.pathfinding.utils.HeapOpenSet;
 import com.personoid.api.utils.debug.Profiler;
@@ -14,44 +16,39 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class PathFinder {
-    private static final int TIMEOUT = 5000;
+public abstract class PathFinder {
     private static final float[] PS_COEFFICIENTS = { 1.5F, 2, 2.5F, 3, 4, 5, 10 };
     private static final int PS_MIN_DISTANCE = 25;
 
-    private final List<NodeEvaluator> evaluators = new ArrayList<>();
+    protected final List<NodeEvaluator> evaluators = new ArrayList<>();
     private final HeapOpenSet openSet;
     private final Set<Node> closedSet;
-    private final Node[] partialSolutions;
+    private Node[] partialSolutions;
     private Node startNode;
     private Node lastConsideration;
     private NodeContext context;
-    private boolean failing;
+    private boolean foundApproximation;
 
     private boolean stop;
 
     public PathFinder() {
+        this.openSet = new HeapOpenSet();
+        this.closedSet = new HashSet<>();
         registerEvaluators();
-        openSet = new HeapOpenSet();
-        closedSet = new HashSet<>();
-        partialSolutions = new Node[PS_COEFFICIENTS.length];
-    }
-
-    private void registerEvaluators() {
-        this.evaluators.add(new WalkNodeEvaluator());
-        this.evaluators.add(new JumpNodeEvaluator());
-        this.evaluators.add(new FallNodeEvaluator());
-        this.evaluators.add(new ClimbNodeEvaluator());
-        this.evaluators.add(new ParkourNodeEvaluator());
     }
 
     public Path findPath(BlockPos start, Goal goal, World world) {
-        context = new NodeContext(start, goal, world, evaluators);
+        int chunkRadius = getChunkingRadius();
+        openSet.clear();
+        closedSet.clear();
+        this.partialSolutions = new Node[PS_COEFFICIENTS.length];
+
+        context = new NodeContext(start, goal, world, evaluators, chunkRadius);
         startNode = context.getNode(start);
         openSet.add(startNode);
 
         long startTime = System.currentTimeMillis();
-        failing = true;
+        foundApproximation = false;
 
         while (!openSet.isEmpty()) {
             if (stop) return null;
@@ -66,11 +63,15 @@ public class PathFinder {
                 return reconstructPath(current);
             }
             addAdjacentNodes(current);
+            int distance = startNode.squaredDistanceTo(current);
+            if (chunkRadius > 0 && distance > (chunkRadius * chunkRadius)) {
+                return bestSoFar();
+            }
             long elapsedTime = System.currentTimeMillis() - startTime;
-            boolean ranOutOfTime = (!failing && elapsedTime > TIMEOUT);
+            boolean ranOutOfTime = elapsedTime > getTimeout() || (foundApproximation && elapsedTime > getTimeout() / 2);
             if (ranOutOfTime) break;
         }
-        return bestSoFar();
+        return shouldSoftFail() ? bestSoFar() : null;
     }
 
     public void stop() {
@@ -105,7 +106,9 @@ public class PathFinder {
             if (closer) {
                 partialSolutions[i] = node;
                 int distance = startNode.squaredDistanceTo(node);
-                if (distance > PS_MIN_DISTANCE) failing = false; // We found a good enough solution
+                if (distance > PS_MIN_DISTANCE) {
+                    foundApproximation = true; // We found a good enough solution
+                }
             }
         }
     }
@@ -138,4 +141,9 @@ public class PathFinder {
         nodes.add(0, startNode);
         return new Path(nodes.toArray(new Node[0]));
     }
+
+    protected abstract void registerEvaluators();
+    protected abstract int getTimeout();
+    protected abstract int getChunkingRadius();
+    protected abstract boolean shouldSoftFail();
 }

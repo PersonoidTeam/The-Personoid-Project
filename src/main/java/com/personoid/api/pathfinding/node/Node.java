@@ -9,7 +9,7 @@ import com.personoid.api.pathfinding.utils.Heuristics;
 public class Node implements Comparable<Node> {
     private static final double MIN_COST_IMPROVEMENT = 0.01;
 
-    private final BlockPos position;
+    private final BlockPos pos;
     private final NodeContext context;
     private Node parent;
 
@@ -21,12 +21,12 @@ public class Node implements Comparable<Node> {
     private int heapIndex = -1;
 
     public Node(BlockPos position, NodeContext context) {
-        this.position = position;
+        this.pos = position;
         this.context = context;
     }
 
     public BlockPos getPos() {
-        return position;
+        return pos;
     }
 
     public Node getParent() {
@@ -67,11 +67,15 @@ public class Node implements Comparable<Node> {
     }
 
     public int squaredDistanceTo(Node node) {
-        return Heuristics.squaredEuclidean(position, node.getPos());
+        return squaredDistanceTo(node.getPos());
+    }
+
+    public int squaredDistanceTo(BlockPos node) {
+        return Heuristics.squaredEuclidean(pos, node);
     }
 
     public Node[] getNeighbors() {
-        return new JumpPointSearch().getNeighbors(this, context);
+        return new JumpPointSearch(context).getNeighbors(this);
     }
 
     public void setParent(Node parent, double cost) {
@@ -103,7 +107,7 @@ public class Node implements Comparable<Node> {
     }
 
     public double getCostTo(Node node) {
-        return Heuristics.euclidean(position, node.position);
+        return Heuristics.euclidean(pos, node.pos);
     }
 
     public NodeContext getContext() {
@@ -111,7 +115,7 @@ public class Node implements Comparable<Node> {
     }
 
     public boolean equals(Node other) {
-        return position.equals(other.position);
+        return pos.equals(other.pos);
     }
 
     @Override
@@ -121,6 +125,6 @@ public class Node implements Comparable<Node> {
 
     @Override
     public String toString() {
-        return String.format("Node{x=%s, y=%s, z=%s}", position.getX(), position.getY(), position.getZ());
+        return String.format("Node{x=%s, y=%s, z=%s}", pos.getX(), pos.getY(), pos.getZ());
     }
 }

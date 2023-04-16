@@ -93,5 +93,12 @@ public class HeapOpenSet {
     public int size() {
         return size;
     }
+
+    public void clear() {
+        for (int i = 0; i < size; i++) {
+            nodes[i] = null;
+        }
+        size = 0;
+    }
 }
 

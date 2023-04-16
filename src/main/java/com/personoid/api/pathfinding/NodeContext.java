@@ -16,13 +16,15 @@ public class NodeContext {
     private final Goal goal;
     private final World world;
     private final List<NodeEvaluator> evaluators;
+    private final int chunkRadius;
 
-    public NodeContext(BlockPos startPos, Goal goal, World world, List<NodeEvaluator> evaluators) {
+    public NodeContext(BlockPos startPos, Goal goal, World world, List<NodeEvaluator> evaluators, int chunkRadius) {
         this.map = new Long2ObjectOpenHashMap<>(1024, 0.75F);
         this.startPos = startPos;
         this.goal = goal;
         this.world = world;
         this.evaluators = evaluators;
+        this.chunkRadius = chunkRadius;
     }
 
     public BlockPos getStartPos() {
@@ -41,10 +43,18 @@ public class NodeContext {
         return evaluators;
     }
 
+    public int getChunkRadius() {
+        return chunkRadius;
+    }
+
     public boolean isWalkable(BlockPos pos) {
         return BlockTags.SOLID.is(pos.below().toBlock(world)) &&
                 !BlockTags.SOLID.is(pos.toBlock(world)) &&
                 !BlockTags.SOLID.is(pos.above().toBlock(world));
+    }
+
+    public boolean isSolid(BlockPos pos) {
+        return BlockTags.SOLID.is(pos.toBlock(world));
     }
 
     public boolean isDiagonal(BlockPos from, BlockPos to) {
@@ -52,10 +62,24 @@ public class NodeContext {
     }
 
     public boolean isInBounds(BlockPos pos) {
-        if (!world.isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) {
-            return false;
-        }
+        if (!isLoaded(pos)) return false;
         return pos.getY() >= world.getMinHeight() && pos.getY() < world.getMaxHeight();
+    }
+
+    public boolean isLoaded(BlockPos pos) {
+        return world.getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getChunk().isLoaded();
+    }
+
+    public boolean isWallInWay(BlockPos from, BlockPos to, int dX, int dZ) {
+        boolean diagonal = isDiagonal(from, to);
+        if (diagonal) {
+            if (!isWalkable(to.add(dX, 0, 0)) || !isWalkable(to.add(0, 0, dZ))) {
+                return true;
+            }
+            return !isWalkable(from.add(dX, 0, 0)) || !isWalkable(from.add(0, 0, dZ));
+        } else {
+            return isSolid(to.add(0, 2, 0));
+        }
     }
 
     public Node getNode(BlockPos pos) {

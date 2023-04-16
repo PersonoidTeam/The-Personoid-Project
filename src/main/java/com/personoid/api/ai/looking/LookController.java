@@ -23,9 +23,9 @@ public class LookController {
         Target target = getHighestPriorityTarget();
         if (target != null) {
             //tryFace(target.getLocation());
-            Location facing = getFacing(getHighestPriorityTarget().getLocation());
+/*            Location facing = getFacing(getHighestPriorityTarget().getLocation());
             Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
-            npc.setRotation(facing.getYaw(), facing.getPitch());
+            npc.setRotation(facing.getYaw(), facing.getPitch());*/
         }
     }
 

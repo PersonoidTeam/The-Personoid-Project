@@ -5,42 +5,31 @@ import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
 import com.personoid.api.npc.Pose;
 import com.personoid.api.pathfinding.Path;
-import com.personoid.api.pathfinding.node.Node;
-import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.Result;
-import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.Priority;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockState;
 
-public class GoToLocationActivity extends Activity {
-    private final Location location;
-    private Path path;
-    private final Location groundLoc;
+public class FollowPathActivity extends Activity {
+    private final Path path;
+    private Location endLocation;
     private final MovementType movementType;
     private final Options options;
     private int tick;
 
     private Location lastLocation;
     private int stuckTicks;
-    private Location startingLocation;
-    private final Long2ObjectOpenHashMap<BlockState> pathCache;
 
-    public GoToLocationActivity(Location location, MovementType movementType) {
+    public FollowPathActivity(Path path, MovementType movementType) {
         super(ActivityType.LOCATION);
-        this.location = location;
-        this.pathCache = new Long2ObjectOpenHashMap<>();
-        this.groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         this.movementType = movementType;
         this.options = new Options();
+        this.path = path;
     }
 
     @Override
     public void onStart(StartType startType) {
-        startingLocation = getNPC().getLocation().clone();
+        Bukkit.broadcastMessage("started following path");
         getNPC().setJumping(movementType.name().contains("JUMP"));
         switch (movementType) {
             case WALK:
@@ -55,17 +44,18 @@ public class GoToLocationActivity extends Activity {
                 getNPC().setPose(Pose.FLYING);
                 break;
         }
-        tryUpdatePath();
-        Profiler.ACTIVITIES.push("going to location: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
+        this.endLocation = path.getNode(path.size() - 1).getPos().toLocation(getNPC().getWorld());
+        getNPC().getNavigation().moveTo(endLocation, path);
+        if (options.canFaceLocation()) {
+            Location lookLoc = endLocation.clone().add(0F, 0F, 0F);
+            getNPC().getLookController().addTarget("travel_location", new Target(lookLoc, options.facePriority));
+        }
     }
 
     @Override
     public void onUpdate() {
         if (getNPC().canSprint() && !getNPC().isSprinting()) {
             getNPC().setSprinting(movementType.name().contains("SPRINT"));
-        }
-        if (++tick % 10 == 0) {
-            tryUpdatePath();
         }
         doStuckDetection();
         finishCheck();
@@ -90,41 +80,6 @@ public class GoToLocationActivity extends Activity {
         lastLocation = getNPC().getLocation().clone();
     }
 
-    private void tryUpdatePath() {
-        if (path == null || hasPathChanged() || true) {
-            path = getNPC().getNavigation().moveTo(location);
-            if (path != null) {
-                for (int i = 0; i < path.size(); i++) {
-                    Node node = path.getNode(i);
-                    long key = node.getPos().asLong();
-                    if (!pathCache.containsKey(key)) {
-                        Block block = node.getPos().toBlock(getNPC().getWorld());
-                        pathCache.put(key, block.getState());
-                    }
-                }
-            }
-        }
-        if (options.canFaceLocation()) {
-            Location lookLoc = groundLoc.clone().add(0F, 0F, 0F);
-            getNPC().getLookController().addTarget("travel_location", new Target(lookLoc, options.facePriority));
-        }
-    }
-
-    private boolean hasPathChanged() {
-        for (int i = 0; i < path.size(); i++) {
-            Node node = path.getNode(i);
-            long key = node.getPos().asLong();
-            if (!pathCache.containsKey(key)) {
-                return true;
-            }
-            Block block = node.getPos().toBlock(getNPC().getWorld());
-            if (!block.getState().equals(pathCache.get(key))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private boolean finishCheck() {
         if (options.getStoppingDistance() <= 0F) {
             Location lastNodeLoc = path.getNode(path.size() - 1).getPos().toLocation(getNPC().getWorld()).add(0.5, 0, 0.5);
@@ -132,7 +87,7 @@ public class GoToLocationActivity extends Activity {
                 markAsFinished(new Result<>(Result.Type.SUCCESS));
                 return true;
             }
-        } else if (groundLoc.distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
+        } else if (endLocation.distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
             markAsFinished(new Result<>(Result.Type.SUCCESS));
             return true;
         }
@@ -157,19 +112,19 @@ public class GoToLocationActivity extends Activity {
     }
 
     public void onStuck() {
-        if (options.getStuckAction() == StuckAction.STOP) {
+        if (options.getStuckAction() == GoToLocationActivity.StuckAction.STOP) {
             getNPC().getNavigation().stop();
             markAsFinished(new Result<>(Result.Type.FAILURE));
-        } else if (options.getStuckAction() == StuckAction.RESTART) {
+        } else if (options.getStuckAction() == GoToLocationActivity.StuckAction.RESTART) {
             getNPC().getNavigation().stop();
-            getNPC().getNavigation().moveTo(location);
-        } else if (options.getStuckAction() == StuckAction.REVERSE) {
+            getNPC().getNavigation().moveTo(endLocation);
+        } else if (options.getStuckAction() == GoToLocationActivity.StuckAction.REVERSE) {
             getNPC().getNavigation().stop();
-            getNPC().getNavigation().moveTo(startingLocation);
-        } else if (options.getStuckAction() == StuckAction.TELEPORT) {
+            getNPC().getNavigation().moveTo(path.getNode(0).getPos().toLocation(getNPC().getWorld()));
+        } else if (options.getStuckAction() == GoToLocationActivity.StuckAction.TELEPORT) {
             getNPC().getNavigation().stop();
-            getNPC().teleport(location);
-        } else if (options.getStuckAction() == StuckAction.IGNORE) {
+            getNPC().teleport(endLocation);
+        } else if (options.getStuckAction() == GoToLocationActivity.StuckAction.IGNORE) {
             // do nothing
         }
     }
@@ -179,12 +134,12 @@ public class GoToLocationActivity extends Activity {
     }
 
     public static class Options {
-        public double stoppingDistance = 0.5;
+        public double stoppingDistance;
         public boolean faceLocation = true;
         public Priority facePriority = Priority.NORMAL;
         public int stuckTime = 20;
         public double stuckDelta = 0.01;
-        public StuckAction stuckAction = StuckAction.STOP;
+        public GoToLocationActivity.StuckAction stuckAction = GoToLocationActivity.StuckAction.STOP;
 
         private Options() {}
 
@@ -225,11 +180,11 @@ public class GoToLocationActivity extends Activity {
             this.stuckDelta = stuckDelta;
         }
 
-        public StuckAction getStuckAction() {
+        public GoToLocationActivity.StuckAction getStuckAction() {
             return stuckAction;
         }
 
-        public void setStuckAction(StuckAction stuckAction) {
+        public void setStuckAction(GoToLocationActivity.StuckAction stuckAction) {
             this.stuckAction = stuckAction;
         }
     }

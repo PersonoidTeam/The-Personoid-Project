@@ -144,24 +144,24 @@ public class NPCOverrides implements Listener {
     public void l() { // tick
         loadChunks();
         aliveTicks++;
-        if (!invoke(Boolean.class, "br")) return; // isAlive
+        if (!invoke(Boolean.class, "bq")) return; // isAlive
         //invoke("m"); // baseTick
-        double yPos = invoke(double.class, "dm"); // getY
+        double yPos = invoke(double.class, "dn"); // getY
         if (aliveTicks == 1) {
             lastYIncrease = yPos;
         }
-        if (getField(int.class, "aK") > 0) modInt("aK", -1); // hurtTime
+        if (getField(int.class, "aJ") > 0) modInt("aJ", -1); // hurtTime
         if (npc.isOnGround()) {
             if (groundTicks < Integer.MAX_VALUE) {
                 groundTicks++;
             }
         } else groundTicks = 0;
-        float health = invoke(float.class, "ek"); // getHealth
-        float maxHealth = invoke(float.class, "ez"); // getMaxHealth
+        float health = invoke(float.class, "eo"); // getHealth
+        float maxHealth = invoke(float.class, "eE"); // getMaxHealth
         float amount = health < maxHealth - 0.05F ? health + 0.05F : maxHealth; // 0.1F = natual regen speed (full saturation)
         getEntity().setHealth(amount);
         //invoke("c", amount); // setHealth, FIXME: method not found?!?!?
-        if (yPos < -64) invoke("ay"); // outOfWorld
+        if (yPos < -64) invoke("aw"); // outOfWorld
         fallDamageCheck();
         // FIXME: swimming not working
 /*        if (inWater() && targetLoc.getY() - 1F < getLocation().getY()) {
@@ -212,7 +212,7 @@ public class NPCOverrides implements Listener {
 
     private void fallDamageCheck() {
         // FIXME: still a little broken
-        double yPos = invoke(double.class, "dm"); // getY
+        double yPos = invoke(double.class, "dn"); // getY
         if (npc.isOnGround() && !npc.isInWater()) { // onGround
             float damage = (float) (lastYIncrease - yPos - 3F);
             if (damage > 0) {
@@ -259,6 +259,10 @@ public class NPCOverrides implements Listener {
     @EventHandler
     private void damage(EntityDamageByEntityEvent event) {
         if (event.getEntity() != getEntity()) return;
+        if (npc.isInvulnerable()) {
+            event.setCancelled(true);
+            return;
+        }
         Entity attacker = event.getDamager();
         double damage = event.getDamage();
         InjectionInfo info = npc.injector.callHookReturn("damage", new CallbackInfo<>(double.class), damage);
@@ -295,6 +299,10 @@ public class NPCOverrides implements Listener {
     @EventHandler
     private void damage(EntityDamageEvent event) {
         if (event.getEntity() != getEntity()) return;
+        if (npc.isInvulnerable()) {
+            event.setCancelled(true);
+            return;
+        }
         double damage = event.getDamage();
         InjectionInfo info = npc.injector.callHookReturn("damage", new CallbackInfo<>(double.class), damage);
         if (info.isModified()) damage = info.getParameter().getValue(Double.class);
@@ -314,11 +322,11 @@ public class NPCOverrides implements Listener {
     }
 
     public boolean isUsingItem() {
-        return invoke(boolean.class, "eZ");
+        return invoke(boolean.class, "fe");
     }
 
     public void stopUsingItem() {
-        invoke("ff");
+        invoke("fk");
         handUsing = -1;
         itemUsingTicks = 0;
     }
@@ -363,11 +371,11 @@ public class NPCOverrides implements Listener {
 
     public void setRotation(float yaw, float pitch) {
         try {
-            base.getClass().getMethod("q", float.class).invoke(base, pitch); // setXRot/pitch
-            base.getClass().getMethod("p", float.class).invoke(base, yaw); // setYRot/yaw
+            base.getClass().getMethod("e", float.class).invoke(base, pitch); // setXRot/pitch
+            base.getClass().getMethod("f", float.class).invoke(base, yaw); // setYRot/yaw
 
-            base.getClass().getMethod("l", float.class).invoke(base, yaw); // setYHeadRot/yaw
-            base.getClass().getMethod("m", float.class).invoke(base, yaw); // setYBodyRot/yaw
+            base.getClass().getMethod("r", float.class).invoke(base, yaw); // setYHeadRot/yaw
+            base.getClass().getMethod("s", float.class).invoke(base, yaw); // setYBodyRot/yaw
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -375,9 +383,9 @@ public class NPCOverrides implements Listener {
 
     public void setYaw(float yaw) {
         try {
-            base.getClass().getMethod("p", float.class).invoke(base, yaw); // setYRot/yaw
-            base.getClass().getMethod("l", float.class).invoke(base, yaw); // setYHeadRot/yaw
-            base.getClass().getMethod("m", float.class).invoke(base, yaw); // setYBodyRot/yaw
+            base.getClass().getMethod("f", float.class).invoke(base, yaw); // setYRot/yaw
+            base.getClass().getMethod("r", float.class).invoke(base, yaw); // setYHeadRot/yaw
+            base.getClass().getMethod("s", float.class).invoke(base, yaw); // setYBodyRot/yaw
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -385,7 +393,7 @@ public class NPCOverrides implements Listener {
 
     public void setPitch(float pitch) {
         try {
-            base.getClass().getMethod("q", float.class).invoke(base, pitch); // setXRot/pitch
+            base.getClass().getMethod("e", float.class).invoke(base, pitch); // setXRot/pitch
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -393,7 +401,7 @@ public class NPCOverrides implements Listener {
 
     public float getYaw() {
         try {
-            return (float) base.getClass().getMethod("dv").invoke(base); // getYRot/yaw
+            return (float) base.getClass().getMethod("dw").invoke(base); // getYRot/yaw
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -401,7 +409,7 @@ public class NPCOverrides implements Listener {
 
     public float getPitch() {
         try {
-            return (float) base.getClass().getMethod("dx").invoke(base); // getXRot/pitch
+            return (float) base.getClass().getMethod("dy").invoke(base); // getXRot/pitch
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -409,7 +417,7 @@ public class NPCOverrides implements Listener {
 
     public void updateSkin() {
         Skin skin = npc.getProfile().getSkin();
-        Object profile = ReflectionUtils.invoke(base, "fD"); // getGameProfile()
+        Object profile = ReflectionUtils.invoke(base, "fI"); // getGameProfile()
         Object properties = ReflectionUtils.invoke(profile, "getProperties");
         Class<?> propertyClass = ReflectionUtils.findClass("com.mojang.authlib.properties", "Property");
         try {
@@ -425,7 +433,7 @@ public class NPCOverrides implements Listener {
 
     public void setJumping(boolean jumping) {
         try {
-            base.getClass().getMethod("q", boolean.class).invoke(base, jumping); // setJumping
+            base.getClass().getMethod("r", boolean.class).invoke(base, jumping); // setJumping
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -433,7 +441,7 @@ public class NPCOverrides implements Listener {
 
     public boolean isJumping() {
         try {
-            Field field = base.getClass().getField("bn"); // jumping
+            Field field = base.getClass().getField("bi"); // jumping
             field.setAccessible(true);
             return (boolean) field.get(base);
         } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -473,7 +481,7 @@ public class NPCOverrides implements Listener {
 
     public Pose getPose() {
         Class<?> entityPose = ReflectionUtils.findClass(Packages.ENTITY, "EntityPose");
-        Object pose = invoke(entityPose, "an"); // getPose
+        Object pose = invoke(entityPose, "al"); // getPose
         String nmsName = pose.toString();
         switch (nmsName) {
             case "STANDING":
