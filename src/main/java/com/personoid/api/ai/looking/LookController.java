@@ -1,7 +1,8 @@
 package com.personoid.api.ai.looking;
 
+import com.personoid.api.ai.looking.target.Target;
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.utils.BlockPos;
+import com.personoid.api.pathfinding.calc.utils.BlockPos;
 import com.personoid.nms.packet.Packets;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -22,7 +23,8 @@ public class LookController {
         if (targets.isEmpty() || lookAhead) return;
         Target target = getHighestPriorityTarget();
         if (target != null) {
-            tryFace(target.getLocation());
+            target.lookAt(npc);
+            //tryFace(target.getLocation());
 /*            Location facing = getFacing(getHighestPriorityTarget().getLocation());
             Packets.rotateEntity(npc.getEntity(), facing.getYaw(), facing.getPitch()).send();
             npc.setRotation(facing.getYaw(), facing.getPitch());*/
@@ -69,15 +71,15 @@ public class LookController {
 
     public Target getHighestPriorityTarget() {
         Target highest = null;
-        for (Target target : targets.values()) {
+/*        for (Target target : targets.values()) {
             if (highest == null || target.getPriority().isHigherThan(highest.getPriority())) {
                 highest = target;
             }
-        }
+        }*/
         return highest;
     }
 
-    public String getLastTarget() {
+/*    public String getLastTarget() {
         String identifier = null;
         for (Map.Entry<String, Target> entry : targets.entrySet()) {
             if (entry.getValue().getPriority() == getHighestPriorityTarget().getPriority()) {
@@ -86,7 +88,7 @@ public class LookController {
             }
         }
         return identifier;
-    }
+    }*/
 
     public boolean hasTarget(String identifier) {
         return targets.containsKey(identifier);

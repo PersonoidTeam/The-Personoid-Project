@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "command",
+            "name": "Build & Copy",
+            "program": "C:/Program Files/Git/bin/sh.exe",
+            "args": ["$PROJECT_DIR$/script.sh"],
+        },
+    ]
+}

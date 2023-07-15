@@ -11,41 +11,16 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public abstract class Activity implements Comparable<Activity> {
-    private ActivityManager manager;
     private NPC npc;
-    private final ActivityType type;
-    private Priority priority;
+    private ActivityManager manager;
     private long currentDuration;
     private boolean finished;
     private Result<?> result;
     private boolean paused;
-    private BoredomSettings boredomSettings;
 
     private final Set<Consumer<Result<?>>> callbacks = new HashSet<>();
     private Activity childActivity;
     private Activity parentActivity;
-
-    public Activity(ActivityType type) {
-        this.type = type;
-        this.priority = Priority.NORMAL;
-    }
-
-    public Activity(ActivityType type, BoredomSettings boredomSettings) {
-        this.type = type;
-        this.priority = Priority.NORMAL;
-        this.boredomSettings = boredomSettings;
-    }
-
-    public Activity(ActivityType type, Priority priority) {
-        this.type = type;
-        this.priority = priority;
-    }
-
-    public Activity(ActivityType type, Priority priority, BoredomSettings boredomSettings) {
-        this.type = type;
-        this.priority = priority;
-        this.boredomSettings = boredomSettings;
-    }
 
     // needs to be called before canStart() or onStart()
     void register(ActivityManager manager) {
@@ -85,11 +60,11 @@ public abstract class Activity implements Comparable<Activity> {
             childActivity.onUpdate();
         }
         currentDuration++;
-        if (boredomSettings != null){
-            if (currentDuration >= boredomSettings.getBoredTime()){
+        if (getBoredomSettings() != null){
+            if (currentDuration >= getBoredomSettings().getBoredTime()){
                 onStop(StopType.BORED);
                 internalStop(StopType.BORED);
-                manager.addBoredTask(this, boredomSettings.getBoredCooldown());
+                manager.addBoredTask(this, getBoredomSettings().getBoredCooldown());
                 Profiler.ACTIVITIES.push("Added bored cooldown for: " + getClass().getSimpleName());
             }
         }
@@ -104,6 +79,10 @@ public abstract class Activity implements Comparable<Activity> {
     public abstract boolean canStart(StartType startType);
 
     public abstract boolean canStop(StopType stopType);
+
+    public abstract Priority getPriority();
+
+    public abstract BoredomSettings getBoredomSettings();
 
     public Activity onFinished(Consumer<Result<?>> callback) {
         callbacks.add(callback);
@@ -135,28 +114,12 @@ public abstract class Activity implements Comparable<Activity> {
         internalStop(StopType.SUCCESS);
     }
 
-    public BoredomSettings getBoredomSettings() {
-        return boredomSettings;
-    }
-
     public Result<?> getResult() {
         return result;
     }
 
     public boolean isFinished() {
         return finished;
-    }
-
-    public ActivityType getType() {
-        return type;
-    }
-
-    public Priority getPriority() {
-        return priority;
-    }
-
-    public void updatePriority(Priority priority) {
-        this.priority = priority;
     }
 
     public void setPaused(boolean paused) {
@@ -173,7 +136,7 @@ public abstract class Activity implements Comparable<Activity> {
 
     @Override
     public int compareTo(@NotNull Activity activity) {
-        return Double.compare(priority.getValue(), activity.priority.getValue());
+        return Double.compare(getPriority().getValue(), activity.getPriority().getValue());
     }
 
     public enum StartType {

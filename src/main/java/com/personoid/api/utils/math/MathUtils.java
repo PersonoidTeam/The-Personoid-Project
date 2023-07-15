@@ -9,6 +9,8 @@ import java.math.RoundingMode;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MathUtils {
+    private static final double LOG_TWO = Math.log(2);
+
     private MathUtils() {}
 
     public static int random(int min, int max) {
@@ -115,5 +117,9 @@ public class MathUtils {
     public static int floor(double value) {
         int intValue = (int) value;
         return value < (double) intValue ? intValue - 1 : intValue;
+    }
+
+    public static double log2(double d) {
+        return Math.log(d) / LOG_TWO;
     }
 }

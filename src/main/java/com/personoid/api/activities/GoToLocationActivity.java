@@ -1,11 +1,10 @@
 package com.personoid.api.activities;
 
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.activity.ActivityType;
-import com.personoid.api.ai.looking.Target;
+import com.personoid.api.ai.looking.target.LocationTarget;
 import com.personoid.api.npc.Pose;
-import com.personoid.api.pathfinding.Path;
-import com.personoid.api.pathfinding.node.Node;
+import com.personoid.api.pathfinding.calc.Path;
+import com.personoid.api.pathfinding.calc.node.Node;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
@@ -30,7 +29,6 @@ public class GoToLocationActivity extends Activity {
     private final Long2ObjectOpenHashMap<BlockState> pathCache;
 
     public GoToLocationActivity(Location location, MovementType movementType) {
-        super(ActivityType.LOCATION);
         this.location = location;
         this.pathCache = new Long2ObjectOpenHashMap<>();
         this.groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
@@ -106,7 +104,7 @@ public class GoToLocationActivity extends Activity {
         }
         if (options.canFaceLocation()) {
             Location lookLoc = groundLoc.clone().add(0F, 0F, 0F);
-            getNPC().getLookController().addTarget("travel_location", new Target(lookLoc, options.facePriority));
+            getNPC().getLookController().addTarget("travel_location", new LocationTarget(lookLoc));
         }
     }
 
@@ -154,6 +152,16 @@ public class GoToLocationActivity extends Activity {
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return Priority.NORMAL;
+    }
+
+    @Override
+    public BoredomSettings getBoredomSettings() {
+        return null;
     }
 
     public void onStuck() {

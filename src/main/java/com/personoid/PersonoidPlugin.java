@@ -4,6 +4,7 @@ import com.personoid.api.npc.NPCRegistry;
 import com.personoid.api.utils.bukkit.Logger;
 import com.personoid.api.utils.bukkit.Task;
 import com.personoid.commands.CommandManager;
+import com.personoid.nms.mappings.Mappings;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,11 +21,12 @@ public class PersonoidPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        LOGGER.info("Successfully loaded Personoid plugin.");
         getCommand("personoid").setExecutor(new CommandManager());
+        Mappings.get();
         CommandManager.registerCommands();
         Config.reload();
         initReloader();
+        LOGGER.info("Successfully loaded Personoid plugin.");
     }
 
     @Override

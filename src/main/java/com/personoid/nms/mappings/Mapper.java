@@ -1,7 +1,6 @@
 package com.personoid.nms.mappings;
 
 import com.personoid.nms.MinecraftVersion;
-import org.json.simple.JSONObject;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -12,14 +11,13 @@ public class Mapper {
     private final MinecraftVersion version;
 
     private String currentClass = "";
-    private JSONObject classFields = new JSONObject();
-    private JSONObject classMethods = new JSONObject();
-    private JSONObject classConstructors = new JSONObject();
-    private JSONObject export = new JSONObject();
+    private final HashMap<String, MappedField> classFields = new HashMap<>();
+    private final HashMap<String, MappedMethod> classMethods = new HashMap<>();
+    private final HashMap<String, MappedConstructor> classConstructors = new HashMap<>();
 
-    private Map<String, String> classSpigotMappings = new HashMap<>();
-    private Map<String, List<MappedMethod>> methodSpigotMappings = new HashMap<>();
-    private Map<String, String> classMCToSpigot = new HashMap<>();
+    private final Map<String, String> classSpigotMappings = new HashMap<>();
+    private final Map<String, List<MappedMethod>> methodSpigotMappings = new HashMap<>();
+    private final Map<String, String> classMCToSpigot = new HashMap<>();
 
     public Mapper(MinecraftVersion version) {
         this.version = version;
@@ -159,113 +157,100 @@ public class Mapper {
         reader.close();
     }
 
-/*    public void map(String bukkit, String bukkitMembers, String mojang, String ex, String docfile, String version) throws IOException {
-        initialiseSpigot(bukkit, bukkitMembers);
-        initialiseMC(mojang);
+    public void map() {
+        try {
+            String mcVersion = ""; //version.getMinecraftVersion();
+            String bukkit = String.format("sources/%s-class.s_", mcVersion);
+            String bukkitMethods = String.format("sources/%s-method.s_", mcVersion);
+            String mojang = String.format("sources/%s-all.m_", mcVersion);
+            initialiseSpigot(bukkit, bukkitMethods);
+            initialiseMC(mojang);
 
-        FileWriter exportfile = new FileWriter(ex);
-        FileWriter document = new FileWriter(docfile);
-        document.write("<html><head><title>" + version + " Docs</title></head><body>");
-        int num = 0;
-        BufferedReader reader = new BufferedReader(new FileReader(mojang));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            num++;
+            BufferedReader reader = new BufferedReader(new FileReader(mojang));
+            String line;
 
-            line = line.replace("\n", "");
-            if (line.startsWith("#")) {
-                continue;
-            }
-
-            if (!currentClass.equals("") && line.startsWith("    ")) {
-                String[] args = line.substring(4).split(" ");
-                if (line.contains("(")) {
-                    String returnType = mapClassName(args[0]);
-                    String function = args[1];
-                    String functionName = function.substring(0, function.indexOf("("));
-                    if (functionName.contains(":")) {
-                        functionName = functionName.substring(function.lastIndexOf(":") + 1);
-                    }
-                    String obfuscatedName = args[3];
-
-                    String[] functionArguments = function.substring(function.indexOf("(") + 1, function.indexOf(")")).split(",");
-                    if (functionArguments[0].equals("")) {
-                        functionArguments = new String[]{"_"};
-                    }
-
-                    if (function.contains("<clinit>")) {
-                        continue;
-                    }
-                    if (function.contains("<init>")) {
-                        classConstructors.add(new HashMap<String, Object>() {{
-                            put("a", Arrays.asList(functionArguments));
-                        }});
-                        continue;
-                    }
-
-                    List<MappedMethod> spigotMapping = methodSpigotMappings.get(mapClassName(currentClass));
-                    boolean found = false;
-                    for (MappedMethod _method : spigotMapping) {
-                        if (!_method.getObfuscatedName().equals(obfuscatedName)) {
-                            continue;
-                        }
-                        if (Arrays.equals(_method.getArguments(), functionArguments)) {
-                            found = true;
-                        }
-                        if (!found) {
-                            continue;
-                        }
-
-                        classMethods.put(functionName, new MappedMethod(obfuscatedName, returnType, functionArguments));
-                        continue;
-                    }
-
-                    String fieldType = mapClassName(args[0]);
-                    String fieldName = args[1];
-                    String obfuscatedName = args[3];
-
-                    classFields.put(fieldName, new MappedField(fieldType, obfuscatedName));
+            while ((line = reader.readLine()) != null) {
+                line = line.replace("\n", "");
+                if (line.startsWith("#")) {
                     continue;
                 }
 
-                exportfile.write(mapClassName(current_class) + "\n");
-                document.write("<h2>" + mapClassName(current_class) + "</h2>");
-                document.write("<h3>Fields</h3>");
-                for (Map.Entry<String, MappedField> entry : classFields.entrySet()) {
-                    MappedField f = entry.getValue();
-                    exportfile.write("  " + f.type + " " + entry.getKey() + " " + f.obfuscatedName + "\n");
-                    exportfile.flush();
-                    document.write("<span><strong>" + entry.getKey() + " (" + f.obfuscatedName + ")</strong> - Returns " + f.type + "</span><br>");
-                    document.flush();
+                if (!currentClass.equals("") && line.startsWith("    ")) {
+                    String[] args = line.substring(4).split(" ");
+                    if (line.contains("(")) {
+                        String returnType = mapClassName(args[0]);
+                        String function = args[1];
+                        String functionName = function.substring(0, function.indexOf("("));
+                        if (functionName.contains(":")) {
+                            functionName = functionName.substring(function.lastIndexOf(":") + 1);
+                        }
+                        String obfuscatedName = args[3];
+
+                        String[] functionArguments = function.substring(function.indexOf("(") + 1, function.indexOf(")")).split(",");
+                        if (functionArguments[0].equals("")) {
+                            functionArguments = new String[]{"_"};
+                        }
+
+                        if (function.contains("<clinit>")) {
+                            continue;
+                        }
+                        if (function.contains("<init>")) {
+                            classConstructors.put("a", new MappedConstructor(functionArguments));
+                            continue;
+                        }
+
+                        List<MappedMethod> spigotMapping = methodSpigotMappings.get(mapClassName(currentClass));
+                        boolean found = false;
+                        for (MappedMethod _method : spigotMapping) {
+                            if (!_method.getObfuscatedName().equals(obfuscatedName)) {
+                                continue;
+                            }
+                            if (Arrays.equals(_method.getArguments(), functionArguments)) {
+                                found = true;
+                            }
+                            if (!found) {
+                                continue;
+                            }
+
+                            classMethods.put(functionName, new MappedMethod(obfuscatedName, returnType, functionArguments));
+                        }
+
+                        String fieldType = mapClassName(args[0]);
+                        String fieldName = args[1];
+                        obfuscatedName = args[3];
+
+                        classFields.put(fieldName, new MappedField(fieldType, obfuscatedName));
+                        continue;
+                    }
+                    currentClass = mapClassName(line.split(" ")[1]);
                 }
-                document.write("<h3>Methods</h3>");
-                for (Map.Entry<String, MappedMethod> entry : classMethods.entrySet()) {
-                    Method m = entry.getValue();
-                    exportfile.write("  " + m.type + " " + entry.getKey() + " " + String.join(",", m.args) + " " + m.obfuscatedName + "\n");
-                    exportfile.flush();
-                    document.write("<span><strong>" + entry.getKey() + " (" + String.join(",", m.args) + ")</strong> - Returns " + m.type + "</span><br><strong>Obfuscated Name: </strong>" + m.obfuscatedName + "<br>");
-                    document.flush();
-                }
-                document.write("<h3>Constructors</h3>");
-                for (Map<String, Object> constructor : classConstructors) {
-                    document.write("<span><strong>(" + String.join(",", (List<String>) constructor.get("a")) + ")</strong></span><br>");
-                    document.flush();
-                }
-                classFields.clear();
-                classMethods.clear();
-                classConstructors.clear();
-                currentClass = mapClassName(line.split(" ")[1]);
             }
-
-            exportfile.close();
-            document.write("</body></html>");
-            document.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-    }*/
+    }
 
-    public static File getMappingsFile(String prefix, String postfix, MinecraftVersion version) {
+    public boolean hasMappingsFile(String prefix, String postfix) {
         String tempDir = System.getProperty("java.io.tmpdir");
-        Path path = Paths.get(tempDir + "/personoid/mojang mappings/" + version.getName());
+        Path path = Paths.get(tempDir + "/personoid/mappings/" + version.getName());
+        if (!path.toFile().exists()) {
+            return false;
+        }
+        File[] files = path.toFile().listFiles();
+        if (files == null) {
+            return false;
+        }
+        for (File file : files) {
+            if (file.getName().startsWith(prefix) && file.getName().endsWith(postfix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public File getMappingsFile(String prefix, String postfix) {
+        String tempDir = System.getProperty("java.io.tmpdir");
+        Path path = Paths.get(tempDir + "/personoid/mappings/" + version.getName());
         if (!path.toFile().exists()) {
             throw new IllegalStateException("Mappings file does not exist");
         }
@@ -279,5 +264,17 @@ public class Mapper {
             }
         }
         throw new IllegalStateException("Mappings file does not exist");
+    }
+
+    public HashMap<String, MappedField> getClassFields() {
+        return classFields;
+    }
+
+    public HashMap<String, MappedMethod> getClassMethods() {
+        return classMethods;
+    }
+
+    public HashMap<String, MappedConstructor> getClassConstructors() {
+        return classConstructors;
     }
 }

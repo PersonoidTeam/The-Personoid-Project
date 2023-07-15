@@ -4,11 +4,13 @@ import com.personoid.api.ai.NPCBrain;
 import com.personoid.api.ai.looking.LookController;
 import com.personoid.api.ai.movement.MoveController;
 import com.personoid.api.ai.movement.Navigation;
+import com.personoid.api.npc.blocker.Blocker;
 import com.personoid.api.npc.injection.Feature;
 import com.personoid.api.npc.injection.Injector;
-import com.personoid.api.pathfinding.utils.BlockPos;
+import com.personoid.api.pathfinding.calc.utils.BlockPos;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.types.HandEnum;
+import com.personoid.nms.packet.Packets;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -28,7 +30,7 @@ public class NPC {
     private final LookController lookController = new LookController(this);
 
     private final NPCBrain brain = new NPCBrain(this);
-    private final BlockBreaker blockBreaker = new BlockBreaker(this);
+    private final Blocker blocker = new Blocker(this);
     private final NPCInventory inventory = new NPCInventory(this);
     final Injector injector = new Injector(this);
 
@@ -64,7 +66,7 @@ public class NPC {
     }
 
     public void remove() {
-        blockBreaker.stop();
+        blocker.stop();
     }
 
     public void tick() {
@@ -73,7 +75,7 @@ public class NPC {
         if (hasAI) {
             brain.tick();
             navigation.tick();
-            blockBreaker.tick();
+            blocker.tick();
             inventory.tick();
         }
         injector.callHook("tick");
@@ -105,10 +107,10 @@ public class NPC {
         if (vy > 0) return false;
         World world = getEntity().getWorld();
         BoundingBox box = getEntity().getBoundingBox();
-        double[] xVals = new double[] { box.getMinX(), box.getMaxX() };
-        double[] zVals = new double[] { box.getMinZ(), box.getMaxZ() };
-        for (double x : xVals) {
-            for (double z : zVals) {
+        double[] xBounds = new double[] { box.getMinX(), box.getMaxX() };
+        double[] zBounds = new double[] { box.getMinZ(), box.getMaxZ() };
+        for (double x : xBounds) {
+            for (double z : zBounds) {
                 Location loc = new Location(world, x, getLocation().getY() - 0.01, z);
                 Block block = world.getBlockAt(loc);
                 if (block.getType().isSolid() && LocationUtils.solidBoundsAt(loc)) {
@@ -206,8 +208,8 @@ public class NPC {
         return brain;
     }
 
-    public BlockBreaker getBlockBreaker() {
-        return blockBreaker;
+    public Blocker getBlocker() {
+        return blocker;
     }
 
     public NPCInventory getInventory() {
@@ -347,19 +349,20 @@ public class NPC {
         Bukkit.broadcastMessage("<" + getProfile().getName() + "> " + message);
     }
 
-    public void placeBlock(Location location, Material material) {
-        if (!material.isBlock() && !material.isAir()) {
-            throw new IllegalArgumentException("Material must be a block");
-        }
-        if (location.getWorld() != getWorld()) {
-            throw new IllegalArgumentException("Location must be in the same world as the NPC");
-        }
-        if (location.distance(getLocation()) > 5) {
-            throw new IllegalArgumentException("Location must be within 5 blocks of the NPC");
-        }
-        location.getBlock().setType(material);
-        Sound placeSound = material.createBlockData().getSoundGroup().getPlaceSound();
-        getWorld().playSound(location, placeSound, 1, 1);
+    public void moveTo(double x, double y) {
+        moveController.moveTo(x, y);
+    }
+
+    public void face(Location location) {
+        Vector dir = location.clone().subtract(getLocation().clone()).toVector();
+        Location facing = getLocation().clone().setDirection(dir);
+
+        Packets.rotateEntity(entity, facing.getYaw(), facing.getPitch()).send();
+        setRotation(facing.getYaw(), facing.getPitch());
+    }
+
+    public void face(double x, double y, double z) {
+        face(new Location(getWorld(), x, y, z));
     }
 
     // endregion

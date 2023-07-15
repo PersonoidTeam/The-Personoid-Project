@@ -1,6 +1,6 @@
 package com.personoid.api.utils;
 
-import com.personoid.api.pathfinding.utils.BlockPos;
+import com.personoid.api.pathfinding.calc.utils.BlockPos;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.math.Range;
 import com.personoid.api.utils.types.BlockTags;

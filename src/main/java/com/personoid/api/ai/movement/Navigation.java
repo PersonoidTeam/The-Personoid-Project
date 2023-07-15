@@ -1,12 +1,12 @@
 package com.personoid.api.ai.movement;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.Path;
-import com.personoid.api.pathfinding.pathfinder.NavigationPathFinder;
-import com.personoid.api.pathfinding.pathfinder.PathFinder;
-import com.personoid.api.pathfinding.goal.BlockGoal;
-import com.personoid.api.pathfinding.node.Node;
-import com.personoid.api.pathfinding.utils.BlockPos;
+import com.personoid.api.pathfinding.calc.Path;
+import com.personoid.api.pathfinding.calc.pathfinder.NavigationPathFinder;
+import com.personoid.api.pathfinding.calc.pathfinder.PathFinder;
+import com.personoid.api.pathfinding.calc.goal.BlockGoal;
+import com.personoid.api.pathfinding.calc.node.Node;
+import com.personoid.api.pathfinding.calc.utils.BlockPos;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.BlockTags;
@@ -34,17 +34,16 @@ public class Navigation {
             npc.getMoveController().moveTo(goal.getX(), goal.getZ());
         } else if (canUpdatePath()) {
             followPath();
-        }
-            /* else if (path != null && !path.isDone()) {
+        } else if (path != null && !path.isDone()) {
             Vector tempNPCPos = getTempNPCPos();
             Vector nextNPCPos = path.getNextNPCPos(npc);
             if (tempNPCPos.getY() > nextNPCPos.getY() && !npc.isOnGround() && Math.floor(tempNPCPos.getX()) == Math.floor(nextNPCPos.getX()) &&
                     Math.floor(tempNPCPos.getZ()) == Math.floor(nextNPCPos.getZ())) {
                 path.advance();
             }
-        }*/
+        }
 
-        if (shouldJump()) {
+        if (npc.getBrain().getAwareness().shouldJump(path)) {
             npc.getMoveController().jump();
         }
 
@@ -59,7 +58,8 @@ public class Navigation {
         if (path != null && options.showPath) {
             for (int i = 0; i < path.size(); i++) {
                 Node node = path.getNode(i);
-                Particle.DustTransition dustTransition = i == path.getNextNodeIndex() ? new Particle.DustTransition(Color.BLUE, Color.PURPLE, 0.8F) :
+                Particle.DustTransition dustTransition = i == path.getNextNodeIndex() ?
+                        new Particle.DustTransition(Color.BLUE, Color.PURPLE, 0.8F) :
                         new Particle.DustTransition(Color.RED, Color.ORANGE, 0.8F);
                 npc.getLocation().getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION,
                         node.getPos().toLocation(npc.getWorld()).clone().add(0.5F, 0, 0.5F), 3, dustTransition);
@@ -77,42 +77,16 @@ public class Navigation {
         return false;
     }
 
-    private boolean shouldJump() {
-        if (npc.getMoveController().isClimbing() || path == null || npc.isMovingInWater()) return false;
-        double blockadeDist = Integer.MAX_VALUE;
-        for (int i = 0; i <= 3; i++) {
-            Vector lookAheadPos = path.getNPCPosAtNode(npc, path.getNextNodeIndex() + i);
-            if (lookAheadPos.getY() < npc.getLocation().getY() - 2) {
-                return false; // jumping here would result in the npc taking fall damage
-            }
-            if (lookAheadPos.toLocation(npc.getWorld()).getBlock().getType().name().contains("STAIRS")) {
-                return false; // don't want to jump on stairs
-            }
-            if (lookAheadPos.getY() > npc.getLocation().getY() + options.maxStepHeight) {
-                blockadeDist = getTempNPCPos().distance(lookAheadPos);
-                break;
-            }
-        }
-        if (npc.isSprinting()) {
-            if (blockadeDist == 2) return false; // ONE LESS THAN SPRINTING JUMP DISTANCE
-            else if (blockadeDist > 2 && npc.isJumping()) return true; // ONE LESS THAN SPRINTING JUMP DISTANCE
-        }
-        if (npc.isOnGround() && groundTicks >= 4) {
-            if (npc.isSprinting() ) {
-                return blockadeDist <= 1.5F; // SPRINTING JUMP DISTANCE
-            } else {
-                return blockadeDist <= 1.25F; // WALKING JUMP DISTANCE
-            }
-        }
-        return false;
-    }
-
     public PathFinder getPathfinder() {
         return pathfinder;
     }
 
     public Path getCurrentPath() {
         return path;
+    }
+
+    public int getGroundTicks() {
+        return groundTicks;
     }
 
     public Path moveTo(Location location) {

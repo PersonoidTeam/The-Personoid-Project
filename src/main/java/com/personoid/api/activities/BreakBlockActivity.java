@@ -1,7 +1,6 @@
 package com.personoid.api.activities;
 
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
@@ -27,7 +26,6 @@ public class BreakBlockActivity extends Activity {
     }
 
     public BreakBlockActivity(Block block, boolean collectDrops) {
-        super(ActivityType.INTERACTION);
         this.block = block;
         originalMaterial = block.getType();
         this.collectDrops = collectDrops;
@@ -35,7 +33,7 @@ public class BreakBlockActivity extends Activity {
 
     @Override
     public void onStart(StartType startType) {
-        getNPC().getBlockBreaker().start(block);
+        getNPC().getBlocker().mine(block, false);
     }
 
     @Override
@@ -99,7 +97,7 @@ public class BreakBlockActivity extends Activity {
 
     @Override
     public void onStop(StopType stopType) {
-        getNPC().getBlockBreaker().stop();
+        getNPC().getBlocker().stop();
     }
 
     @Override
@@ -110,5 +108,15 @@ public class BreakBlockActivity extends Activity {
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return Priority.NORMAL;
+    }
+
+    @Override
+    public BoredomSettings getBoredomSettings() {
+        return null;
     }
 }

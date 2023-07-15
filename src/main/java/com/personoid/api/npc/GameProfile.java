@@ -35,6 +35,7 @@ public class GameProfile {
         return name;
     }
 
+    /*TODO: implement working solution*/
     public void setName(String name) {
         this.name = name;
 /*        npc.getEntity().setDisplayName(name);

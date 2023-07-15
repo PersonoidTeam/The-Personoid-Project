@@ -18,12 +18,32 @@ public class Result<T> {
         return type;
     }
 
+    public T getResult() {
+        return result;
+    }
+
     public <Z> Z getResult(Class<Z> clazz) {
         if (clazz.isInstance(result)) {
             return clazz.cast(result);
         } else {
             throw new IllegalArgumentException("Result is not of type " + clazz.getSimpleName());
         }
+    }
+
+    public static <T> Result<T> success() {
+        return new Result<>(Type.SUCCESS);
+    }
+
+    public static <T> Result<T> success(T result) {
+        return new Result<>(Type.SUCCESS, result);
+    }
+
+    public static <T> Result<T> failure() {
+        return new Result<>(Type.FAILURE);
+    }
+
+    public static <T> Result<T> failure(T result) {
+        return new Result<>(Type.FAILURE, result);
     }
 
     public enum Type {

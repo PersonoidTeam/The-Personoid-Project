@@ -4,36 +4,121 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 
+import java.util.HashMap;
+
 public class Logger {
+    private static final HashMap<String, Logger> loggers = new HashMap<>();
+    private static final ConsoleCommandSender sender = Bukkit.getConsoleSender();
+
     private final String logger;
-    private final ConsoleCommandSender sender = Bukkit.getConsoleSender();
+    private String title = "";
+
+    private int infoCount;
+    private int warningCount;
+    private int severeCount;
+    private int successCount;
 
     public Logger(String logger) {
         this.logger = logger;
     }
 
+    private Logger() {
+        this.logger = null;
+
+    }
+
+    public Logger title(String title) {
+        this.title = title + ": ";
+        return this;
+    }
+
     public static Logger get(String logger) {
-        return new Logger(logger);
+        if (loggers.containsKey(logger)) return loggers.get(logger);
+        Logger newLogger = new Logger(logger);
+        loggers.put(logger, newLogger);
+        return newLogger;
+    }
+
+    public static Logger get() {
+        return new Logger();
     }
 
     public void log(Level level, String message) {
-        sender.sendMessage("[" + logger + "] " + level + message);
+        if (logger == null) {
+            sender.sendMessage(title + level + message);
+        } else {
+            sender.sendMessage("[" + logger + "] " + title + level + message);
+        }
+        switch (level) {
+            case INFO:
+                infoCount++;
+                break;
+            case WARNING:
+                warningCount++;
+                break;
+            case SEVERE:
+                severeCount++;
+                break;
+            case SUCCESS:
+                successCount++;
+                break;
+        }
     }
 
     public void info(String message) {
-        sender.sendMessage("[" + logger + "] " + Level.INFO + message);
+        if (logger == null) {
+            sender.sendMessage(title + Level.INFO + message);
+        } else {
+            sender.sendMessage("[" + logger + "] " + title + Level.INFO + message);
+        }
+        infoCount++;
     }
 
     public void warning(String message) {
-        sender.sendMessage("[" + logger + "] " + Level.WARNING + message);
+        if (logger == null) {
+            sender.sendMessage(title + Level.WARNING + message);
+        } else {
+            sender.sendMessage("[" + logger + "] " + title + Level.WARNING + message);
+        }
+        warningCount++;
     }
 
     public void severe(String message) {
-        sender.sendMessage("[" + logger + "] " + Level.SEVERE + message);
+        if (logger == null) {
+            sender.sendMessage(title + Level.SEVERE + message);
+        } else {
+            sender.sendMessage("[" + logger + "] " + title + Level.SEVERE + message);
+        }
+        severeCount++;
     }
 
     public void success(String message) {
-        sender.sendMessage("[" + logger + "] " + Level.SUCCESS + message);
+        if (logger == null) {
+            sender.sendMessage(title + Level.SUCCESS + message);
+        } else {
+            sender.sendMessage("[" + logger + "] " + title + Level.SUCCESS + message);
+        }
+        successCount++;
+    }
+
+    public int getInfoCount() {
+        return infoCount;
+    }
+
+    public int getWarningCount() {
+        return warningCount;
+    }
+
+    public int getSevereCount() {
+        return severeCount;
+    }
+
+    public int getSuccessCount() {
+        return successCount;
+    }
+
+    public int getLogCount() {
+        return infoCount + warningCount + severeCount + successCount;
     }
 
     public enum Level {

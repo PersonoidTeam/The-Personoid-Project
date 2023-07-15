@@ -4,7 +4,7 @@ import com.google.common.collect.ForwardingMultimap;
 import com.personoid.api.npc.injection.CallbackInfo;
 import com.personoid.api.npc.injection.InjectionInfo;
 import com.personoid.api.utils.types.HandEnum;
-import com.personoid.nms.NMSBridge;
+import com.personoid.nms.NMS;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.Packets;
 import com.personoid.nms.packet.ReflectionUtils;
@@ -370,7 +370,7 @@ public class NPCOverrides implements Listener {
     public void move(Vector vector) {
         Class<?> moverType = ReflectionUtils.findClass(Packages.MOVER_TYPE, "EnumMoveType");
         Object selfMoverType = ReflectionUtils.getEnum(moverType, "SELF"); // SELF (a)
-        invoke("a", selfMoverType, NMSBridge.toVec3(vector)); // move
+        invoke("a", selfMoverType, NMS.toVec3(vector)); // move
     }
 
     public void setLocation(Location location) {
@@ -435,8 +435,8 @@ public class NPCOverrides implements Listener {
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException("Failed to create property whilst updating skin", e);
         }
-        NMSBridge.setEntityData(npc, 17, "byte", (byte)0x00);
-        NMSBridge.setEntityData(npc, 17, "byte", (byte)0xFF);
+        NMS.setEntityData(npc, 17, "byte", (byte)0x00);
+        NMS.setEntityData(npc, 17, "byte", (byte)0xFF);
     }
 
     public void setJumping(boolean jumping) {

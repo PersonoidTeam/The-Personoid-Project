@@ -231,7 +231,7 @@ public class ReflectionUtils {
             //return Bukkit.getBukkitVersion().split("-")[0].replace(".", "_");
             return Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
         } catch (ArrayIndexOutOfBoundsException e) {
-            return null;
+            throw new RuntimeException("Server version not found!");
         }
     }
 
