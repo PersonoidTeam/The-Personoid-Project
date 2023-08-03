@@ -1,226 +1,164 @@
 package com.personoid.nms.mappings;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.personoid.api.utils.bukkit.Logger;
 import com.personoid.nms.MinecraftVersion;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MappingsLoader {
-    private static final String VERSION_MANIFEST_URL = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
-
     private final MinecraftVersion version;
+    private final Map<String, String> classMappings = new HashMap<>();
     private final Map<String, MappedClass> classes = new HashMap<>();
 
     public MappingsLoader(MinecraftVersion version) {
         this.version = version;
     }
 
-    public void loadMappings() {
-        if (!hasMappingsFile("minecraft", ".mapping")) {
-            Logger.get().severe("downloading mappings...");
-            downloadMappings(this::createMappings);
-        } else {
-            createMappings();
-        }
-        String string = "java.lang.Long minSq -> f";
-        Logger.get().severe(String.join(",", string.replace("-> ", "").split(" ")));
-        string = "84:99:com.google.gson.JsonElement serializeToJson() -> c";
-        Logger.get().severe(String.join(",", string.replace("-> ", "").split(" ")));
-    }
+    private void createClassMappings(File spigotClasses, File mojangMappings) {
+        try {
+            Map<String, String> spigotClassMappings = new HashMap<>();
 
-    private void downloadMappings(Runnable callback) {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpGet request = new HttpGet(VERSION_MANIFEST_URL);
-            HttpResponse response = client.execute(request);
-            if (response.getStatusLine().getStatusCode() == 200) {
-                JsonObject json = new Gson().fromJson(EntityUtils.toString(response.getEntity()), JsonObject.class);
-                JsonArray versions = json.getAsJsonArray("versions");
-                for (JsonElement jsonVersion : versions) {
-                    String id = jsonVersion.getAsJsonObject().get("id").getAsString();
-                    if (id.equals(version.getDotName())) {
-                        String packageUrl = jsonVersion.getAsJsonObject().get("url").getAsString();
-                        String mappingsUrl = getVersionMappingsUrl(packageUrl);
-                        if (mappingsUrl != null) {
-                            writeMappingsToFile(mappingsUrl, callback);
-                        } else {
-                            throw new RuntimeException("Version mappings not found for " + this.version.getName());
-                        }
-                        return;
-                    }
-                }
-            } else if (response.getStatusLine().getStatusCode() == 404) {
-                throw new RuntimeException("Version package not found for " + this.version.getName());
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Could not get version package for " + this.version.getName(), e);
-        }
-    }
-
-    private String getVersionMappingsUrl(String packageUrl) {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpGet request = new HttpGet(packageUrl);
-            HttpResponse response = client.execute(request);
-            if (response.getStatusLine().getStatusCode() == 200) {
-                JsonObject json = new Gson().fromJson(EntityUtils.toString(response.getEntity()), JsonObject.class);
-                JsonObject downloads = json.getAsJsonObject("downloads");
-                if (downloads != null && downloads.has("server_mappings")) {
-                    JsonObject serverMappings = downloads.getAsJsonObject("server_mappings");
-                    if (serverMappings.has("url")) {
-                        return serverMappings.get("url").getAsString();
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Could not get version mappings URL for " + this.version.getName(), e);
-        }
-        return null;
-    }
-
-    private void writeMappingsToFile(String mappingsUrl, Runnable callback) {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpGet request = new HttpGet(mappingsUrl);
-            client.execute(request, response -> {
-                if (response.getStatusLine().getStatusCode() == 200) {
-                    String tempDir = System.getProperty("java.io.tmpdir");
-                    Path path = Paths.get(tempDir, "personoid", "mappings", version.getName());
-                    if (!Files.exists(path)) {
-                        Files.createDirectories(path);
-                    }
-                    Logger.get().severe("Writing mappings to file...");
-                    Path mappings = Files.createTempFile(path, "minecraft_", ".mapping");
-                    try (InputStream inputStream = response.getEntity().getContent();
-                         OutputStream outputStream = Files.newOutputStream(mappings)) {
-                        byte[] buffer = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = inputStream.read(buffer)) != -1) {
-                            outputStream.write(buffer, 0, bytesRead);
-                        }
-                    }
-                    Logger.get().severe("Written mappings to file");
-                    callback.run();
-                } else if (response.getStatusLine().getStatusCode() == 404) {
-                    throw new RuntimeException("Mappings not found for " + version.getName());
-                }
-                return null;
-            });
-        } catch (IOException e) {
-            throw new RuntimeException("Could not download mappings for " + version.getName(), e);
-        }
-    }
-
-
-    public void createMappings() {
-        Logger.get().severe("creating mappings...");
-        try (InputStream mappings = Files.newInputStream(getMappingsFile("minecraft", ".mapping").toPath())) {
-            Map<String, MappedField> currentFields = new HashMap<>();
-            Map<String, MappedMethod> currentMethods = new HashMap<>();
-            List<MappedConstructor> currentConstructors = new ArrayList<>();
-            String currentClass = null;
-            BufferedReader reader = new BufferedReader(new InputStreamReader(mappings, StandardCharsets.UTF_8));
+            BufferedReader reader = new BufferedReader(new FileReader(spigotClasses));
             String line;
             while ((line = reader.readLine()) != null) {
                 line = line.replace("\n", "");
                 if (line.startsWith("#")) {
                     continue;
                 }
-
-                if (!currentClass.equals("") && line.startsWith("    ")) {
-                    String[] args = line.substring(4).split(" ");
-                    if (line.contains("(")) {
-                        String returnType = mapClassName(args[0]);
-                        String function = args[1];
-                        String functionName = function.substring(0, function.indexOf("("));
-                        if (functionName.contains(":")) {
-                            functionName = functionName.substring(function.lastIndexOf(":") + 1);
-                        }
-                        String obfuscatedName = args[3];
-
-                        String[] functionArguments = function.substring(function.indexOf("(") + 1, function.indexOf(")")).split(",");
-                        if (functionArguments[0].equals("")) {
-                            functionArguments = new String[]{"_"};
-                        }
-
-                        if (function.contains("<clinit>")) {
-                            continue;
-                        }
-                        if (function.contains("<init>")) {
-                            classConstructors.put("a", new MappedConstructor(functionArguments));
-                            continue;
-                        }
-
-                        List<MappedMethod> spigotMapping = methodSpigotMappings.get(mapClassName(currentClass));
-                        boolean found = false;
-                        for (MappedMethod _method : spigotMapping) {
-                            if (!_method.getObfuscatedName().equals(obfuscatedName)) {
-                                continue;
-                            }
-                            if (Arrays.equals(_method.getArguments(), functionArguments)) {
-                                found = true;
-                            }
-                            if (!found) {
-                                continue;
-                            }
-
-                            classMethods.put(functionName, new MappedMethod(obfuscatedName, returnType, functionArguments));
-                        }
-
-                        String fieldType = mapClassName(args[0]);
-                        String fieldName = args[1];
-                        obfuscatedName = args[3];
-
-                        classFields.put(fieldName, new MappedField(fieldType, obfuscatedName));
-                        continue;
-                    }
-                    currentClass = mapClassName(line.split(" ")[1]);
-                }
+                String[] info = line.split(" ");
+                spigotClassMappings.put(info[0], info[1]);
             }
-            Logger.get().severe("created mappings");
-            Logger.get().severe("mappings: " + classes.size());
+            reader.close();
+
+            reader = new BufferedReader(new FileReader(mojangMappings));
+            while ((line = reader.readLine()) != null) {
+                line = line.replace("\n", "").replace(":", "");
+                if (line.startsWith("#") || line.startsWith("    ")) {
+                    continue;
+                }
+
+                String[] classDetails = line.split(" -> ");
+                String className;
+                if (spigotClassMappings.containsKey(classDetails[1])) {
+                    className = spigotClassMappings.get(classDetails[1]);
+                } else {
+                    className = classDetails[0];
+                }
+
+                classMappings.put(classDetails[0], className.replace("/", "."));
+            }
+            reader.close();
         } catch (IOException e) {
-            throw new RuntimeException("Could not read mappings file for " + this.version.getName(), e);
+            throw new RuntimeException(e);
         }
     }
 
-    public boolean hasMappingsFile(String prefix, String postfix) {
-        return getMappingsFile(prefix, postfix) != null;
+    public void createMappings() {
+        Logger.get("Personoid").info("Creating mappings...");
+        createClassMappings(
+                getMappingsFile("spigot_classes", ".mapping"),
+                getMappingsFile("mojang", ".mapping")
+        );
+
+        InputStream mappings;
+        try {
+            mappings = new FileInputStream(getMappingsFile("mojang", ".mapping"));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Could not create input stream from .mapping file", e);
+        }
+
+        try (InputStreamReader streamReader = new InputStreamReader(mappings, StandardCharsets.UTF_8)) {
+            BufferedReader reader = new BufferedReader(streamReader);
+
+            Map<String, MappedField> currentFields = new HashMap<>();
+            Map<String, MappedMethod> currentMethods = new HashMap<>();
+            List<MappedConstructor> currentConstructors = new ArrayList<>();
+            String currentClass = null;
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("#") || line.contains("<clinit>")) {
+                    continue;
+                }
+
+                // class
+                String[] details = Arrays.stream(line.replace("-> ", "")
+                        .split(" ")).map(String::trim).toArray(String[]::new);
+                if (!line.startsWith("  ")) {
+                    if (currentClass != null) {
+                        classes.put(currentClass, new MappedClass(currentMethods, currentFields, currentConstructors));
+                        currentFields = new HashMap<>();
+                        currentMethods = new HashMap<>();
+                        currentConstructors = new ArrayList<>();
+                    }
+                    if (details.length > 0) {
+                        currentClass = details[0];
+                    }
+                    continue;
+                }
+
+                line = line.trim();
+
+                if (Character.isDigit(line.charAt(0))) {
+                    String[] split = line.split(":");
+                    line = split[split.length - 1];
+                    details = Arrays.stream(line.replace("-> ", "")
+                            .split(" ")).map(String::trim).toArray(String[]::new);
+
+                    String[] args = Arrays.stream(details[1].substring(details[1].indexOf('(') + 1, details[1].indexOf(')'))
+                            .split(",")).filter(arg -> !arg.isEmpty()).toArray(String[]::new);
+                    if (line.contains("void <init>")) {
+                        // constructor
+                        currentConstructors.add(new MappedConstructor(args));
+                    } else {
+                        // method
+                        String methodName = details[1].substring(0, details[1].indexOf('('));
+                        currentMethods.put(methodName, new MappedMethod(details[2], details[0], args));
+                    }
+                    continue;
+                }
+
+                // field
+                if (details.length == 3) {
+                    currentFields.put(details[1], new MappedField(details[0], details[2]));
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create mappings!", e);
+        }
+        Logger.get("Personoid").info("Successfully created mappings");
     }
 
     public File getMappingsFile(String prefix, String postfix) {
         String tempDir = System.getProperty("java.io.tmpdir");
-        Path path = Paths.get(tempDir, "personoid", "mappings", version.getName());
-        if (Files.isDirectory(path)) {
-            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(path)) {
-                for (Path file : dirStream) {
-                    String fileName = file.getFileName().toString();
-                    if (Files.isRegularFile(file) && fileName.startsWith(prefix) && fileName.endsWith(postfix)) {
-                        return file.toFile();
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+        Path path = Paths.get(tempDir + "/personoid/mappings/" + version.getName());
+        if (!path.toFile().exists()) {
+            throw new IllegalStateException("Mappings file does not exist");
+        }
+        File[] files = path.toFile().listFiles();
+        if (files == null) {
+            throw new IllegalStateException("Mappings file does not exist");
+        }
+        for (File file : files) {
+            if (file.getName().startsWith(prefix) && file.getName().endsWith(postfix)) {
+                return file;
             }
         }
-        return null;
+        throw new IllegalStateException("Mappings file does not exist");
     }
 
-    public Map<String, MappedClass> getClasses() {
-        return classes;
+    public String getSpigotClassName(String mojangClass) {
+        if (classMappings.containsKey(mojangClass)) {
+            return classMappings.get(mojangClass);
+        }
+        return mojangClass;
+    }
+
+    public MappedClass getClass(String mojangClass) {
+        return classes.get(mojangClass);
     }
 }
