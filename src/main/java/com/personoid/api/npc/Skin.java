@@ -18,9 +18,7 @@ import org.json.simple.parser.ParseException;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
@@ -52,12 +50,12 @@ public class Skin implements Serializable {
     public static Skin get(String name) {
         return CACHE.getOrPut(name, () -> {
             try {
-                URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
+                URL url = new URI("https://api.mojang.com/users/profiles/minecraft/" + name).toURL();
                 InputStreamReader reader = new InputStreamReader(url.openStream());
                 String uuid = JsonParser.parseReader(reader).getAsJsonObject().get("id").getAsString();
                 return getFromUUID(uuid);
-            } catch (IOException e) {
-                throw new RuntimeException("Error ", e);
+            } catch (IOException | URISyntaxException e) {
+                throw new RuntimeException("Error whilst getting skin from profile name", e);
             }
         });
     }
@@ -69,13 +67,13 @@ public class Skin implements Serializable {
     private static Skin getFromUUID(String uuid) {
         return CACHE.getOrPut(uuid, () -> {
             try {
-                URL url2 = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid + "?unsigned=false");
+                URL url2 = new URI("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid + "?unsigned=false").toURL();
                 InputStreamReader reader2 = new InputStreamReader(url2.openStream());
                 JsonObject property = JsonParser.parseReader(reader2).getAsJsonObject().get("properties").getAsJsonArray().get(0).getAsJsonObject();
                 String texture = property.get("value").getAsString();
                 String signature = property.get("signature").getAsString();
                 return new Skin(texture, signature);
-            } catch (Exception e) {
+            } catch (IOException | URISyntaxException e) {
                 throw new RuntimeException("Error while getting skin from uuid", e);
             }
         });

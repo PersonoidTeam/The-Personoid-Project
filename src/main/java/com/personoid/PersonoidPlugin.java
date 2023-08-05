@@ -28,7 +28,7 @@ public class PersonoidPlugin extends JavaPlugin {
         Config.reload();
         initReloader();
         LOGGER.info("Successfully loaded Personoid plugin.");
-        Method method = Mappings.get().getMethod("net.minecraft.world.entity.LivingEntity", "getHealth");
+        Method method = Mappings.get().getMethod(CommonPackages.LIVING_ENTITY, "getHealth");
         Logger.get().severe("method: " + method);
     }
 

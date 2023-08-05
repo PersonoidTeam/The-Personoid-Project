@@ -1,15 +1,24 @@
 package com.personoid.nms;
 
 import com.personoid.api.npc.NPC;
+import com.personoid.api.utils.Parameter;
 import com.personoid.api.utils.cache.Cache;
+import com.personoid.nms.mappings.Mappings;
+import com.personoid.nms.packet.Package;
 import com.personoid.nms.packet.Packages;
+import com.personoid.nms.packet.Packet;
 import com.personoid.nms.packet.ReflectionUtils;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.List;
 
 public class NMS {
     private static final Cache CACHE = new Cache("NMSBridge");
@@ -116,5 +125,71 @@ public class NMS {
 
     public static double getItemSpeed(ItemStack item) {
         return 0;
+    }
+
+    private static List<String> getProtocolPackages() {
+        return Arrays.asList(
+                Package.PROTOCOL.sub("game").toString(),
+                Package.PROTOCOL.sub("handshake").toString(),
+                Package.PROTOCOL.sub("login").toString(),
+                Package.PROTOCOL.sub("status").toString()
+        );
+    }
+
+    public static Packet createPacket(String className, Parameter... parameters) {
+        String mappedClassName = Mappings.get().getMappedClassName(className);
+        Class<?> packetClass = null;
+        for (String subPackage : getProtocolPackages()) {
+            try {
+                packetClass = Class.forName(subPackage + "." + mappedClassName);
+            } catch (ClassNotFoundException ignored) {}
+        }
+        if (packetClass == null) {
+            throw new RuntimeException("Could not find packet " + className + " in sub packages");
+        }
+        try {
+            Class<?>[] types = new Class[parameters.length];
+            for (int i = 0; i < parameters.length; i++) {
+                types[i] = parameters[i].getType();
+            }
+            Object[] args = new Object[parameters.length];
+            for (int i = 0; i < parameters.length; i++) {
+                args[i] = parameters[i].getValue();
+            }
+            Object packetInstance = packetClass.getConstructor(types).newInstance(args);
+            return new Packet() {
+                @Override
+                public void send(Player to) {
+                    try {
+                        Object craftPlayer = to.getClass().getMethod("getHandle").invoke(to);
+                        Field connField = craftPlayer.getClass().getField("b");
+                        connField.setAccessible(true);
+                        Object connection = connField.get(craftPlayer);
+                        Class<?> packetClass = Class.forName(Package.PROTOCOL.sub("Packet").toString());
+                        connection.getClass().getMethod("a", packetClass).invoke(connection, packetInstance);
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | NoSuchFieldException | ClassNotFoundException e) {
+                        throw new RuntimeException("Could not get handle of player", e);
+                    }
+                }
+            };
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException("Could not create packet " + className, e);
+        }
+    }
+
+    public static Object getPlayer(Player player) {
+        try {
+            return player.getClass().getMethod("getHandle").invoke(player);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException("Could not get handle of player", e);
+        }
+    }
+
+    public static Object getEntity(Entity entity) {
+        try {
+            return entity.getClass().getMethod("getHandle").invoke(entity);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException("Could not get handle of entity", e);
+        }
     }
 }

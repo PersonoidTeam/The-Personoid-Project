@@ -36,7 +36,7 @@ public class NPCBuilder {
             for (String method : npc.getOverrides().getMethods()) {
                 builder = builder.method(ElementMatchers.isMethod()
                         .and(ElementMatchers.named(method))
-                        .and(ElementMatchers.returns(TypeDescription.VOID))
+                        .and(ElementMatchers.returns(TypeDescription.UNDEFINED))
                         .and(ElementMatchers.takesNoArguments())
                 ).intercept(MethodCall.invokeSuper().andThen(MethodCall.invoke(NPCOverrides.class.getMethod(method)).on(npc.getOverrides())));
             }

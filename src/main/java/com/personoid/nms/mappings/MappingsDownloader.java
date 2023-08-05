@@ -52,7 +52,7 @@ public class MappingsDownloader {
             Logger.get("Personoid").info("Spigot class mappings found, skipping download...");
         }
 
-        Logger.get("Personoid").info("Checking for spigot method mappings...");
+/*        Logger.get("Personoid").info("Checking for spigot method mappings...");
         if (!hasMappingsFile("spigot_methods", ".mapping")) {
             Logger.get("Personoid").info("Spigot method mappings not found, downloading...");
 
@@ -62,7 +62,7 @@ public class MappingsDownloader {
             Logger.get("Personoid").info("Downloaded spigot method mappings");
         } else {
             Logger.get("Personoid").info("Spigot method mappings found, skipping download...");
-        }
+        }*/
 
         Logger.get("Personoid").info("Checking for mojang mappings...");
         if (!hasMappingsFile("mojang", ".mapping")) {

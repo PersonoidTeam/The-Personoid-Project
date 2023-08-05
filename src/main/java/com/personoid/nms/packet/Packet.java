@@ -16,7 +16,7 @@ public abstract class Packet {
 
     protected abstract void send(Player to);
 
-    public static Packet mergePackets(Packet... packets) {
+    public static Packet merge(Packet... packets) {
         return new Packet() {
             @Override
             protected void send(Player to) {

@@ -231,7 +231,8 @@ public class MoveController {
             Vector vec3d = (d > 1.0 ? worldVector.normalize() : worldVector).multiply(speed);
             float f = (float) Math.sin(yaw * 0.017453292F);
             float g = (float) Math.cos(yaw * 0.017453292F);
-            return new Vector(vec3d.getX() * (double)g + vec3d.getZ() * (double)f, vec3d.getY(), vec3d.getZ() * (double)g - vec3d.getX() * (double)f);
+            return new Vector(vec3d.getX() * (double) g + vec3d.getZ() * (double) f,
+                    vec3d.getY(), vec3d.getZ() * (double) g - vec3d.getX() * (double) f);
         }
     }
 

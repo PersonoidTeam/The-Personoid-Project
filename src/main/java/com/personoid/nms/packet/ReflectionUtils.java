@@ -1,7 +1,6 @@
 package com.personoid.nms.packet;
 
 import com.personoid.api.utils.cache.Cache;
-import com.personoid.api.utils.Parameter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -12,7 +11,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -99,46 +97,6 @@ public class ReflectionUtils {
         throw new RuntimeException("Failed to invoke method for class " + obj.getClass().getName() + " ( " + methodName + ")");
     }
 
-    public static Packet createPacket(String className, Parameter... parameters) throws ClassNotFoundException {
-        Class<?> packetClass = null;
-        for (String subPackage : getPacketSubPackages()) {
-            try {
-                packetClass = Class.forName(subPackage + "." + className);
-            } catch (ClassNotFoundException ignored) {}
-        }
-        if (packetClass == null) {
-            throw new ClassNotFoundException("Could not find packet " + className + " in sub packages");
-        }
-        try {
-            Class<?>[] types = new Class[parameters.length];
-            for (int i = 0; i < parameters.length; i++) {
-                types[i] = parameters[i].getType();
-            }
-            Object[] args = new Object[parameters.length];
-            for (int i = 0; i < parameters.length; i++) {
-                args[i] = parameters[i].getValue();
-            }
-            Object packetInstance = packetClass.getConstructor(types).newInstance(args);
-            return new Packet() {
-                @Override
-                public void send(Player to) {
-                    try {
-                        Object craftPlayer = to.getClass().getMethod("getHandle").invoke(to);
-                        Field connField = craftPlayer.getClass().getField("b");
-                        connField.setAccessible(true);
-                        Object connection = connField.get(craftPlayer);
-                        Class<?> packetClass = Class.forName("net.minecraft.network.protocol.Packet");
-                        connection.getClass().getMethod("a", packetClass).invoke(connection, packetInstance);
-                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | NoSuchFieldException | ClassNotFoundException e) {
-                        throw new RuntimeException("Could not get handle of player", e);
-                    }
-                }
-            };
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("Could not create packet " + className, e);
-        }
-    }
-
     public static Object getEntityPlayer(Player player) {
         try {
             return player.getClass().getMethod("getHandle").invoke(player);
@@ -215,15 +173,6 @@ public class ReflectionUtils {
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("Could not get NMS enum", e);
         }
-    }
-
-    private static List<String> getPacketSubPackages() {
-        return Arrays.asList(
-                Packages.PACKETS.plus("game"),
-                Packages.PACKETS.plus("handshake"),
-                Packages.PACKETS.plus("login"),
-                Packages.PACKETS.plus("status")
-        );
     }
 
     public static String getVersion() {

@@ -26,6 +26,18 @@ public class Mappings {
         Logger.get("Personoid").info("Finished initialising mappings!");
     }
 
+    public String getMappedClassName(String clazz) {
+        return loader.getSpigotClassName(clazz);
+    }
+
+    public Class<?> getMappedClass(String clazz) {
+        try {
+            return Class.forName(loader.getSpigotClassName(clazz));
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Field getField(String clazz, String fieldName) {
         try {
             MappedClass mappedClass = loader.getClass(clazz);
@@ -36,7 +48,8 @@ public class Mappings {
             if (mappedField == null) {
                 throw new RuntimeException("Failed to find mapped field!");
             }
-            return Class.forName(loader.getSpigotClassName(clazz)).getField(mappedField.getObfuscatedName());
+            Class<?> spigotClass = Class.forName(loader.getSpigotClassName(clazz));
+            return spigotClass.getField(mappedField.getObfuscatedName());
         } catch (ClassNotFoundException | NoSuchFieldException e) {
             throw new RuntimeException(e);
         }
@@ -56,7 +69,8 @@ public class Mappings {
             if (!Arrays.equals(mappedMethod.getArguments(), arguments)) {
                 throw new RuntimeException("Method arguments of mapped method do not match!");
             }
-            return Class.forName(loader.getSpigotClassName(clazz)).getMethod(mappedMethod.getObfuscatedName(), parameters);
+            Class<?> spigotClass = Class.forName(loader.getSpigotClassName(clazz));
+            return spigotClass.getMethod(mappedMethod.getObfuscatedName(), parameters);
         } catch (NoSuchMethodException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

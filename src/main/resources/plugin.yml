@@ -1,9 +1,9 @@
 name: Personoid
 version: '${project.version}'
 main: com.personoid.PersonoidPlugin
-authors: [ DefineDoddy, notnotnotswipez ]
+author: DefineDoddy
 description: A plugin that allows easy access to creating and modifying NPCs
-api-version: 1.14
+api-version: 1.17
 commands:
   personoid:
     description: Accesses Personoid's configurations
