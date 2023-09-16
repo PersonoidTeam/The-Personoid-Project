@@ -3,7 +3,7 @@ package com.personoid.nms.packet;
 import com.personoid.api.utils.Parameter;
 import com.personoid.api.utils.cache.Cache;
 import com.personoid.nms.NMS;
-import com.personoid.nms.mappings.Mappings;
+import com.personoid.nms.mappings.NMSMethod;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -11,29 +11,28 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 
-import static com.personoid.nms.packet.ReflectionUtils.*;
+import static com.personoid.nms.packet.NMSReflection.findClass;
 
 public class Packets {
     private static final Cache CACHE = new Cache("Packets");
 
     static {
-        CACHE.put("server_player", Package.SERVER_PLAYER.getMappedClass());
+        CACHE.put("server_player", Package.SERVER_PLAYER_CLASS.getMappedClass());
         CACHE.put("block_position", Package.minecraft("core.BlockPos").getMappedClass());
     }
 
     public static Packet addPlayer(Player player, boolean tabListed) {
-        Parameter playerParam = new Parameter(Package.PLAYER.getMappedClass(), NMS.getPlayer(player));
+        Parameter playerParam = new Parameter(Package.PLAYER_CLASS.getRawClass(), NMS.getPlayer(player));
         Packet addPlayerPacket = NMS.createPacket("ClientboundAddPlayerPacket", playerParam);
         return Packet.merge(showPlayer(player, tabListed), addPlayerPacket);
     }
 
     public static Packet showPlayer(Player player, boolean tabListed) {
-        Class<?> action = Package.PROTOCOL.sub("game.ClientboundPlayerInfoUpdatePacket$Action").getMappedClass();
-        Enum addPlayerAction = (Enum) ReflectionUtils.getEnum(action, "ADD_PLAYER");
-        Enum updateListedAction = (Enum) ReflectionUtils.getEnum(action, "UPDATE_LISTED");
+        Class<?> action = Package.PROTOCOL.sub("game.ClientboundPlayerInfoUpdatePacket$Action").getRawClass();
+        Enum addPlayerAction = (Enum) NMSReflection.getEnum(action, "ADD_PLAYER");
+        Enum updateListedAction = (Enum) NMSReflection.getEnum(action, "UPDATE_LISTED");
         EnumSet enumSet = EnumSet.of(addPlayerAction);
         if (tabListed) enumSet.add(updateListedAction);
         Parameter actionParams = new Parameter(EnumSet.class, enumSet);
@@ -44,9 +43,9 @@ public class Packets {
     }
 
     public static Packet updateDisplayName(Player player) {
-        Class<?> action = Package.PROTOCOL.sub("game.ClientboundPlayerInfoUpdatePacket$Action").getMappedClass();
-        Parameter updateParam = new Parameter(action, ReflectionUtils.getEnum(action, "UPDATE_DISPLAY_NAME"));
-        Parameter playerParam = new Parameter(Collection.class, Collections.singletonList(ReflectionUtils.getEntityPlayer(player)));
+        Class<?> action = Package.PROTOCOL.sub("game.ClientboundPlayerInfoUpdatePacket$Action").getRawClass();
+        Parameter updateParam = new Parameter(action, NMSReflection.getEnum(action, "UPDATE_DISPLAY_NAME"));
+        Parameter playerParam = new Parameter(Collection.class, Collections.singletonList(NMSReflection.getNMSPlayer(player)));
         return NMS.createPacket("ClientboundPlayerInfoUpdatePacket", updateParam.enumSet(), playerParam);
     }
 
@@ -92,7 +91,7 @@ public class Packets {
         byte yawByte = (byte) ((yaw % 360) * 256 / 360);
         byte pitchByte = (byte) ((pitch % 360) * 256 / 360);
         Parameter entityParam = CACHE.getOrPut("entity", () -> {
-            return new Parameter(findClass(Packages.ENTITY, "Entity"), ReflectionUtils.getNMSEntity(entity));
+            return new Parameter(findClass(Packages.ENTITY, "Entity"), NMSReflection.getNMSEntity(entity));
         });
         Packet headPacket = NMS.createPacket("ClientboundRotateHeadPacket", entityParam, new Parameter(byte.class, yawByte));
 /*            Packet entityPacket = createPacket("PacketPlayOutEntity$PacketPlayOutEntityLook", new Parameter(int.class, entity.getEntityId()),
@@ -104,30 +103,26 @@ public class Packets {
     }
 
     public static Packet updateEntityData(Entity entity) {
-        try {
-            Method getEntityData = Mappings.get().getMethod(Package.ENTITY.toString(), "getEntityData");
-            Object entityData = getEntityData.invoke(NMS.getEntity(entity));
-            if (ReflectionUtils.getVersionInt() >= 19 && ReflectionUtils.getSubVersionInt() <= 2) {
-                return NMS.createPacket("ClientboundSetEntityDataPacket", new Parameter(int.class, entity.getEntityId()),
-                        new Parameter(entityData.getClass(), entityData), new Parameter(boolean.class, false));
-            } else {
-                Method getNonDefaultValues = Mappings.get().getMethod(Package.ENTITY_DATA.toString(), "getNonDefaultValues");
-                Object nonDefaultValues = getNonDefaultValues.invoke(entityData);
-                return NMS.createPacket("ClientboundSetEntityDataPacket", new Parameter(int.class, entity.getEntityId()),
-                        new Parameter(List.class, nonDefaultValues));
-            }
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        NMSMethod getEntityData = Package.ENTITY_CLASS.getMappedClass().getMethod("getEntityData");
+        Object entityData = getEntityData.invoke(NMS.getEntity(entity));
+        if (NMSReflection.getVersionInt() >= 19 && NMSReflection.getSubVersionInt() <= 2) {
+            return NMS.createPacket("ClientboundSetEntityDataPacket", new Parameter(int.class, entity.getEntityId()),
+                    new Parameter(entityData.getClass(), entityData), new Parameter(boolean.class, false));
+        } else {
+            NMSMethod getNonDefaultValues = Package.ENTITY_DATA_CLASS.getMappedClass().getMethod("getNonDefaultValues");
+            Object nonDefaultValues = getNonDefaultValues.invoke(entityData);
+            return NMS.createPacket("ClientboundSetEntityDataPacket", new Parameter(int.class, entity.getEntityId()),
+                    new Parameter(List.class, nonDefaultValues));
         }
     }
 
     public static Packet entityEquipment(int entityId, Map<EquipmentSlot, ItemStack> equipment) {
-        Class<?> pairClass = Package.mojang("datafixers.util.Pair").getMappedClass();
+        Class<?> pairClass = Package.mojang("datafixers.util.Pair").getRawClass();
         List<Object> list = new ArrayList<>();
         equipment.forEach((slot, item) -> {
             try {
                 Object pair = pairClass.getConstructor(Object.class, Object.class)
-                        .newInstance(ReflectionUtils.getEquipmentSlot(slot), ReflectionUtils.getItemStack(item));
+                        .newInstance(NMSReflection.getEquipmentSlot(slot), NMSReflection.getNMSItemStack(item));
                 list.add(pair);
             } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();

@@ -1,8 +1,6 @@
 package com.personoid.api.npc;
 
-import com.personoid.api.utils.bukkit.Logger;
 import com.personoid.nms.NMS;
-import com.personoid.nms.mappings.Mappings;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.Packets;
 import net.bytebuddy.ByteBuddy;
@@ -15,12 +13,11 @@ import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.personoid.nms.packet.ReflectionUtils.*;
+import static com.personoid.nms.packet.NMSReflection.*;
 
 public class NPCRegistry {
     private static final List<NPC> NPCs = new ArrayList<>();
@@ -56,13 +53,11 @@ public class NPCRegistry {
     }
 
     public void spawnNPC(NPC npc, Location location) {
-        Method method = Mappings.get().getMethod("net.minecraft.world.entity.LivingEntity", "getHealth");
-        Logger.get().info("GET HEALTH METHOD: " + method.getName());
         NMS.setPos(npc, new Vector(location.getX(), location.getY(), location.getZ()));
         Packets.addPlayer(npc.getEntity(), npc.getProfile().isVisibleInTab()).send();
         try {
             Class<?> serverPlayerClass = findClass(Packages.SERVER_LEVEL, "EntityPlayer");
-            Object serverPlayer = getEntityPlayer(npc.getEntity());
+            Object serverPlayer = getNMSPlayer(npc.getEntity());
             Class<?> connClass = findClass(Packages.SERVER_NETWORK, "PlayerConnection"); // ServerGamePacketListenerImpl
 
             Object server = invoke(Bukkit.getServer(), "getServer");

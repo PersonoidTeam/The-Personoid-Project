@@ -10,7 +10,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,8 +27,6 @@ public class PersonoidPlugin extends JavaPlugin {
         Config.reload();
         initReloader();
         LOGGER.info("Successfully loaded Personoid plugin.");
-        Method method = Mappings.get().getMethod(CommonPackages.LIVING_ENTITY, "getHealth");
-        Logger.get().severe("method: " + method);
     }
 
     @Override

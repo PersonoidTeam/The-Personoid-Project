@@ -11,8 +11,8 @@ import java.util.*;
 
 public class MappingsLoader {
     private final MinecraftVersion version;
-    private final Map<String, String> classMappings = new HashMap<>();
-    private final Map<String, MappedClass> classes = new HashMap<>();
+    private final Map<String, String> classMappings = new LinkedHashMap<>();
+    private final Map<String, NMSClass> classes = new LinkedHashMap<>();
 
     public MappingsLoader(MinecraftVersion version) {
         this.version = version;
@@ -22,35 +22,53 @@ public class MappingsLoader {
         try {
             Map<String, String> spigotClassMappings = new HashMap<>();
 
-            BufferedReader reader = new BufferedReader(new FileReader(spigotClasses));
             String line;
+            BufferedReader reader = new BufferedReader(new FileReader(spigotClasses));
+
             while ((line = reader.readLine()) != null) {
-                line = line.replace("\n", "");
-                if (line.startsWith("#")) {
-                    continue;
+                if (line.startsWith("#")) continue; // skip comments
+                String[] details = line.split(" "); // extract details
+                if (details.length == 2) {
+                    // spigot class mapping found
+                    spigotClassMappings.put(details[0].replace("/", "."),
+                            details[1].replace("/", "."));
                 }
-                String[] info = line.split(" ");
-                spigotClassMappings.put(info[0], info[1]);
             }
-            reader.close();
 
             reader = new BufferedReader(new FileReader(mojangMappings));
+
             while ((line = reader.readLine()) != null) {
-                line = line.replace("\n", "").replace(":", "");
-                if (line.startsWith("#") || line.startsWith("    ")) {
-                    continue;
-                }
+                if (line.startsWith("#")) continue; // skip comments
 
-                String[] classDetails = line.split(" -> ");
-                String className;
-                if (spigotClassMappings.containsKey(classDetails[1])) {
-                    className = spigotClassMappings.get(classDetails[1]);
-                } else {
-                    className = classDetails[0];
-                }
+                // extract details
+                String[] details = Arrays.stream(line.replace("-> ", "").
+                        replace(":", "").split(" "))
+                        .map(String::trim).toArray(String[]::new);
 
-                classMappings.put(classDetails[0], className.replace("/", "."));
+                if (details.length == 2) {
+                    String classNoDollar = details[1].contains("$") ? details[1].substring(0, details[1].indexOf("$")) : details[1];
+                    String classDollar = details[1].contains("$") ? details[1].substring(details[1].indexOf("$")) : details[1];
+
+                    String spigotClass = spigotClassMappings.get(details[1]);
+                    String spigotClassOriginal = spigotClassMappings.get(details[0]);
+                    String spigotClassNoDollar = spigotClassMappings.get(classNoDollar);
+
+                    if (spigotClass != null) { // classes that have a spigot mapping
+                        classMappings.put(details[0], spigotClass);
+                    } else if (spigotClassOriginal != null) { // classes that have original as obfuscated name
+                        classMappings.put(details[0], spigotClassOriginal);
+                    } else if (spigotClassNoDollar != null) { // scenarios where only the base class is in mappings
+                        classMappings.put(details[0], spigotClassNoDollar + classDollar);
+                    } else if (details[0].contains("$")) { // inner classes that do not have a spigot mapping
+                        String className = details[0].substring(0, details[0].indexOf("$")) +
+                                details[1].substring(details[1].indexOf("$"));
+                        classMappings.put(details[0], className);
+                    } else { // classes that do not have a spigot mapping, e.g. com.mojang classes
+                        classMappings.put(details[0], details[0]);
+                    }
+                }
             }
+
             reader.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -74,29 +92,46 @@ public class MappingsLoader {
         try (InputStreamReader streamReader = new InputStreamReader(mappings, StandardCharsets.UTF_8)) {
             BufferedReader reader = new BufferedReader(streamReader);
 
-            Map<String, MappedField> currentFields = new HashMap<>();
-            Map<String, MappedMethod> currentMethods = new HashMap<>();
-            List<MappedConstructor> currentConstructors = new ArrayList<>();
-            String currentClass = null;
+            String mojangClassName = null;
+            String spigotClassName;
+            NMSClass NMSClass = null;
+
+            List<NMSConstructor> constructors = new ArrayList<>();
+            Map<String, List<NMSMethod>> methods = new HashMap<>();
+            Map<String, NMSField> fields = new HashMap<>();
 
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith("#") || line.contains("<clinit>")) {
-                    continue;
-                }
+                // skip comments and static initialisers
+                if (line.startsWith("#") || line.contains("<clinit>")) continue;
 
-                // class
-                String[] details = Arrays.stream(line.replace("-> ", "")
-                        .split(" ")).map(String::trim).toArray(String[]::new);
-                if (!line.startsWith("  ")) {
-                    if (currentClass != null) {
-                        classes.put(currentClass, new MappedClass(currentMethods, currentFields, currentConstructors));
-                        currentFields = new HashMap<>();
-                        currentMethods = new HashMap<>();
-                        currentConstructors = new ArrayList<>();
+                // extract details
+                String[] details = Arrays.stream(line.replace("-> ", "").split("\\s+"))
+                        .filter(s -> !s.isEmpty())
+                        .toArray(String[]::new);
+
+                if (!line.startsWith("  ")) { // populate and store class
+                    if (NMSClass != null) {
+                        NMSClass.setConstructors(constructors);
+                        NMSClass.setMethods(methods);
+                        NMSClass.setFields(fields);
+                        for (List<NMSMethod> nmsMethods : methods.values()) {
+                            for (NMSMethod nmsMethod : nmsMethods) {
+                                if (nmsMethod.getMojangName().equals("setXRot")) {
+                                    Logger.get().info("Found x method in class " + mojangClassName);
+                                }
+                            }
+                        }
+                        classes.put(mojangClassName, NMSClass);
+
+                        constructors = new ArrayList<>();
+                        methods = new HashMap<>();
+                        fields = new HashMap<>();
                     }
-                    if (details.length > 0) {
-                        currentClass = details[0];
+                    if (details.length > 0) { // initialise class
+                        mojangClassName = details[0];
+                        spigotClassName = getSpigotClassName(mojangClassName);
+                        NMSClass = new NMSClass(mojangClassName, spigotClassName);
                     }
                     continue;
                 }
@@ -106,31 +141,46 @@ public class MappingsLoader {
                 if (Character.isDigit(line.charAt(0))) {
                     String[] split = line.split(":");
                     line = split[split.length - 1];
-                    details = Arrays.stream(line.replace("-> ", "")
-                            .split(" ")).map(String::trim).toArray(String[]::new);
 
-                    String[] args = Arrays.stream(details[1].substring(details[1].indexOf('(') + 1, details[1].indexOf(')'))
-                            .split(",")).filter(arg -> !arg.isEmpty()).toArray(String[]::new);
-                    if (line.contains("void <init>")) {
-                        // constructor
-                        currentConstructors.add(new MappedConstructor(args));
-                    } else {
-                        // method
-                        String methodName = details[1].substring(0, details[1].indexOf('('));
-                        currentMethods.put(methodName, new MappedMethod(details[2], details[0], args));
+                    // TODO: add support for arrays and lists etc. (encapsulated classes)
+                    String[] args = Arrays.stream(details[1].substring(details[1].indexOf('(') + 1, details[1].indexOf(')')).split(","))
+                            .map(s -> getSpigotClassName(s.replace("[]", "").trim()))
+                            .filter(s -> !s.isEmpty())
+                            .toArray(String[]::new);
+
+                    if (line.contains("void <init>")) { // constructor
+                        constructors.add(new NMSConstructor(NMSClass, args));
+                    } else { // method
+                        String methodName = details[1].substring(0, details[1].indexOf('(')).trim();
+                        NMSMethod method = new NMSMethod(NMSClass, methodName, details[2], details[0], args);
+                        if (methods.containsKey(methodName)) {
+                            List<NMSMethod> methodList = methods.get(methodName);
+                            methodList.add(method);
+                            methods.put(methodName, methodList);
+                            if (methodName.equals("setXRot")) {
+                                Logger.get().info("Found another x method " + mojangClassName);
+                            }
+                        } else {
+                            methods.put(methodName, new ArrayList<>(Collections.singletonList(method)));
+                            if (methodName.equals("setXRot")) {
+                                Logger.get().info("Found new x method " + mojangClassName);
+                            }
+                        }
                     }
-                    continue;
-                }
-
-                // field
-                if (details.length == 3) {
-                    currentFields.put(details[1], new MappedField(details[0], details[2]));
+                } else { // field
+                    fields.put(details[1], new NMSField(NMSClass, details[1], details[0], details[2]));
                 }
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to create mappings!", e);
         }
         Logger.get("Personoid").info("Successfully created mappings");
+    }
+
+    public NMSClass createRawMapping(String className) {
+        NMSClass clazz = new NMSClass(className, className);
+        classes.put(className, clazz);
+        return clazz;
     }
 
     public File getMappingsFile(String prefix, String postfix) {
@@ -158,7 +208,17 @@ public class MappingsLoader {
         return mojangClass;
     }
 
-    public MappedClass getClass(String mojangClass) {
-        return classes.get(mojangClass);
+    public String getMojangClassName(String spigotClass) {
+        for (Map.Entry<String, String> entry : classMappings.entrySet()) {
+            if (entry.getValue().equals(spigotClass)) {
+                return entry.getKey();
+            }
+        }
+        return spigotClass;
+    }
+
+    public NMSClass getClass(String clazz, boolean spigotClass) {
+        if (spigotClass) clazz = getMojangClassName(clazz);
+        return classes.get(clazz);
     }
 }

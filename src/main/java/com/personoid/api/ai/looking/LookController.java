@@ -3,6 +3,7 @@ package com.personoid.api.ai.looking;
 import com.personoid.api.ai.looking.target.Target;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.pathfinding.calc.utils.BlockPos;
+import com.personoid.api.utils.types.Priority;
 import com.personoid.nms.packet.Packets;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -71,11 +72,11 @@ public class LookController {
 
     public Target getHighestPriorityTarget() {
         Target highest = null;
-/*        for (Target target : targets.values()) {
+        for (Target target : targets.values()) {
             if (highest == null || target.getPriority().isHigherThan(highest.getPriority())) {
                 highest = target;
             }
-        }*/
+        }
         return highest;
     }
 
@@ -95,9 +96,14 @@ public class LookController {
     }
 
     public boolean addTarget(String identifier, Target target) {
-        boolean exists = targets.containsKey(identifier);
+        return addTarget(identifier, target, Priority.NORMAL);
+    }
+
+    public boolean addTarget(String identifier, Target target, Priority priority) {
+        if (targets.containsKey(identifier)) return false;
+        target.setPriority(priority);
         this.targets.put(identifier, target);
-        return !exists;
+        return true;
     }
 
     public boolean removeTarget(String identifier) {

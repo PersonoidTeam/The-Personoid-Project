@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ReflectionUtils {
+public class NMSReflection {
     private static final Cache CACHE = new Cache("reflection_utils");
 
     public static Class<?> findClass(Packages packageType, String className) {
@@ -97,7 +97,16 @@ public class ReflectionUtils {
         throw new RuntimeException("Failed to invoke method for class " + obj.getClass().getName() + " ( " + methodName + ")");
     }
 
-    public static Object getEntityPlayer(Player player) {
+    public static Object getHandle(Object obj) {
+        try {
+            return obj.getClass().getMethod("getHandle").invoke(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static Object getNMSPlayer(Player player) {
         try {
             return player.getClass().getMethod("getHandle").invoke(player);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
@@ -113,7 +122,7 @@ public class ReflectionUtils {
         }
     }
 
-    public static Object getItemStack(ItemStack itemStack) {
+    public static Object getNMSItemStack(ItemStack itemStack) {
         try {
             Class<?> craftItemStackClass = findClass(Packages.CRAFT_ITEM_STACK, "CraftItemStack");
             return craftItemStackClass.getMethod("asNMSCopy", ItemStack.class).invoke(null, itemStack);
@@ -177,8 +186,7 @@ public class ReflectionUtils {
 
     public static String getVersion() {
         try {
-            //return Bukkit.getBukkitVersion().split("-")[0].replace(".", "_");
-            return Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
+            return Bukkit.getBukkitVersion().split("-")[0].replace(".", "_");
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new RuntimeException("Server version not found!");
         }

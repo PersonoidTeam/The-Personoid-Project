@@ -49,7 +49,6 @@ public class NPCInventory {
                         if (event.isCancelled()) return;
                     }
                     int diff = this.addItem(item.getItemStack());
-                    //Bukkit.broadcastMessage("diff: " + diff);
                     if (diff != item.getItemStack().getAmount()) {
                         Packets.entityTakeItem(item.getEntityId(), npc.getEntity().getEntityId(), item.getItemStack().getAmount()).send();
                         if (diff == 0) {
@@ -113,9 +112,7 @@ public class NPCInventory {
         Packets.entityEquipment(npc.getEntityId(), Collections.singletonMap(EquipmentSlot.HAND, hotbar[slot])).send();
     }
 
-    // armour OR armor :)
-
-    public void setHelmet(ItemStack itemStack){
+    public void setHelmet(ItemStack itemStack) {
         ItemStack clone = itemStack.clone();
         removeItem(itemStack);
         armorContents[SlotIndex.HELMET.index] = clone;
@@ -123,21 +120,21 @@ public class NPCInventory {
         Packets.entityEquipment(npc.getEntityId(), Collections.singletonMap(EquipmentSlot.HEAD, itemStack)).send();
     }
 
-    public void setChestplate(ItemStack itemStack){
+    public void setChestplate(ItemStack itemStack) {
         removeItem(itemStack);
         armorContents[SlotIndex.CHESTPLATE.index] = itemStack.clone();
         npc.getEntity().getInventory().setChestplate(itemStack);
         Packets.entityEquipment(npc.getEntityId(), Collections.singletonMap(EquipmentSlot.CHEST, itemStack)).send();
     }
 
-    public void setLeggings(ItemStack itemStack){
+    public void setLeggings(ItemStack itemStack) {
         removeItem(itemStack);
         armorContents[SlotIndex.LEGGINGS.index] = itemStack.clone();
         npc.getEntity().getInventory().setLeggings(itemStack);
         Packets.entityEquipment(npc.getEntityId(), Collections.singletonMap(EquipmentSlot.LEGS, itemStack)).send();
     }
 
-    public void setBoots(ItemStack itemStack){
+    public void setBoots(ItemStack itemStack) {
         removeItem(itemStack);
         armorContents[SlotIndex.BOOTS.index] = itemStack.clone();
         npc.getEntity().getInventory().setBoots(itemStack);
@@ -163,38 +160,38 @@ public class NPCInventory {
         return offhand;
     }
 
-    // contents
-
     public int addItem(ItemStack itemStack) {
-        int diff = addItem(hotbar, itemStack, new HashSet<>());
-        if (diff == itemStack.getAmount()) {
-            npc.getEntity().getInventory().setItemInMainHand(hotbar[selectedSlot]);
-            Packets.entityEquipment(npc.getEntityId(), Collections.singletonMap(EquipmentSlot.HAND, hotbar[selectedSlot])).send();
-            return addItem(contents, itemStack, new HashSet<>());
-        } else return diff;
+        int remainingAmount = addItemToInventory(hotbar, itemStack);
+
+        if (remainingAmount > 0) {
+            remainingAmount = addItemToInventory(contents, new ItemStack(itemStack.getType(), remainingAmount));
+        }
+
+        npc.getEntity().getInventory().setItemInMainHand(hotbar[selectedSlot]);
+        Packets.entityEquipment(npc.getEntityId(), Collections.singletonMap(EquipmentSlot.HAND, hotbar[selectedSlot])).send();
+
+        return remainingAmount;
     }
 
-    private int addItem(ItemStack[] contents, ItemStack itemStack, Set<Integer> excludedSlots) {
-        // FIXME: keeps on picking up items when full
-        for (int i = 0; i < contents.length; i++) {
-            if (excludedSlots.contains(i)) continue;
-            if (contents[i] != null && contents[i].getType() == itemStack.getType()) {
-                int diff = (contents[i].getAmount() + itemStack.getAmount()) - contents[i].getMaxStackSize();
-                contents[i].setAmount(Math.min(contents[i].getAmount() + itemStack.getAmount(), itemStack.getMaxStackSize()));
-                if (diff == 0 || i == contents.length - 1) {
-                    return diff;
-                } else if (diff > 0) {
-                    excludedSlots.add(i);
-                    return addItem(contents, new ItemStack(itemStack.getType(), diff), excludedSlots);
+    private int addItemToInventory(ItemStack[] inventory, ItemStack itemStack) {
+        int remainingAmount = itemStack.getAmount();
+
+        for (int i = 0; i < inventory.length && remainingAmount > 0; i++) {
+            if (inventory[i] == null) {
+                int amountToAdd = Math.min(remainingAmount, itemStack.getMaxStackSize());
+                inventory[i] = new ItemStack(itemStack.getType(), amountToAdd);
+                remainingAmount -= amountToAdd;
+            } else if (inventory[i].getType() == itemStack.getType()) {
+                int spaceAvailable = itemStack.getMaxStackSize() - inventory[i].getAmount();
+                if (spaceAvailable > 0) {
+                    int amountToAdd = Math.min(remainingAmount, spaceAvailable);
+                    inventory[i].setAmount(inventory[i].getAmount() + amountToAdd);
+                    remainingAmount -= amountToAdd;
                 }
-            } else if (contents[i] == null) {
-                ItemStack stack = itemStack.clone();
-                stack.setAmount(Math.min(itemStack.getAmount(), itemStack.getMaxStackSize()));
-                contents[i] = stack;
-                return 0;
             }
         }
-        return itemStack.getAmount();
+
+        return remainingAmount;
     }
 
     public void removeItem(ItemStack itemStack) {

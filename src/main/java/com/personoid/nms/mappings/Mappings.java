@@ -3,19 +3,15 @@ package com.personoid.nms.mappings;
 import com.personoid.api.utils.bukkit.Logger;
 import com.personoid.nms.MinecraftVersion;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-
 public class Mappings {
-    private static final Mappings mappings = get();
+    private static Mappings instance;
     private final MinecraftVersion version = MinecraftVersion.get();
     private final MappingsDownloader downloader;
     private final MappingsLoader loader;
 
     public static Mappings get() {
-        if (mappings != null) return mappings;
-        return new Mappings();
+        if (instance == null) instance = new Mappings();
+        return instance;
     }
 
     private Mappings() {
@@ -23,60 +19,40 @@ public class Mappings {
         downloader.downloadMappings();
         loader = new MappingsLoader(version);
         loader.createMappings();
-        Logger.get("Personoid").info("Finished initialising mappings!");
+        Logger.get("Personoid").info("Finished initialising mappings (version: " + version.getDotName() + ")");
     }
 
-    public String getMappedClassName(String clazz) {
-        return loader.getSpigotClassName(clazz);
+    public String getSpigotClassName(String mojangClassName) {
+        return loader.getSpigotClassName(mojangClassName);
     }
 
-    public Class<?> getMappedClass(String clazz) {
-        try {
-            return Class.forName(loader.getSpigotClassName(clazz));
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public String getMojangClassName(String spigotClassName) {
+        return loader.getMojangClassName(spigotClassName);
     }
 
-    public Field getField(String clazz, String fieldName) {
-        try {
-            MappedClass mappedClass = loader.getClass(clazz);
-            if (mappedClass == null) {
-                throw new RuntimeException("Failed to find mapped class!");
-            }
-            MappedField mappedField = mappedClass.getFields().get(fieldName);
-            if (mappedField == null) {
-                throw new RuntimeException("Failed to find mapped field!");
-            }
-            Class<?> spigotClass = Class.forName(loader.getSpigotClassName(clazz));
-            return spigotClass.getField(mappedField.getObfuscatedName());
-        } catch (ClassNotFoundException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
+    public NMSClass getClassFromMojang(String clazz) {
+        NMSClass nmsClass = loader.getClass(clazz, false);
+        if (nmsClass != null) return nmsClass;
+        if (clazz.startsWith("net.minecraft.")) return null;
+        return loader.createRawMapping(clazz);
     }
 
-    public Method getMethod(String clazz, String methodName, Class<?>... parameters) {
-        try {
-            MappedClass mappedClass = loader.getClass(clazz);
-            if (mappedClass == null) {
-                throw new RuntimeException("Failed to find mapped class!");
-            }
-            MappedMethod mappedMethod = mappedClass.getMethods().get(methodName);
-            if (mappedMethod == null) {
-                throw new RuntimeException("Failed to find mapped method!");
-            }
-            String[] arguments = Arrays.stream(parameters).map(Class::getCanonicalName).toArray(String[]::new);
-            if (!Arrays.equals(mappedMethod.getArguments(), arguments)) {
-                throw new RuntimeException("Method arguments of mapped method do not match!");
-            }
-            Class<?> spigotClass = Class.forName(loader.getSpigotClassName(clazz));
-            return spigotClass.getMethod(mappedMethod.getObfuscatedName(), parameters);
-        } catch (NoSuchMethodException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public NMSClass getClassFromSpigot(String clazz) {
+        NMSClass nmsClass = loader.getClass(clazz, true);
+        if (nmsClass != null) return nmsClass;
+        if (clazz.startsWith("net.minecraft.")) return null;
+        return loader.createRawMapping(clazz);
     }
 
     public MinecraftVersion getVersion() {
         return version;
+    }
+
+    public MappingsDownloader getDownloader() {
+        return downloader;
+    }
+
+    public MappingsLoader getLoader() {
+        return loader;
     }
 }

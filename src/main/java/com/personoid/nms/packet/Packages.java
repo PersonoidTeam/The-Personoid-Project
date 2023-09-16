@@ -1,5 +1,7 @@
 package com.personoid.nms.packet;
 
+import org.bukkit.Bukkit;
+
 import java.util.function.BiFunction;
 
 public enum Packages {
@@ -33,7 +35,9 @@ public enum Packages {
     private final String packageName;
 
     Packages(BiFunction<String, Integer, String> packageName) {
-        this.packageName = packageName.apply(ReflectionUtils.getVersion(), ReflectionUtils.getVersionInt());
+        String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
+        int vInt = Integer.parseInt(Bukkit.getBukkitVersion().split("\\.")[1]);
+        this.packageName = packageName.apply(version, vInt);
     }
 
     public String getPackageName() {

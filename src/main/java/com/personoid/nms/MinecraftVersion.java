@@ -1,6 +1,6 @@
 package com.personoid.nms;
 
-import com.personoid.nms.packet.ReflectionUtils;
+import com.personoid.nms.packet.NMSReflection;
 
 public class MinecraftVersion {
     private static final MinecraftVersion version = MinecraftVersion.get();
@@ -41,6 +41,6 @@ public class MinecraftVersion {
 
     public static MinecraftVersion get() {
         if (version != null) return version;
-        return new MinecraftVersion(ReflectionUtils.getVersion());
+        return new MinecraftVersion(NMSReflection.getVersion());
     }
 }
