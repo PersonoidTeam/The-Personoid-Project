@@ -64,7 +64,7 @@ public class NPCBuilder {
                                 CACHE.getClass(KEY_PROFILE_PUBLIC_KEY))
                         .newInstance(
                                 NMSReflection.invoke(Bukkit.getServer(), "getServer"),
-                                NMSReflection.invoke(Bukkit.getWorlds().get(0), "getHandle"),
+                                NMSReflection.getHandle(Bukkit.getWorlds().get(0)),
                                 gameProfile, null
                         );
             } else {
@@ -74,7 +74,7 @@ public class NPCBuilder {
                                 CACHE.getClass(KEY_GAME_PROFILE))
                         .newInstance(
                                 NMSReflection.invoke(Bukkit.getServer(), "getServer"),
-                                NMSReflection.invoke(Bukkit.getWorlds().get(0), "getHandle"),
+                                NMSReflection.getHandle(Bukkit.getWorlds().get(0)),
                                 gameProfile
                         );
             }

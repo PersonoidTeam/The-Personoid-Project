@@ -3,7 +3,7 @@ package com.personoid.api.npc;
 import com.google.common.collect.ForwardingMultimap;
 import com.personoid.api.npc.injection.CallbackInfo;
 import com.personoid.api.npc.injection.InjectionInfo;
-import com.personoid.api.utils.bukkit.Logger;
+import com.personoid.api.utils.Parameter;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.nms.NMS;
 import com.personoid.nms.mappings.NMSClass;
@@ -28,14 +28,11 @@ import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class NPCOverrides implements Listener {
     public static final NMSClass SERVER_PLAYER = Package.SERVER_PLAYER_CLASS.getMappedClass();
-    public static final String METHOD_TICK = getObsfucatedMethodName("tick");
+    public static final String METHOD_TICK = getObfuscatedMethodName("tick");
 
     private Object base;
     private final NPC npc;
@@ -57,21 +54,6 @@ public class NPCOverrides implements Listener {
         return base;
     }
 
-    private static String getObsfucatedMethodName(String methodName, Object... args) {
-        List<Class<?>> argTypes = new ArrayList<>();
-        for (Object arg : args) argTypes.add(arg.getClass());
-        NMSClass currentClass = SERVER_PLAYER;
-        while (currentClass != null) {
-            NMSMethod method = currentClass.getMethod(methodName, argTypes.toArray(new Class[0]));
-            if (method != null) {
-                return method.getObfuscatedName();
-            } else {
-                currentClass = currentClass.getSuperclass();
-            }
-        }
-        return null;
-    }
-
     public Method get(String method) {
         try {
             Method methodField = getClass().getMethod(method);
@@ -84,29 +66,34 @@ public class NPCOverrides implements Listener {
 
     // region UTILS
 
-    public void invoke(String methodName, Object... args) {
+    private static String getObfuscatedMethodName(String methodName, Parameter... args) {
+        Class<?>[] argTypes = Arrays.stream(args).map(Parameter::getType).toArray(Class[]::new);
+        NMSClass currentClass = SERVER_PLAYER;
+        while (currentClass != null) {
+            NMSMethod method = currentClass.getMethod(methodName, argTypes);
+            if (method != null) {
+                return method.getObfuscatedName();
+            } else {
+                currentClass = currentClass.getSuperclass();
+            }
+        }
+        return null;
+    }
+
+    public void invoke(String methodName, Parameter... args) {
         invoke(null, methodName, args);
     }
 
-    public <T> T invoke(Class<T> returnType, String methodName, Object... args) {
-        List<Class<?>> argTypes = new ArrayList<>();
-        for (Object arg : args) argTypes.add(arg.getClass());
+    public <T> T invoke(Class<T> returnType, String methodName, Parameter... args) {
+        Class<?>[] argTypes = Arrays.stream(args).map(Parameter::getType).toArray(Class[]::new);
         NMSClass currentClass = SERVER_PLAYER;
         while (currentClass != null) {
-            NMSMethod method = currentClass.getMethod(methodName, argTypes.toArray(new Class[0]));
-            if (methodName.equals("setXRot")) {
-                Logger.get().info("Found x method " + method);
-            }
-            if (methodName.equals("setYRot")) {
-                Logger.get().info("Found y method " + method);
-            }
+            NMSMethod method = currentClass.getMethod(methodName, argTypes);
             if (method != null) {
-                return method.invoke(base, args);
+                Object[] argValues = Arrays.stream(args).map(Parameter::getValue).toArray(Object[]::new);
+                return method.invoke(base, argValues);
             } else {
                 currentClass = currentClass.getSuperclass();
-                if (methodName.equals("setXRot")) {
-                    Logger.get().info("Searching for x method in " + currentClass.getMojangName());
-                }
             }
         }
         return null;
@@ -189,7 +176,7 @@ public class NPCOverrides implements Listener {
         float health = invoke(float.class, "getHealth");
         float maxHealth = invoke(float.class, "getMaxHealth");
         float amount = health < maxHealth - 0.05F ? health + 0.05F : maxHealth; // 0.1F = natual regen speed (full saturation)
-        invoke("setHealth", amount);
+        invoke("setHealth", new Parameter(float.class, amount));
         if (yPos < -64) invoke("outOfWorld");
         fallDamageCheck();
         // FIXME: swimming not working
@@ -345,7 +332,7 @@ public class NPCOverrides implements Listener {
     }
 
     public void startUsingItem(HandEnum hand) {
-        invoke("startUsingItem", getNMSHand(hand));
+        invoke("startUsingItem", Parameter.of(getNMSHand(hand)));
         if (handUsing != (hand == HandEnum.LEFT ? 0 : 1)) itemUsingTicks = 0;
         handUsing = hand == HandEnum.LEFT ? 0 : 1;
     }
@@ -365,7 +352,7 @@ public class NPCOverrides implements Listener {
     }
 
     public void swingHand(HandEnum hand) {
-        invoke("swing", getNMSHand(hand));
+        invoke("swing", Parameter.of(getNMSHand(hand)));
     }
 
     public int getItemCooldown(Material material) {
@@ -391,7 +378,7 @@ public class NPCOverrides implements Listener {
     public void move(Vector vector) {
         NMSClass moverType = Package.minecraft("world.entity.MoverType").getMappedClass();
         Object self = moverType.getField("SELF").get(base);
-        invoke("move", self, NMS.toVec3(vector));
+        invoke("move", Parameter.of(self), Parameter.of(NMS.toVec3(vector)));
     }
 
     public void setLocation(Location location) {
@@ -404,13 +391,13 @@ public class NPCOverrides implements Listener {
     }
 
     public void setYaw(float yaw) {
-        invoke("setYRot", yaw);
-        invoke("setYHeadRot", yaw);
-        invoke("setYBodyRot", yaw);
+        invoke("setYRot", new Parameter(float.class, yaw));
+        invoke("setYHeadRot", new Parameter(float.class, yaw));
+        invoke("setYBodyRot", new Parameter(float.class, yaw));
     }
 
     public void setPitch(float pitch) {
-        invoke("setXRot", pitch);
+        invoke("setXRot", new Parameter(float.class, pitch));
     }
 
     public float getYaw() {
@@ -439,7 +426,7 @@ public class NPCOverrides implements Listener {
     }
 
     public void setJumping(boolean jumping) {
-        invoke("setJumping", jumping);
+        invoke("setJumping", new Parameter(boolean.class, jumping));
     }
 
     public boolean isJumping() {
@@ -480,7 +467,7 @@ public class NPCOverrides implements Listener {
         // new version
         NMSClass poseClass = Package.ENTITY.sub("Pose").getMappedClass();
         Object nmsPose = poseClass.getField(pose.name()).get(null);
-        invoke("setPose", nmsPose);
+        invoke("setPose", new Parameter(poseClass.getRawClass(), nmsPose));
     }
 
     public Pose getPose() {

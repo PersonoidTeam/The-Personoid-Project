@@ -14,6 +14,10 @@ public class Parameter {
         this.value = value;
     }
 
+    public static Parameter of(Object value) {
+        return new Parameter(value.getClass(), value);
+    }
+
     public Class<?> getType() {
         return type;
     }

@@ -97,7 +97,7 @@ public class MappingsLoader {
             NMSClass NMSClass = null;
 
             List<NMSConstructor> constructors = new ArrayList<>();
-            Map<String, List<NMSMethod>> methods = new HashMap<>();
+            List<NMSMethod> methods = new ArrayList<>();
             Map<String, NMSField> fields = new HashMap<>();
 
             String line;
@@ -115,23 +115,20 @@ public class MappingsLoader {
                         NMSClass.setConstructors(constructors);
                         NMSClass.setMethods(methods);
                         NMSClass.setFields(fields);
-                        for (List<NMSMethod> nmsMethods : methods.values()) {
-                            for (NMSMethod nmsMethod : nmsMethods) {
-                                if (nmsMethod.getMojangName().equals("setXRot")) {
-                                    Logger.get().info("Found x method in class " + mojangClassName);
-                                }
+                        for (NMSMethod nmsMethod : methods) {
+                            if (nmsMethod.getMojangName().equals("setXRot")) {
+                                Logger.get().info("Found x method in class " + mojangClassName);
                             }
                         }
                         classes.put(mojangClassName, NMSClass);
-
-                        constructors = new ArrayList<>();
-                        methods = new HashMap<>();
-                        fields = new HashMap<>();
                     }
                     if (details.length > 0) { // initialise class
                         mojangClassName = details[0];
                         spigotClassName = getSpigotClassName(mojangClassName);
                         NMSClass = new NMSClass(mojangClassName, spigotClassName);
+                        constructors = new ArrayList<>();
+                        methods = new ArrayList<>();
+                        fields = new HashMap<>();
                     }
                     continue;
                 }
@@ -153,18 +150,9 @@ public class MappingsLoader {
                     } else { // method
                         String methodName = details[1].substring(0, details[1].indexOf('(')).trim();
                         NMSMethod method = new NMSMethod(NMSClass, methodName, details[2], details[0], args);
-                        if (methods.containsKey(methodName)) {
-                            List<NMSMethod> methodList = methods.get(methodName);
-                            methodList.add(method);
-                            methods.put(methodName, methodList);
-                            if (methodName.equals("setXRot")) {
-                                Logger.get().info("Found another x method " + mojangClassName);
-                            }
-                        } else {
-                            methods.put(methodName, new ArrayList<>(Collections.singletonList(method)));
-                            if (methodName.equals("setXRot")) {
-                                Logger.get().info("Found new x method " + mojangClassName);
-                            }
+                        methods.add(method);
+                        if (methodName.equals("setXRot")) {
+                            Logger.get().info("Found x method " + mojangClassName);
                         }
                     }
                 } else { // field

@@ -1,8 +1,7 @@
 package com.personoid.nms.mappings;
 
-import com.personoid.api.utils.bukkit.Logger;
-
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +10,7 @@ public class NMSClass {
     private final String mojangName;
     private final String spigotName;
     private List<NMSConstructor> constructors;
-    private Map<String, List<NMSMethod>> methods;
+    private final List<NMSMethod> methods = new ArrayList<>();
     private Map<String, NMSField> fields;
 
     public NMSClass(String mojangName, String spigotName) {
@@ -20,36 +19,13 @@ public class NMSClass {
     }
 
     public NMSMethod getMethod(String methodName, Class<?>... parameters) {
-        Logger.get().severe("looking for method: " + methodName);
-        if (methods != null) {
-            List<NMSMethod> nmsMethods = methods.get(methodName);
-            if (nmsMethods != null) {
-                Logger.get().severe("finding method...");
-                for (NMSMethod nmsMethod : nmsMethods) {
-                    if (parameters.length > 0 && nmsMethod.getArguments().length > 0) {
-                        String[] arguments = Arrays.stream(parameters).map(Class::getCanonicalName).toArray(String[]::new);
-                        if (!Arrays.equals(nmsMethod.getArguments(), arguments)) continue;
-                    }
-                    if (spigotName.equals("net.minecraft.world.entity.Entity")) {
-                        Logger.get().severe("found method: " + nmsMethod.getMojangName());
-                        if (parameters.length > 0 && nmsMethod.getArguments().length > 0) {
-                            String[] arguments = Arrays.stream(parameters).map(Class::getCanonicalName).toArray(String[]::new);
-                            Logger.get().severe("arguments: " + Arrays.toString(arguments));
-                            Logger.get().severe("NMSMethod arguments: " + Arrays.toString(nmsMethod.getArguments()));
-                        } else {
-                            Logger.get().severe("no arguments");
-                        }
-                    }
-                    return nmsMethod;
-                }
-                Logger.get().severe("finished finding method");
-            } else {
-                Logger.get().severe("no method found");
+        for (NMSMethod nmsMethod : methods) {
+            if (!nmsMethod.getMojangName().equals(methodName)) continue;
+            if (parameters.length > 0 && nmsMethod.getArguments().length > 0) {
+                String[] arguments = Arrays.stream(parameters).map(Class::getCanonicalName).toArray(String[]::new);
+                if (!Arrays.equals(nmsMethod.getArguments(), arguments)) continue;
             }
-        } else {
-            if (spigotName.equals("net.minecraft.world.entity.Entity")) {
-                Logger.get().severe("methods is null");
-            }
+            return nmsMethod;
         }
         try {
             Method method = getRawClass().getMethod(methodName, parameters);
@@ -83,10 +59,7 @@ public class NMSClass {
 
     public NMSClass getSuperclass() {
         Class<?> superclass = getRawClass().getSuperclass();
-        //Logger.get().severe("raw class: " + getRawClass());
-        //Logger.get().severe("superclass: " + getRawClass().getSuperclass());
         if (superclass == null) return null;
-        //Logger.get().severe("spigot: " + Mappings.get().getClassFromSpigot(superclass.getCanonicalName()));
         return Mappings.get().getClassFromSpigot(superclass.getCanonicalName());
     }
 
@@ -106,12 +79,12 @@ public class NMSClass {
         this.constructors = constructors;
     }
 
-    public Map<String, List<NMSMethod>> getMethods() {
+    public List<NMSMethod> getMethods() {
         return methods;
     }
 
-    void setMethods(Map<String, List<NMSMethod>> methods) {
-        this.methods = methods;
+    void setMethods(List<NMSMethod> methods) {
+        this.methods.addAll(methods);
     }
 
     public Map<String, NMSField> getFields() {
