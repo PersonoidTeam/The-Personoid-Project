@@ -24,7 +24,7 @@ public class Packets {
     }
 
     public static Packet addPlayer(Player player, boolean tabListed) {
-        Parameter playerParam = new Parameter(Package.PLAYER_CLASS.getRawClass(), NMS.getPlayer(player));
+        Parameter playerParam = new Parameter(Package.PLAYER_CLASS.getRawClass(), NMSReflection.getHandle(player));
         Packet addPlayerPacket = NMS.createPacket("ClientboundAddPlayerPacket", playerParam);
         return Packet.merge(showPlayer(player, tabListed), addPlayerPacket);
     }
@@ -36,7 +36,7 @@ public class Packets {
         EnumSet enumSet = EnumSet.of(addPlayerAction);
         if (tabListed) enumSet.add(updateListedAction);
         Parameter actionParams = new Parameter(EnumSet.class, enumSet);
-        Parameter playerParam = new Parameter(Collection.class, Collections.singletonList(NMS.getPlayer(player)));
+        Parameter playerParam = new Parameter(Collection.class, Collections.singletonList(NMSReflection.getHandle(player)));
         Packet updatePacket = NMS.createPacket("ClientboundPlayerInfoUpdatePacket", actionParams, playerParam);
         if (!tabListed) return Packet.merge(hidePlayer(player), updatePacket);
         return updatePacket;
@@ -45,7 +45,7 @@ public class Packets {
     public static Packet updateDisplayName(Player player) {
         Class<?> action = Package.PROTOCOL.sub("game.ClientboundPlayerInfoUpdatePacket$Action").getRawClass();
         Parameter updateParam = new Parameter(action, NMSReflection.getEnum(action, "UPDATE_DISPLAY_NAME"));
-        Parameter playerParam = new Parameter(Collection.class, Collections.singletonList(NMSReflection.getNMSPlayer(player)));
+        Parameter playerParam = new Parameter(Collection.class, Collections.singletonList(NMSReflection.getHandle(player)));
         return NMS.createPacket("ClientboundPlayerInfoUpdatePacket", updateParam.enumSet(), playerParam);
     }
 
@@ -91,7 +91,7 @@ public class Packets {
         byte yawByte = (byte) ((yaw % 360) * 256 / 360);
         byte pitchByte = (byte) ((pitch % 360) * 256 / 360);
         Parameter entityParam = CACHE.getOrPut("entity", () -> {
-            return new Parameter(findClass(Packages.ENTITY, "Entity"), NMSReflection.getNMSEntity(entity));
+            return new Parameter(findClass(Packages.ENTITY, "Entity"), NMSReflection.getHandle(entity));
         });
         Packet headPacket = NMS.createPacket("ClientboundRotateHeadPacket", entityParam, new Parameter(byte.class, yawByte));
 /*            Packet entityPacket = createPacket("PacketPlayOutEntity$PacketPlayOutEntityLook", new Parameter(int.class, entity.getEntityId()),
@@ -104,15 +104,20 @@ public class Packets {
 
     public static Packet updateEntityData(Entity entity) {
         NMSMethod getEntityData = Package.ENTITY_CLASS.getMappedClass().getMethod("getEntityData");
-        Object entityData = getEntityData.invoke(NMS.getEntity(entity));
-        if (NMSReflection.getVersionInt() >= 19 && NMSReflection.getSubVersionInt() <= 2) {
-            return NMS.createPacket("ClientboundSetEntityDataPacket", new Parameter(int.class, entity.getEntityId()),
-                    new Parameter(entityData.getClass(), entityData), new Parameter(boolean.class, false));
-        } else {
+        Object entityData = getEntityData.invoke(NMSReflection.getHandle(entity));
+
+        int versionInt = NMSReflection.getVersionInt();
+        int subVersionInt = NMSReflection.getSubVersionInt();
+        boolean updatedVersion = versionInt > 19 || (versionInt == 19 && subVersionInt >= 2);
+
+        if (updatedVersion) {
             NMSMethod getNonDefaultValues = Package.ENTITY_DATA_CLASS.getMappedClass().getMethod("getNonDefaultValues");
             Object nonDefaultValues = getNonDefaultValues.invoke(entityData);
             return NMS.createPacket("ClientboundSetEntityDataPacket", new Parameter(int.class, entity.getEntityId()),
                     new Parameter(List.class, nonDefaultValues));
+        } else {
+            return NMS.createPacket("ClientboundSetEntityDataPacket", new Parameter(int.class, entity.getEntityId()),
+                    new Parameter(entityData.getClass(), entityData), new Parameter(boolean.class, false));
         }
     }
 

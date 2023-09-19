@@ -104,7 +104,7 @@ public class NPCOverrides implements Listener {
         while (currentClass != null) {
             NMSField field = currentClass.getField(fieldName);
             if (field != null) {
-                return field.get(base);
+                return field.getValue(base);
             } else {
                 currentClass = currentClass.getSuperclass();
             }
@@ -130,7 +130,7 @@ public class NPCOverrides implements Listener {
         while (currentClass != null) {
             NMSField field = currentClass.getField(fieldName);
             if (field != null) {
-                field.set(base, (int) field.get(base) + modifier);
+                field.set(base, (int) field.getValue(base) + modifier);
             } else {
                 currentClass = currentClass.getSuperclass();
             }
@@ -377,7 +377,7 @@ public class NPCOverrides implements Listener {
 
     public void move(Vector vector) {
         NMSClass moverType = Package.minecraft("world.entity.MoverType").getMappedClass();
-        Object self = moverType.getField("SELF").get(base);
+        Object self = moverType.getField("SELF").getValue(base);
         invoke("move", Parameter.of(self), Parameter.of(NMS.toVec3(vector)));
     }
 
@@ -466,7 +466,7 @@ public class NPCOverrides implements Listener {
 
         // new version
         NMSClass poseClass = Package.ENTITY.sub("Pose").getMappedClass();
-        Object nmsPose = poseClass.getField(pose.name()).get(null);
+        Object nmsPose = poseClass.getField(pose.name()).getValue(null);
         invoke("setPose", new Parameter(poseClass.getRawClass(), nmsPose));
     }
 

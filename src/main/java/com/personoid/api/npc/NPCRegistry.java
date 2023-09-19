@@ -1,6 +1,8 @@
 package com.personoid.api.npc;
 
 import com.personoid.nms.NMS;
+import com.personoid.nms.mappings.NMSClass;
+import com.personoid.nms.packet.Package;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.Packets;
 import net.bytebuddy.ByteBuddy;
@@ -57,16 +59,19 @@ public class NPCRegistry {
         Packets.addPlayer(npc.getEntity(), npc.getProfile().isVisibleInTab()).send();
         try {
             Class<?> serverPlayerClass = findClass(Packages.SERVER_LEVEL, "EntityPlayer");
-            Object serverPlayer = getNMSPlayer(npc.getEntity());
+            Object serverPlayer = getHandle(npc.getEntity());
             Class<?> connClass = findClass(Packages.SERVER_NETWORK, "PlayerConnection"); // ServerGamePacketListenerImpl
 
             Object server = invoke(Bukkit.getServer(), "getServer");
             Class<?> minecraftServerClass = findClass(Packages.SERVER_VERSION_MOD, "MinecraftServer");
 
             // network manager
+            NMSClass connectionClass = Package.NETWORK.sub("Connection").getMappedClass();
+            String genericsFtw = connectionClass.getMethod("genericsFtw").getObfuscatedName();
+
             Class<?> networkManagerClassBase = findClass(Packages.NETWORK, "NetworkManager"); // Connection
             Class<?> networkManagerClass = new ByteBuddy().subclass(networkManagerClassBase)
-                    .method(ElementMatchers.named("a")).intercept(MethodCall.run(() -> {})).make()
+                    .method(ElementMatchers.named(genericsFtw)).intercept(MethodCall.run(() -> {})).make()
                     .load(networkManagerClassBase.getClassLoader(), ClassLoadingStrategy.Default.INJECTION).getLoaded();
 
             Class<?> packetFlowClass = findClass(Packages.NETWORK.plus("protocol"), "EnumProtocolDirection");
@@ -77,7 +82,8 @@ public class NPCRegistry {
             Object conn = connClass.getConstructor(minecraftServerClass, networkManagerClassBase, serverPlayerClass)
                     .newInstance(server, networkManager, serverPlayer);
 
-            setField(serverPlayer, "b", conn);
+            String connName = Package.SERVER_PLAYER_CLASS.getMappedClass().getField("connection").getObfuscatedName();
+            setField(serverPlayer, connName, conn);
             NMS.addToWorld(npc, location.getWorld());
             npc.getOverrides().onSpawn();
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {

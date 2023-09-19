@@ -36,42 +36,24 @@ public class NMSMethod {
             e.printStackTrace();
             return null;
         }
-
     }
 
     private void findArgumentTypes() {
         for (String argument : arguments) {
             try {
-                // handle primitive types
-                switch (argument) {
-                    case "byte":
-                        argumentTypes.add(byte.class);
-                        continue;
-                    case "short":
-                        argumentTypes.add(short.class);
-                        continue;
-                    case "int":
-                        argumentTypes.add(int.class);
-                        continue;
-                    case "long":
-                        argumentTypes.add(long.class);
-                        continue;
-                    case "float":
-                        argumentTypes.add(float.class);
-                        continue;
-                    case "double":
-                        argumentTypes.add(double.class);
-                        continue;
-                    case "boolean":
-                        argumentTypes.add(boolean.class);
-                        continue;
-                    case "char":
-                        argumentTypes.add(char.class);
-                        continue;
-                }
-                argumentTypes.add(Class.forName(argument));
+                if (argument.equals("int")) argumentTypes.add(int.class);
+                else if (argument.equals("float")) argumentTypes.add(float.class);
+                else if (argument.equals("double")) argumentTypes.add(double.class);
+                else if (argument.equals("long")) argumentTypes.add(long.class);
+                else if (argument.equals("short")) argumentTypes.add(short.class);
+                else if (argument.equals("byte")) argumentTypes.add(byte.class);
+                else if (argument.equals("boolean")) argumentTypes.add(boolean.class);
+                else if (argument.equals("char")) argumentTypes.add(char.class);
+                else if (argument.equals("void")) argumentTypes.add(void.class);
+                else argumentTypes.add(Class.forName(argument));
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Failed to find argument type!", e);
+                //throw new RuntimeException("Failed to find argument type!", e);
+                argumentTypes.add(null);
             }
         }
     }

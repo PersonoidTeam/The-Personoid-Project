@@ -1,5 +1,7 @@
 package com.personoid.nms.mappings;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.personoid.api.utils.bukkit.Logger;
 import com.personoid.nms.MinecraftVersion;
 
@@ -45,6 +47,7 @@ public class MappingsLoader {
                         replace(":", "").split(" "))
                         .map(String::trim).toArray(String[]::new);
 
+                // FIXME: not completely accurate
                 if (details.length == 2) {
                     String classNoDollar = details[1].contains("$") ? details[1].substring(0, details[1].indexOf("$")) : details[1];
                     String classDollar = details[1].contains("$") ? details[1].substring(details[1].indexOf("$")) : details[1];
@@ -97,7 +100,7 @@ public class MappingsLoader {
             NMSClass NMSClass = null;
 
             List<NMSConstructor> constructors = new ArrayList<>();
-            List<NMSMethod> methods = new ArrayList<>();
+            ListMultimap<String, NMSMethod> methods = ArrayListMultimap.create();
             Map<String, NMSField> fields = new HashMap<>();
 
             String line;
@@ -115,11 +118,6 @@ public class MappingsLoader {
                         NMSClass.setConstructors(constructors);
                         NMSClass.setMethods(methods);
                         NMSClass.setFields(fields);
-                        for (NMSMethod nmsMethod : methods) {
-                            if (nmsMethod.getMojangName().equals("setXRot")) {
-                                Logger.get().info("Found x method in class " + mojangClassName);
-                            }
-                        }
                         classes.put(mojangClassName, NMSClass);
                     }
                     if (details.length > 0) { // initialise class
@@ -127,7 +125,7 @@ public class MappingsLoader {
                         spigotClassName = getSpigotClassName(mojangClassName);
                         NMSClass = new NMSClass(mojangClassName, spigotClassName);
                         constructors = new ArrayList<>();
-                        methods = new ArrayList<>();
+                        methods = ArrayListMultimap.create();
                         fields = new HashMap<>();
                     }
                     continue;
@@ -150,10 +148,7 @@ public class MappingsLoader {
                     } else { // method
                         String methodName = details[1].substring(0, details[1].indexOf('(')).trim();
                         NMSMethod method = new NMSMethod(NMSClass, methodName, details[2], details[0], args);
-                        methods.add(method);
-                        if (methodName.equals("setXRot")) {
-                            Logger.get().info("Found x method " + mojangClassName);
-                        }
+                        methods.put(methodName, method);
                     }
                 } else { // field
                     fields.put(details[1], new NMSField(NMSClass, details[1], details[0], details[2]));

@@ -3,18 +3,17 @@ package com.personoid.nms;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.utils.Parameter;
 import com.personoid.api.utils.cache.Cache;
-import com.personoid.nms.mappings.Mappings;
-import com.personoid.nms.mappings.NMSClass;
+import com.personoid.nms.mappings.*;
+import com.personoid.nms.packet.NMSReflection;
 import com.personoid.nms.packet.Package;
-import com.personoid.nms.packet.*;
+import com.personoid.nms.packet.Packages;
+import com.personoid.nms.packet.Packet;
 import org.bukkit.World;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
@@ -33,14 +32,24 @@ public class NMS {
         NPC_CACHE.remove("entityData." + id);
     }
 
+    public static <T> T invoke(NPC npc, String methodName, Parameter... args) {
+        Class<?>[] argTypes = Arrays.stream(args).map(Parameter::getType).toArray(Class[]::new);
+        NMSClass currentClass = Package.SERVER_PLAYER_CLASS.getMappedClass();
+        while (currentClass != null) {
+            NMSMethod method = currentClass.getMethod(methodName, argTypes);
+            if (method != null) {
+                Object[] argValues = Arrays.stream(args).map(Parameter::getValue).toArray(Object[]::new);
+                return method.invoke(toNMSPlayer(npc), argValues);
+            } else {
+                currentClass = currentClass.getSuperclass();
+            }
+        }
+        return null;
+    }
+
     public static Object toNMSPlayer(NPC npc) {
         return NPC_CACHE.getOrPut("nmsPlayer." + npc.getEntityId(), () -> {
-            try {
-                return npc.getEntity().getClass().getMethod("getHandle").invoke(npc.getEntity());
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-            }
-            return null;
+            return NMSReflection.getHandle(npc.getEntity());
         });
     }
 
@@ -61,47 +70,38 @@ public class NMS {
     }
 
     public static void setEntityData(NPC npc, int key, String type, Object value) {
-        if (type.equalsIgnoreCase("byte")) type = "a";
-        try {
-            Class<?> registry = CACHE.getOrPut("DataWatcherRegistry", () -> {
-                return NMSReflection.findClass(Packages.ENTITY_DATA_WATCHER, "DataWatcherRegistry"); // EntityDataSerializers
-            });
-            Class<?> serializerClass = CACHE.getOrPut("DataWatcherSerializer", () -> {
-                return NMSReflection.findClass(Packages.ENTITY_DATA_WATCHER, "DataWatcherSerializer"); // EntityDataSerializer
-            });
-            Constructor<?> objectConstructor = CACHE.getOrPut("DataWatcherObject", () -> {
-                try {
-                    return NMSReflection.findClass(Packages.ENTITY_DATA_WATCHER, "DataWatcherObject") // EntityDataAccessor
-                            .getConstructor(int.class, serializerClass); // EntityDataAccessor
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            Object data = objectConstructor.newInstance(key, NMSReflection.getField(registry, type));
-            Object entityData = NPC_CACHE.getOrPut("entityData." + npc.getEntityId(), () -> {
-                return NMSReflection.invoke(toNMSPlayer(npc), "aj"); // getEntityData
-            });
-            entityData.getClass().getMethod("b", data.getClass(), Object.class).invoke(entityData, data, value); // set
-            //ReflectionUtils.invoke(entityData, "b", data, value); // set
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
+        NMSClass registry = CACHE.getOrPut("EntityDataSerializers", () -> {
+            return Package.NETWORK_SYNCHER.sub("EntityDataSerializers").getMappedClass();
+        });
+        NMSClass serializerClass = CACHE.getOrPut("EntityDataSerializer", () -> {
+            return Package.NETWORK_SYNCHER.sub("EntityDataSerializer").getMappedClass();
+        });
+        NMSConstructor constructor = CACHE.getOrPut("EntityDataAccessor", () -> {
+            NMSClass nmsClass = Package.NETWORK_SYNCHER.sub("EntityDataAccessor").getMappedClass();
+            return nmsClass.getConstructor(int.class, serializerClass.getRawClass());
+        });
+
+        NMSField field = registry.getField(type.toUpperCase());
+        Object data = constructor.newInstance(key, field.getStaticValue());
+        Object entityData = NPC_CACHE.getOrPut("entityData." + npc.getEntityId(), () -> {
+            return invoke(npc, "getEntityData");
+        });
+
+        NMSClass dataClass = Package.NETWORK_SYNCHER.sub("SynchedEntityData").getMappedClass();
+        NMSMethod setMethod = dataClass.getMethod("set", data.getClass(), Object.class);
+        setMethod.invoke(entityData, data, value);
     }
 
     public static void setPos(NPC npc, Vector pos) {
-        NMSReflection.invoke(toNMSPlayer(npc), "a", toVec3(pos)); // setPos
+        invoke(npc, "setPos", Parameter.of(toVec3(pos)));
     }
 
     public static void respawn(NPC npc) {
-        NMSReflection.invoke(toNMSPlayer(npc), "fH"); // respawn
+        invoke(npc, "respawn");
     }
 
     public static void setArrowCount(NPC npc, int count) {
-        try {
-            CACHE.getClass("entity_player").getMethod("o", int.class).invoke(toNMSPlayer(npc), count); // setArrowCount
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
+        invoke(npc, "setArrowCount", new Parameter(int.class, count));
     }
 
     public static void addToWorld(NPC npc, World world) {
@@ -155,36 +155,19 @@ public class NMS {
                 @Override
                 public void send(Player to) {
                     try {
-                        Object craftPlayer = to.getClass().getMethod("getHandle").invoke(to);
-                        Field connField = craftPlayer.getClass().getField("b");
-                        connField.setAccessible(true);
-                        Object connection = connField.get(craftPlayer);
+                        Object craftPlayer = NMSReflection.getHandle(to);
+                        NMSField connField = Package.SERVER_PLAYER_CLASS.getMappedClass().getField("connection");
+                        Object conn = connField.getValue(craftPlayer);
                         Class<?> packetClass = Class.forName(Package.PROTOCOL.sub("Packet").toString());
-                        connection.getClass().getMethod("a", packetClass).invoke(connection, packetInstance);
-                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
-                             NoSuchFieldException | ClassNotFoundException e) {
+                        NMSClass connClass = Package.minecraft("server.network.ServerGamePacketListenerImpl").getMappedClass();
+                        connClass.getMethod("send", packetClass).invoke(conn, packetInstance);
+                    } catch (NullPointerException | ClassNotFoundException e) {
                         throw new RuntimeException("Could not get handle of player", e);
                     }
                 }
             };
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("Could not create packet " + className, e);
-        }
-    }
-
-    public static Object getPlayer(Player player) {
-        try {
-            return player.getClass().getMethod("getHandle").invoke(player);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("Could not get handle of player", e);
-        }
-    }
-
-    public static Object getEntity(Entity entity) {
-        try {
-            return entity.getClass().getMethod("getHandle").invoke(entity);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("Could not get handle of entity", e);
         }
     }
 }

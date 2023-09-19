@@ -1,25 +1,70 @@
 package com.personoid.nms.mappings;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.personoid.api.utils.Parameter;
+
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class NMSClass {
     private final String mojangName;
     private final String spigotName;
-    private List<NMSConstructor> constructors;
-    private final List<NMSMethod> methods = new ArrayList<>();
-    private Map<String, NMSField> fields;
+
+    private final List<NMSConstructor> constructors = new ArrayList<>();
+    private final ListMultimap<String, NMSMethod> methods = ArrayListMultimap.create();
+    private final Map<String, NMSField> fields = new HashMap<>();
 
     public NMSClass(String mojangName, String spigotName) {
         this.mojangName = mojangName;
         this.spigotName = spigotName;
     }
 
+    public Object construct(Parameter... args) {
+        Object argValues = Arrays.stream(args).map(Parameter::getValue).toArray();
+        for (NMSConstructor constructor : constructors) {
+            if (constructor.getArguments().length != args.length) continue;
+            boolean matches = true;
+            for (int i = 0; i < args.length; i++) {
+                if (!constructor.getArguments()[i].equals(args[i].getType().getCanonicalName())) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                return constructor.newInstance(argValues);
+            }
+        }
+        try {
+            Class<?>[] argTypes = Arrays.stream(args).map(Parameter::getType).toArray(Class<?>[]::new);
+            return getRawClass().getConstructor(argTypes).newInstance(argValues);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public NMSConstructor getConstructor(Class<?>... args) {
+        for (NMSConstructor constructor : constructors) {
+            if (constructor.getArguments().length != args.length) continue;
+            boolean matches = true;
+            for (int i = 0; i < args.length; i++) {
+                if (!constructor.getArguments()[i].equals(args[i].getCanonicalName())) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                return constructor;
+            }
+        }
+        String[] argNames = Arrays.stream(args).map(Class::getCanonicalName).toArray(String[]::new);
+        return new NMSConstructor(this, argNames);
+    }
+
     public NMSMethod getMethod(String methodName, Class<?>... parameters) {
-        for (NMSMethod nmsMethod : methods) {
+        List<NMSMethod> thisMethod = methods.get(methodName);
+        for (NMSMethod nmsMethod : thisMethod) {
             if (!nmsMethod.getMojangName().equals(methodName)) continue;
             if (parameters.length > 0 && nmsMethod.getArguments().length > 0) {
                 String[] arguments = Arrays.stream(parameters).map(Class::getCanonicalName).toArray(String[]::new);
@@ -38,7 +83,6 @@ public class NMSClass {
     }
 
     public NMSField getField(String fieldName) {
-        if (fields == null) return null;
         NMSField field = fields.get(fieldName);
         if (field != null) return field;
         try {
@@ -76,15 +120,15 @@ public class NMSClass {
     }
 
     void setConstructors(List<NMSConstructor> constructors) {
-        this.constructors = constructors;
+        this.constructors.addAll(constructors);
     }
 
-    public List<NMSMethod> getMethods() {
+    public ListMultimap<String, NMSMethod> getMethods() {
         return methods;
     }
 
-    void setMethods(List<NMSMethod> methods) {
-        this.methods.addAll(methods);
+    void setMethods(ListMultimap<String, NMSMethod> methods) {
+        this.methods.putAll(methods);
     }
 
     public Map<String, NMSField> getFields() {
@@ -92,6 +136,6 @@ public class NMSClass {
     }
 
     void setFields(Map<String, NMSField> fields) {
-        this.fields = fields;
+        this.fields.putAll(fields);
     }
 }

@@ -2,8 +2,6 @@ package com.personoid.nms.packet;
 
 import com.personoid.api.utils.cache.Cache;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
@@ -12,7 +10,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class NMSReflection {
     private static final Cache CACHE = new Cache("reflection_utils");
@@ -32,46 +29,6 @@ public class NMSReflection {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static Class<?> getNMSClass(String packageName, String className) throws ClassNotFoundException {
-        if (packageName == null) {
-            return Class.forName("net.minecraft.server." + getVersion() + "." + className);
-        } else {
-            return Class.forName("net.minecraft.server." + getVersion() + "." + packageName + "." + className);
-        }
-    }
-
-    public static Class<?> getNMSClassNoVer(String packageName, String className) throws ClassNotFoundException {
-        if (packageName == null) {
-            return Class.forName("net.minecraft.server." + className);
-        } else {
-            return Class.forName("net.minecraft.server." + packageName + "." + className);
-        }
-    }
-
-    public static Class<?> getNMSClass(String oldPackageName, String newPackageName, String className, int minVerPackageChange) {
-        try {
-            if (Integer.parseInt(Objects.requireNonNull(getVersion()).split("_")[1]) >= minVerPackageChange) {
-                if (newPackageName == null) {
-                    return Class.forName("net.minecraft.server." + className);
-                } else {
-                    return Class.forName("net.minecraft.server." + newPackageName + "." + className);
-                }
-            } else {
-                if (oldPackageName == null) {
-                    return Class.forName("net.minecraft.server." + getVersion() + "." + className);
-                } else {
-                    return Class.forName("net.minecraft.server." + getVersion() + "." + oldPackageName + "." + className);
-                }
-            }
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Class<?> getCraftClass(String packageName, String className) throws ClassNotFoundException {
-        return Class.forName("org.bukkit.craftbukkit." + getVersion() + "." + packageName + "." + className);
     }
 
     public static Object construct(Class<?> clazz, Object... parameters) {
@@ -103,22 +60,6 @@ public class NMSReflection {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
-        }
-    }
-
-    public static Object getNMSPlayer(Player player) {
-        try {
-            return player.getClass().getMethod("getHandle").invoke(player);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("Could not get handle of player", e);
-        }
-    }
-
-    public static Object getNMSEntity(Entity entity) {
-        try {
-            return entity.getClass().getMethod("getHandle").invoke(entity);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("Could not get handle of entity", e);
         }
     }
 

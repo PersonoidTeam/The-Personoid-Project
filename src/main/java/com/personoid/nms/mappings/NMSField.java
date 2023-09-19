@@ -16,13 +16,17 @@ public class NMSField {
         this.obfuscatedName = obfuscatedName;
     }
 
-    public <T> T get(Object instance) {
+    public <T> T getValue(Object instance) {
         try {
             return (T) clazz.getRawClass().getField(obfuscatedName).get(instance);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public <T> T getStaticValue() {
+        return getValue(null);
     }
 
     public void set(Object instance, Object value) {

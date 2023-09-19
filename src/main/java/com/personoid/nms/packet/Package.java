@@ -6,6 +6,9 @@ import com.personoid.nms.mappings.NMSClass;
 public class Package {
     public static final Package PROTOCOL = minecraft("network.protocol");
     public static final Package ENTITY = minecraft("world.entity");
+    public static final Package NETWORK = minecraft("network");
+    public static final Package NETWORK_SYNCHER = minecraft("network.syncher");
+    public static final Package ITEM = minecraft("world.item");
 
     public static final Package LIVING_ENTITY_CLASS = minecraft("world.entity.LivingEntity");
     public static final Package ITEM_STACK_CLASS = minecraft("world.item.ItemStack");
