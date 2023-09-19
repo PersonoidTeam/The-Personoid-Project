@@ -5,20 +5,19 @@ import com.personoid.api.ai.looking.target.LocationTarget;
 import com.personoid.api.npc.Pose;
 import com.personoid.api.pathfinding.calc.Path;
 import com.personoid.api.pathfinding.calc.node.Node;
-import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.Priority;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.util.Vector;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
     private Path path;
-    private final Location groundLoc;
+    private Location groundLoc;
     private final MovementType movementType;
     private final Options options;
     private int tick;
@@ -31,9 +30,9 @@ public class GoToLocationActivity extends Activity {
     public GoToLocationActivity(Location location, MovementType movementType) {
         this.location = location;
         this.pathCache = new Long2ObjectOpenHashMap<>();
-        this.groundLoc = LocationUtils.getBlockInDir(location, BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
         this.movementType = movementType;
         this.options = new Options();
+        this.groundLoc = location.clone().add(0.5, 0.5, 0.5);
     }
 
     @Override
@@ -92,6 +91,7 @@ public class GoToLocationActivity extends Activity {
         if (path == null || hasPathChanged() || true) {
             path = getNPC().getNavigation().moveTo(location);
             if (path != null) {
+                if (!path.isDone()) groundLoc = path.getLastNodePos().add(new Vector(0.5, 0.5, 0.5)).toLocation(getNPC().getWorld());
                 for (int i = 0; i < path.size(); i++) {
                     Node node = path.getNode(i);
                     long key = node.getPos().asLong();
@@ -124,13 +124,7 @@ public class GoToLocationActivity extends Activity {
     }
 
     private boolean finishCheck() {
-        if (options.getStoppingDistance() <= 0F && path != null && path.size() > 0) {
-            Location lastNodeLoc = path.getNode(path.size() - 1).getPos().toLocation(getNPC().getWorld()).add(0.5, 0, 0.5);
-            if (lastNodeLoc.distance(getNPC().getLocation()) <= 0.3F) {
-                markAsFinished(new Result<>(Result.Type.SUCCESS));
-                return true;
-            }
-        } else if (groundLoc.distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
+        if (groundLoc.distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
             markAsFinished(new Result<>(Result.Type.SUCCESS));
             return true;
         }

@@ -3,6 +3,7 @@ package com.personoid.nms.packet;
 import com.personoid.api.utils.Parameter;
 import com.personoid.api.utils.cache.Cache;
 import com.personoid.nms.NMS;
+import com.personoid.nms.mappings.NMSClass;
 import com.personoid.nms.mappings.NMSMethod;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -76,15 +77,11 @@ public class Packets {
     }
 
     public static Packet blockDestruction(int breakerId, Location location, int stage) {
-        try {
-            Class<?> blockPosClass = CACHE.getClass("block_position");
-            Object blockPos = blockPosClass.getConstructor(int.class, int.class, int.class)
-                    .newInstance(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-            return NMS.createPacket("ClientboundBlockDestructionPacket", new Parameter(int.class, breakerId),
-                    new Parameter(blockPosClass, blockPos), new Parameter(int.class, stage));
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        NMSClass blockPosClass = CACHE.get("block_position");
+        Object blockPos = blockPosClass.getConstructor(int.class, int.class, int.class)
+                .newInstance(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return NMS.createPacket("ClientboundBlockDestructionPacket", new Parameter(int.class, breakerId),
+                new Parameter(blockPosClass.getRawClass(), blockPos), new Parameter(int.class, stage));
     }
 
     public static Packet rotateEntity(Entity entity, float yaw, float pitch) {

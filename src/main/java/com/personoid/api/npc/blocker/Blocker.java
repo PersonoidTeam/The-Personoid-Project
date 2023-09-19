@@ -10,6 +10,7 @@ import org.bukkit.block.Block;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.function.Consumer;
 
 public class Blocker {
     private final NPC npc;
@@ -24,6 +25,8 @@ public class Blocker {
     public void tick() {
         if (currentInstruction != null) {
             currentInstruction.tick();
+        } else {
+            nextInstruction();
         }
     }
 
@@ -42,6 +45,17 @@ public class Blocker {
             @Override
             public void finish(Result<?> result) {
                 super.finish(result);
+                nextInstruction();
+            }
+        });
+    }
+
+    public void mine(Block block, boolean collectDrops, Consumer<Result<?>> onFinish) {
+        queue.add(new BlockBreakInstruction(npc, block, collectDrops) {
+            @Override
+            public void finish(Result<?> result) {
+                super.finish(result);
+                onFinish.accept(result);
                 nextInstruction();
             }
         });

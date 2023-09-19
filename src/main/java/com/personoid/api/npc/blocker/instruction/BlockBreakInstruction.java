@@ -26,6 +26,7 @@ public class BlockBreakInstruction extends Instruction {
 
     @Override
     public void onStart() {
+        Logger.get().severe("BlockBreakInstruction.onStart() called!");
         if (collectDrops) {
             Logger.get().title("Blocker").warning("Collecting drops is not yet implemented!");
         }
@@ -33,10 +34,10 @@ public class BlockBreakInstruction extends Instruction {
             finish(Result.failure("NPC and block are not in the same world!"));
             return;
         }
-        if (withinRange(5)) {
+/*        if (withinRange(5)) {
             finish(Result.failure("NPC too far away from block! Must be within 5 blocks."));
             return;
-        }
+        }*/
         data = getBlock().getBlockData();
         hardness = getBlock().getType().getHardness();
         getNPC().face(getBlock().getLocation());
@@ -47,10 +48,12 @@ public class BlockBreakInstruction extends Instruction {
         progress += getBlock().getBreakSpeed(getNPC().getEntity()) * 5.1F; // WHY THIS VALUE?
         Packets.blockDestruction(getNPC().getEntityId(), getBlock().getLocation(), getStage()).send();
         getNPC().swingHand(HandEnum.RIGHT);
+        Logger.get().severe("progress: " + progress + ", hardness: " + hardness);
         if (hardness * progress >= hardness) {
             ItemStack hand = getNPC().getEntity().getInventory().getItemInMainHand();
             getBlock().breakNaturally(hand);
             playBreakSound();
+            Packets.blockDestruction(getNPC().getEntityId(), getBlock().getLocation(), 0).send();
             finish(Result.success());
         } else if (++tick % 20 == 0) {
             playHitSound();
@@ -69,8 +72,8 @@ public class BlockBreakInstruction extends Instruction {
     }
 
     private void playHitParticle() {
-        getBlock().getWorld().spawnParticle(Particle.ITEM_CRACK, getBlock().getLocation(),
-                1, 0.5, 0.5, 0.5, 0.5, data.getMaterial().createBlockData());
+        getBlock().getWorld().spawnParticle(Particle.BLOCK_CRACK, getBlock().getLocation().add(0.5, 0.5, 0.5),
+                1, 1, 0.1, 0.1, 0.1, getBlock().getBlockData());
     }
 
     private void playBreakSound() {

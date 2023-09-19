@@ -52,6 +52,10 @@ public class Path {
         return new Vector(node.getPos().getX(), node.getPos().getY(), node.getPos().getZ());
     }
 
+    public Vector getLastNodePos() {
+        return getNodePos(nodes.length - 1);
+    }
+
     public void advance() {
         ++this.nextNodeIndex;
     }
