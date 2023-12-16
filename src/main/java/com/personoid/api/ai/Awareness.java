@@ -1,8 +1,6 @@
 package com.personoid.api.ai;
 
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.calc.Path;
-import org.bukkit.util.Vector;
 
 public class Awareness {
     private final NPC npc;
@@ -15,7 +13,7 @@ public class Awareness {
 
     }
 
-    public boolean shouldJump(Path path) {
+/*    public boolean shouldJump(Path path) {
         if (npc.getMoveController().isClimbing() || path == null || npc.isMovingInWater()) return false;
         double blockadeDist = Integer.MAX_VALUE;
         for (int i = 0; i <= 3; i++) {
@@ -43,5 +41,5 @@ public class Awareness {
             }
         }
         return false;
-    }
+    }*/
 }

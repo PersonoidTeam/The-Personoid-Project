@@ -3,15 +3,20 @@ package com.personoid.api.npc;
 import com.personoid.api.ai.NPCBrain;
 import com.personoid.api.ai.looking.LookController;
 import com.personoid.api.ai.movement.MoveController;
-import com.personoid.api.ai.movement.Navigation;
 import com.personoid.api.npc.blocker.Blocker;
 import com.personoid.api.npc.injection.Feature;
 import com.personoid.api.npc.injection.Injector;
-import com.personoid.api.pathfinding.calc.utils.BlockPos;
+import com.personoid.api.pathfindingold.BlockPos;
+import com.personoid.api.pathfindingold.Pathfinder;
+import com.personoid.api.pathfindingold.favouring.Favouring;
+import com.personoid.api.pathfindingold.goal.Goal;
 import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.nms.packet.Packets;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
@@ -21,11 +26,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NPC {
+    private Pathfinder pathfinder;
     private final NPCOverrides overrides = new NPCOverrides(this);
     private final List<Feature> features = new ArrayList<>();
     private final GameProfile profile;
 
-    private final Navigation navigation = new Navigation(this);
+    //private final Navigation navigation = new Navigation(this);
     private final MoveController moveController = new MoveController(this);
     private final LookController lookController = new LookController(this);
 
@@ -55,6 +61,7 @@ public class NPC {
     }
 
     void init() {
+        pathfinder = new Pathfinder(this, new Favouring(getWorld()));
         injector.callHook("init");
     }
 
@@ -74,7 +81,7 @@ public class NPC {
         lookController.tick();
         if (hasAI) {
             brain.tick();
-            navigation.tick();
+            //navigation.tick();
             blocker.tick();
             inventory.tick();
         }
@@ -192,8 +199,12 @@ public class NPC {
         return profile;
     }
 
-    public Navigation getNavigation() {
+    /*public Navigation getNavigation() {
         return navigation;
+    }*/
+
+    public void moveTo(Goal goal) {
+        pathfinder.findPath()
     }
 
     public MoveController getMoveController() {
@@ -363,6 +374,10 @@ public class NPC {
 
     public void face(double x, double y, double z) {
         face(new Location(getWorld(), x, y, z));
+    }
+
+    public void interact() {
+        swingHand(HandEnum.DOMINANT);
     }
 
     // endregion

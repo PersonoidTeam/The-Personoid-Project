@@ -1,22 +1,7 @@
 package com.personoid.api.ai.movement;
 
-import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.calc.Path;
-import com.personoid.api.pathfinding.calc.pathfinder.NavigationPathFinder;
-import com.personoid.api.pathfinding.calc.pathfinder.PathFinder;
-import com.personoid.api.pathfinding.calc.goal.BlockGoal;
-import com.personoid.api.pathfinding.calc.node.Node;
-import com.personoid.api.pathfinding.calc.utils.BlockPos;
-import com.personoid.api.utils.LocationUtils;
-import com.personoid.api.utils.debug.Profiler;
-import com.personoid.api.utils.types.BlockTags;
-import org.bukkit.*;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.util.Vector;
-
 public class Navigation {
-    private final NPC npc;
+/*    private final NPC npc;
     private final PathFinder pathfinder = new NavigationPathFinder();
     private final Options options = new Options();
     private Path path;
@@ -37,10 +22,10 @@ public class Navigation {
         } else if (path != null && !path.isDone()) {
             Vector tempNPCPos = getTempNPCPos();
             Vector nextNPCPos = path.getNextNPCPos(npc);
-            if (tempNPCPos.getY() > nextNPCPos.getY() && !npc.isOnGround() && Math.floor(tempNPCPos.getX()) == Math.floor(nextNPCPos.getX()) &&
+*//*            if (tempNPCPos.getY() > nextNPCPos.getY() && !npc.isOnGround() && Math.floor(tempNPCPos.getX()) == Math.floor(nextNPCPos.getX()) &&
                     Math.floor(tempNPCPos.getZ()) == Math.floor(nextNPCPos.getZ())) {
                 path.advance();
-            }
+            }*//*
         }
 
         if (npc.getBrain().getAwareness().shouldJump(path)) {
@@ -207,5 +192,5 @@ public class Navigation {
         public void setShowPath(boolean showPath) {
             this.showPath = showPath;
         }
-    }
+    }*/
 }

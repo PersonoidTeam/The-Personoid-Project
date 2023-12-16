@@ -84,6 +84,61 @@ public class NPCInventory {
         }}).send();
     }
 
+    public boolean hasItem(ItemStack itemStack) {
+        for (ItemStack item : hotbar) {
+            if (equals(item, itemStack)) {
+                return true;
+            }
+        }
+        for (ItemStack item : contents) {
+            if (equals(item, itemStack)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasItem(Material material) {
+        for (ItemStack item : hotbar) {
+            if (item != null && item.getType() == material) {
+                return true;
+            }
+        }
+        for (ItemStack item : contents) {
+            if (item != null && item.getType() == material) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void select(ItemStack item) {
+        int slot = -1;
+        for (int i = 0; i < hotbar.length; i++) {
+            if (equals(hotbar[i], item)) {
+                slot = i;
+                break;
+            }
+        }
+        if (slot == -1) {
+            for (int i = 0; i < contents.length; i++) {
+                if (equals(contents[i], item)) {
+                    slot = i;
+                    break;
+                }
+            }
+            if (slot == -1) {
+                throw new IllegalArgumentException("Item not found in inventory");
+            }
+            ItemStack temp = hotbar[selectedSlot];
+            hotbar[selectedSlot] = item;
+            contents[slot] = temp;
+        }
+        selectedSlot = slot;
+        npc.getEntity().getInventory().setItemInMainHand(hotbar[selectedSlot]);
+        Packets.entityEquipment(npc.getEntityId(), Collections.singletonMap(EquipmentSlot.HAND, hotbar[slot])).send();
+    }
+
     public void select(int slot) {
         if (slot > 8 || slot < 0) {
             throw new IndexOutOfBoundsException("Slot index must be between than 0-8 (was " + slot + ")");

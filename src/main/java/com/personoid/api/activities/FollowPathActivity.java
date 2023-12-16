@@ -1,15 +1,7 @@
 package com.personoid.api.activities;
 
-import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.looking.target.LocationTarget;
-import com.personoid.api.npc.Pose;
-import com.personoid.api.pathfinding.calc.Path;
-import com.personoid.api.utils.Result;
-import com.personoid.api.utils.types.Priority;
-import org.bukkit.Location;
-
-public class FollowPathActivity extends Activity {
-    private final Path path;
+public class FollowPathActivity {
+/*    private final Path path;
     private Location endLocation;
     private final MovementType movementType;
     private final Options options;
@@ -209,5 +201,5 @@ public class FollowPathActivity extends Activity {
         SPRINT,
         SPRINT_JUMP,
         FLY
-    }
+    }*/
 }

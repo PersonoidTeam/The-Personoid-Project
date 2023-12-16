@@ -1,22 +1,17 @@
 package com.personoid.api.activities;
 
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.looking.target.LocationTarget;
 import com.personoid.api.npc.Pose;
-import com.personoid.api.pathfinding.calc.Path;
-import com.personoid.api.pathfinding.calc.node.Node;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.debug.Profiler;
 import com.personoid.api.utils.types.Priority;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.util.Vector;
 
 public class GoToLocationActivity extends Activity {
     private final Location location;
-    private Path path;
+    //private Path path;
     private Location groundLoc;
     private final MovementType movementType;
     private final Options options;
@@ -52,7 +47,7 @@ public class GoToLocationActivity extends Activity {
                 getNPC().setPose(Pose.FLYING);
                 break;
         }
-        tryUpdatePath();
+        //tryUpdatePath();
         Profiler.ACTIVITIES.push("going to location: " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
     }
 
@@ -62,7 +57,7 @@ public class GoToLocationActivity extends Activity {
             getNPC().setSprinting(movementType.name().contains("SPRINT"));
         }
         if (++tick % 10 == 0) {
-            tryUpdatePath();
+            //tryUpdatePath();
         }
         doStuckDetection();
         finishCheck();
@@ -76,7 +71,7 @@ public class GoToLocationActivity extends Activity {
                 stuckTicks++;
                 if (stuckTicks >= options.stuckTime) {
                     stuckTicks = 0;
-                    onStuck();
+                    //onStuck();
                 }
             } else {
                 stuckTicks = 0;
@@ -87,7 +82,7 @@ public class GoToLocationActivity extends Activity {
         lastLocation = getNPC().getLocation().clone();
     }
 
-    private void tryUpdatePath() {
+/*    private void tryUpdatePath() {
         if (path == null || hasPathChanged() || true) {
             path = getNPC().getNavigation().moveTo(location);
             if (path != null) {
@@ -121,7 +116,7 @@ public class GoToLocationActivity extends Activity {
             }
         }
         return false;
-    }
+    }*/
 
     private boolean finishCheck() {
         if (groundLoc.distance(getNPC().getLocation()) <= options.getStoppingDistance()) {
@@ -133,7 +128,7 @@ public class GoToLocationActivity extends Activity {
 
     @Override
     public void onStop(StopType stopType) {
-        getNPC().getNavigation().stop();
+        //getNPC().getNavigation().stop();
         getNPC().getMoveController().stop();
         if (options.canFaceLocation()) getNPC().getLookController().removeTarget("travel_location");
     }
@@ -158,7 +153,7 @@ public class GoToLocationActivity extends Activity {
         return null;
     }
 
-    public void onStuck() {
+/*    public void onStuck() {
         if (options.getStuckAction() == StuckAction.STOP) {
             getNPC().getNavigation().stop();
             markAsFinished(new Result<>(Result.Type.FAILURE));
@@ -174,7 +169,7 @@ public class GoToLocationActivity extends Activity {
         } else if (options.getStuckAction() == StuckAction.IGNORE) {
             // do nothing
         }
-    }
+    }*/
 
     public Options getOptions() {
         return options;

@@ -6,9 +6,13 @@ import org.bukkit.util.Vector;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MathUtils {
+    private static final DecimalFormat FORMAT = new DecimalFormat("#.0", new DecimalFormatSymbols(Locale.UK));
     private static final double LOG_TWO = Math.log(2);
 
     private MathUtils() {}
@@ -121,5 +125,9 @@ public class MathUtils {
 
     public static double log2(double d) {
         return Math.log(d) / LOG_TWO;
+    }
+
+    public static String formatNumber(double d) {
+        return FORMAT.format(d);
     }
 }

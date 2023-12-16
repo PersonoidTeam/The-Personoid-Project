@@ -2,7 +2,7 @@ package com.personoid.api.ai.looking;
 
 import com.personoid.api.ai.looking.target.Target;
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.calc.utils.BlockPos;
+import com.personoid.api.pathfindingold.BlockPos;
 import com.personoid.api.utils.types.Priority;
 import com.personoid.nms.packet.Packets;
 import org.bukkit.Location;

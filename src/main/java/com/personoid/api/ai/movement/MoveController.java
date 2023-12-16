@@ -268,6 +268,19 @@ public class MoveController {
         return null;
     }
 
+    public void move(boolean forward, boolean strafe) {
+        moveForward = forward ? 1D : 0D;
+        moveStrafing = strafe ? 1D : 0D;
+    }
+
+    public void moveForward(boolean forward) {
+        moveForward = forward ? 1D : 0D;
+    }
+
+    public void moveStrafe(boolean strafe) {
+        moveStrafing = strafe ? 1D : 0D;
+    }
+
     /**
      * Sets the NPC's target coordinates to the given x and z coordinates.
      * <p>This method will only see results if {@link NPC#hasAI()} is true.</p>
@@ -367,5 +380,13 @@ public class MoveController {
      */
     public boolean isClimbing() {
         return climbing;
+    }
+
+    /**
+     * Gets whether the NPC is falling.
+     * @return Whether the NPC is falling
+     */
+    public boolean isFalling() {
+        return motionY < 0;
     }
 }

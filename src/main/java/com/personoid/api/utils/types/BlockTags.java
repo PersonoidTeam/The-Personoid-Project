@@ -1,6 +1,6 @@
 package com.personoid.api.utils.types;
 
-import com.personoid.api.pathfinding.calc.utils.BlockPos;
+import com.personoid.api.pathfindingold.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
